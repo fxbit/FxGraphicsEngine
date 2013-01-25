@@ -4,3 +4,6 @@
 [submodule "FxMath"]
 	path = FxMath
 	url = git@github.com:fxbit/FxMath.git
+[submodule "DockPanelSuite"]
+	path = DockPanelSuite
+	url = ../dockpanelsuite.git
