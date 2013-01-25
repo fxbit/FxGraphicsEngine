@@ -1,0 +1,6 @@
+[submodule "FxFramework"]
+	path = FxFramework
+	url = git@github.com:fxbit/FxFramework.git
+[submodule "FxMath"]
+	path = FxMath
+	url = git@github.com:fxbit/FxMath.git
