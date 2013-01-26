@@ -30,7 +30,7 @@ using GraphicsEngine.Core.Shaders;
 
 namespace Tester
 {
-    public partial class Viewport : DockContent
+    public partial class Viewport3D : DockContent
     {
 
         #region Variables
@@ -46,7 +46,7 @@ namespace Tester
 
 
 
-        public Viewport(Engine engine)
+        public Viewport3D(Engine engine)
         {
             InitializeComponent();
 

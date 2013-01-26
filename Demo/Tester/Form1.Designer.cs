@@ -44,7 +44,6 @@
             WeifenLuo.WinFormsUI.Docking.DockPanelGradient dockPanelGradient3 = new WeifenLuo.WinFormsUI.Docking.DockPanelGradient();
             WeifenLuo.WinFormsUI.Docking.TabGradient tabGradient6 = new WeifenLuo.WinFormsUI.Docking.TabGradient();
             WeifenLuo.WinFormsUI.Docking.TabGradient tabGradient7 = new WeifenLuo.WinFormsUI.Docking.TabGradient();
-            this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel_fps = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
@@ -52,12 +51,118 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.timer_statistics_update = new System.Windows.Forms.Timer(this.components);
+            this.add2DViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.meshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addSamplePlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.direct2DToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.timer_statistics_update = new System.Windows.Forms.Timer(this.components);
+            this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
+            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // statusStrip1
+            // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripStatusLabel_fps,
+            this.toolStripStatusLabel2,
+            this.toolStripStatusLabel_triangles});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 499);
+            this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Size = new System.Drawing.Size(884, 25);
+            this.statusStrip1.TabIndex = 2;
+            this.statusStrip1.Text = "statusStrip1";
+            // 
+            // toolStripStatusLabel_fps
+            // 
+            this.toolStripStatusLabel_fps.Name = "toolStripStatusLabel_fps";
+            this.toolStripStatusLabel_fps.Size = new System.Drawing.Size(47, 20);
+            this.toolStripStatusLabel_fps.Text = "FPS: 0";
+            // 
+            // toolStripStatusLabel2
+            // 
+            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(13, 20);
+            this.toolStripStatusLabel2.Text = "|";
+            // 
+            // toolStripStatusLabel_triangles
+            // 
+            this.toolStripStatusLabel_triangles.Name = "toolStripStatusLabel_triangles";
+            this.toolStripStatusLabel_triangles.Size = new System.Drawing.Size(84, 20);
+            this.toolStripStatusLabel_triangles.Text = "Triangles: 0";
+            // 
+            // menuStrip1
+            // 
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewToolStripMenuItem,
+            this.meshToolStripMenuItem,
+            this.direct2DToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(884, 28);
+            this.menuStrip1.TabIndex = 4;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // viewToolStripMenuItem
+            // 
+            this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.addViewportToolStripMenuItem,
+            this.add2DViewportToolStripMenuItem});
+            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            this.viewToolStripMenuItem.Size = new System.Drawing.Size(53, 24);
+            this.viewToolStripMenuItem.Text = "View";
+            // 
+            // addViewportToolStripMenuItem
+            // 
+            this.addViewportToolStripMenuItem.Name = "addViewportToolStripMenuItem";
+            this.addViewportToolStripMenuItem.Size = new System.Drawing.Size(193, 24);
+            this.addViewportToolStripMenuItem.Text = "Add 3D Viewport";
+            this.addViewportToolStripMenuItem.Click += new System.EventHandler(this.addViewportToolStripMenuItem_Click);
+            // 
+            // add2DViewportToolStripMenuItem
+            // 
+            this.add2DViewportToolStripMenuItem.Name = "add2DViewportToolStripMenuItem";
+            this.add2DViewportToolStripMenuItem.Size = new System.Drawing.Size(193, 24);
+            this.add2DViewportToolStripMenuItem.Text = "Add 2D Viewport";
+            this.add2DViewportToolStripMenuItem.Click += new System.EventHandler(this.add2DViewportToolStripMenuItem_Click);
+            // 
+            // meshToolStripMenuItem
+            // 
+            this.meshToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.addSamplePlaneToolStripMenuItem});
+            this.meshToolStripMenuItem.Name = "meshToolStripMenuItem";
+            this.meshToolStripMenuItem.Size = new System.Drawing.Size(93, 24);
+            this.meshToolStripMenuItem.Text = "DirectX 3D";
+            // 
+            // addSamplePlaneToolStripMenuItem
+            // 
+            this.addSamplePlaneToolStripMenuItem.Name = "addSamplePlaneToolStripMenuItem";
+            this.addSamplePlaneToolStripMenuItem.Size = new System.Drawing.Size(200, 24);
+            this.addSamplePlaneToolStripMenuItem.Text = "Add Sample Plane";
+            this.addSamplePlaneToolStripMenuItem.Click += new System.EventHandler(this.addSamplePlaneToolStripMenuItem_Click);
+            // 
+            // direct2DToolStripMenuItem
+            // 
+            this.direct2DToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.addImageToolStripMenuItem});
+            this.direct2DToolStripMenuItem.Name = "direct2DToolStripMenuItem";
+            this.direct2DToolStripMenuItem.Size = new System.Drawing.Size(93, 24);
+            this.direct2DToolStripMenuItem.Text = "DirectX 2D";
+            // 
+            // addImageToolStripMenuItem
+            // 
+            this.addImageToolStripMenuItem.Name = "addImageToolStripMenuItem";
+            this.addImageToolStripMenuItem.Size = new System.Drawing.Size(152, 24);
+            this.addImageToolStripMenuItem.Text = "Add Image";
+            this.addImageToolStripMenuItem.Click += new System.EventHandler(this.addImageToolStripMenuItem_Click);
+            // 
+            // timer_statistics_update
+            // 
+            this.timer_statistics_update.Enabled = true;
+            this.timer_statistics_update.Interval = 1000;
+            this.timer_statistics_update.Tick += new System.EventHandler(this.timer_statistics_update_Tick);
             // 
             // dockPanel1
             // 
@@ -112,85 +217,11 @@
             dockPaneStripSkin1.ToolWindowGradient = dockPaneStripToolWindowGradient1;
             dockPanelSkin1.DockPaneStripSkin = dockPaneStripSkin1;
             this.dockPanel1.Skin = dockPanelSkin1;
-            this.dockPanel1.SupportDeeplyNestedContent = true;
             this.dockPanel1.TabIndex = 0;
             // 
-            // statusStrip1
+            // openFileDialog1
             // 
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabel_fps,
-            this.toolStripStatusLabel2,
-            this.toolStripStatusLabel_triangles});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 499);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(884, 25);
-            this.statusStrip1.TabIndex = 2;
-            this.statusStrip1.Text = "statusStrip1";
-            // 
-            // toolStripStatusLabel_fps
-            // 
-            this.toolStripStatusLabel_fps.Name = "toolStripStatusLabel_fps";
-            this.toolStripStatusLabel_fps.Size = new System.Drawing.Size(47, 20);
-            this.toolStripStatusLabel_fps.Text = "FPS: 0";
-            // 
-            // toolStripStatusLabel2
-            // 
-            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(13, 20);
-            this.toolStripStatusLabel2.Text = "|";
-            // 
-            // toolStripStatusLabel_triangles
-            // 
-            this.toolStripStatusLabel_triangles.Name = "toolStripStatusLabel_triangles";
-            this.toolStripStatusLabel_triangles.Size = new System.Drawing.Size(84, 20);
-            this.toolStripStatusLabel_triangles.Text = "Triangles: 0";
-            // 
-            // menuStrip1
-            // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewToolStripMenuItem,
-            this.meshToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(884, 28);
-            this.menuStrip1.TabIndex = 4;
-            this.menuStrip1.Text = "menuStrip1";
-            // 
-            // viewToolStripMenuItem
-            // 
-            this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.addViewportToolStripMenuItem});
-            this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-            this.viewToolStripMenuItem.Size = new System.Drawing.Size(53, 24);
-            this.viewToolStripMenuItem.Text = "View";
-            // 
-            // addViewportToolStripMenuItem
-            // 
-            this.addViewportToolStripMenuItem.Name = "addViewportToolStripMenuItem";
-            this.addViewportToolStripMenuItem.Size = new System.Drawing.Size(170, 24);
-            this.addViewportToolStripMenuItem.Text = "Add Viewport";
-            this.addViewportToolStripMenuItem.Click += new System.EventHandler(this.addViewportToolStripMenuItem_Click);
-            // 
-            // timer_statistics_update
-            // 
-            this.timer_statistics_update.Enabled = true;
-            this.timer_statistics_update.Interval = 1000;
-            this.timer_statistics_update.Tick += new System.EventHandler(this.timer_statistics_update_Tick);
-            // 
-            // meshToolStripMenuItem
-            // 
-            this.meshToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.addSamplePlaneToolStripMenuItem});
-            this.meshToolStripMenuItem.Name = "meshToolStripMenuItem";
-            this.meshToolStripMenuItem.Size = new System.Drawing.Size(56, 24);
-            this.meshToolStripMenuItem.Text = "Mesh";
-            // 
-            // addSamplePlaneToolStripMenuItem
-            // 
-            this.addSamplePlaneToolStripMenuItem.Name = "addSamplePlaneToolStripMenuItem";
-            this.addSamplePlaneToolStripMenuItem.Size = new System.Drawing.Size(200, 24);
-            this.addSamplePlaneToolStripMenuItem.Text = "Add Sample Plane";
-            this.addSamplePlaneToolStripMenuItem.Click += new System.EventHandler(this.addSamplePlaneToolStripMenuItem_Click);
+            this.openFileDialog1.FileName = "openFileDialog1";
             // 
             // Form1
             // 
@@ -203,6 +234,7 @@
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";
             this.Text = "Form1";
+            this.ResizeEnd += new System.EventHandler(this.Form1_ResizeEnd);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
@@ -225,6 +257,10 @@
         private System.Windows.Forms.Timer timer_statistics_update;
         private System.Windows.Forms.ToolStripMenuItem meshToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addSamplePlaneToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem add2DViewportToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem direct2DToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem addImageToolStripMenuItem;
+        private System.Windows.Forms.OpenFileDialog openFileDialog1;
     }
 }
 

@@ -76,7 +76,7 @@ namespace Tester
         #region View Menu
 
 
-        #region Add ViewPort
+        #region Add 3D ViewPort
 
         private void addViewportToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -84,20 +84,30 @@ namespace Tester
             StartGraphicEngine();
 
             // create a new viewport
-            Viewport viewport = new Viewport(engine);
-
-
-            // suspend the layout until we finish the viewport adding
-            dockPanel1.SuspendLayout(true);
+            Viewport3D viewport = new Viewport3D(engine);
 
             // add the viewport to the dock
             viewport.Show(dockPanel1, DockState.Document);
-
-            // resume the layout
-            dockPanel1.ResumeLayout(true, true);
         }
 
         #endregion
+
+
+
+
+        #region Add 2D ViewPort
+
+        private void add2DViewportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // create a new viewport
+            Viewport2D viewport = new Viewport2D();
+
+            // add the viewport to the dock
+            viewport.Show(dockPanel1, DockState.Document);
+        }
+
+        #endregion
+
 
 
         #endregion
@@ -124,7 +134,8 @@ namespace Tester
         #endregion
 
 
-        #region Mesh Menu
+
+        #region DirectX 3D Menu
 
 
         #region Add Sample Plane
@@ -202,8 +213,59 @@ namespace Tester
         } 
 
         #endregion
-        
+
 
         #endregion
+
+
+
+
+
+        #region DirectX 2D Menu
+
+
+
+        #region Add image on the selected Canva
+        private void addImageToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Viewport2D viewport = null;
+
+            if (dockPanel1.ActiveContent is Viewport2D)
+            {
+                viewport = (Viewport2D)dockPanel1.ActiveContent;
+            }
+            else if (dockPanel1.ActiveDocument is Viewport2D)
+            {
+                viewport = (Viewport2D)dockPanel1.ActiveDocument;
+            }
+
+            if (viewport != null)
+            {
+                if (openFileDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    // load the image that the user have select
+                    FxImages im = FxTools.FxImages_safe_constructors(new Bitmap(openFileDialog1.FileName));
+
+                    // create a new image element 
+                    ImageElement imE = new ImageElement(im);
+
+                    // add the element on canva
+                    viewport.AddElement(imE);
+                }
+            }
+        } 
+        #endregion
+
+
+        #endregion
+
+
+
+
+
+        private void Form1_ResizeEnd(object sender, EventArgs e)
+        {
+        }
+        
     }
 }
