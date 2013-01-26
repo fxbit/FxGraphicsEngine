@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-// SlimDx lib
-using SlimDX;
+// SharpDX lib
+using SharpDX;
 
 // internals libraries
 using GraphicsEngine.Core.PrimaryObjects3D;

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-// SlimDx lib
-using SlimDX;
+// SharpDX lib
+using SharpDX;
 
 // internals libraries
 using GraphicsEngine.Core;

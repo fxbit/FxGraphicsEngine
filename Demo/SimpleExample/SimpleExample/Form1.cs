@@ -13,9 +13,9 @@ using GraphicsEngine;
 using GraphicsEngine.UI;
 using GraphicsEngine.Managers;
 
-using SlimDX;
-using SlimDX.Direct3D11;
-using SlimDX.DXGI;
+using SharpDX;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
 using FxMaths.Images;
 using FxMaths.GUI;
 using FxMaths.Vector;
@@ -67,7 +67,7 @@ namespace SimpleExample
 
                     // init the engine
                     //engine = new Engine(RenderArea.Width, RenderArea.Height, RenderArea.Handle, this.Handle);
-                    engine = new Engine(1680, 1050, RenderArea.Handle, this.Handle);
+                    engine = new Engine(1680, 1050, RenderArea.Handle, this);
 
                     // set the first viewport
                     RenderArea_Viewport = new GraphicsEngine.Core.Viewport(RenderArea.Width, RenderArea.Height, RenderArea.Handle, Format.R8G8B8A8_UNorm);

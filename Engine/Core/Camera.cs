@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using SlimDX;
-using SlimDX.DirectInput;
+using SharpDX;
+using SharpDX.DirectInput;
 using System.Drawing;
-using SlimDX.Direct3D11;
+using SharpDX.Direct3D11;
 
 namespace GraphicsEngine.Core {
 
@@ -164,11 +164,11 @@ namespace GraphicsEngine.Core {
             m_Velocity = new Vector3(0, 0, 0);
             m_RotVelocity = new Vector2(0, 0);
 
-            m_RotationScaler = 0.001f;
-            m_MoveScaler = 0.1f;
+            m_RotationScaler = 0.002f;
+            m_MoveScaler = 0.3f;
 
             m_MouseDelta = new Vector2(0, 0);
-            m_FramesToSmoothMouseData = 4.0f;
+            m_FramesToSmoothMouseData = 8.0f;
 
             m_Windows_Width = width;
             m_Windows_Height = height;
@@ -302,20 +302,20 @@ namespace GraphicsEngine.Core {
         /// </summary>
         /// <param name="key">Key from keyboard</param>
         /// <returns>Action to perform</returns>
-        private static CameraKeys MapKey(Key key)
+        private static CameraKeys MapKey(System.Windows.Forms.Keys key)
         {
             switch (key) {
-                case Key.S:
+                case System.Windows.Forms.Keys.S:
                     return CameraKeys.MOVE_BACKWARD;
-                case Key.W:
+                case System.Windows.Forms.Keys.W:
                     return CameraKeys.MOVE_FORWARD;
-                case Key.A:
+                case System.Windows.Forms.Keys.A:
                     return CameraKeys.STRAFE_LEFT;
-                case Key.D:
+                case System.Windows.Forms.Keys.D:
                     return CameraKeys.STRAFE_RIGHT;
-                case Key.Q:
+                case System.Windows.Forms.Keys.Q:
                     return CameraKeys.MOVE_UP;
-                case Key.E:
+                case System.Windows.Forms.Keys.E:
                     return CameraKeys.MOVE_DOWN;
 
                 default:
@@ -352,7 +352,7 @@ namespace GraphicsEngine.Core {
         /// Gets the input key and alters the move direction
         /// </summary>
         /// <param name="key">Input key from keyboard</param>
-        public void handleKeys(SlimDX.DirectInput.Key key)
+        public void handleKeys(System.Windows.Forms.Keys key)
         {
             /// Get mapped action
             CameraKeys mapKey = MapKey(key);
@@ -384,10 +384,8 @@ namespace GraphicsEngine.Core {
         /// Handles the mouse events
         /// </summary>
         /// <param name="mouse_state">The state of the mouse</param>
-        public void handleMouse(MouseState mouse_state)
+        public void handleMouse(Vector2 CurMouseDelta)
         {
-            Vector2 CurMouseDelta = new Vector2(mouse_state.X, -mouse_state.Y);
-
             /// Smooth the relative mouse data over a few frames so it isn't 
             /// jerky when moving slowly at low frame rates.
             float fPercentOfNew = 1.0f / m_FramesToSmoothMouseData;
@@ -397,5 +395,6 @@ namespace GraphicsEngine.Core {
             m_RotVelocity = m_MouseDelta * m_RotationScaler;
         }
         #endregion
+
     }
 }

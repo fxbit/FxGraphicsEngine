@@ -6,24 +6,26 @@ using System.IO;
 
 using FXFramework;
 
-// slimdx library
-using SlimDX;
-using SlimDX.DXGI;
-using SlimDX.Direct3D11;
-using SlimDX.D3DCompiler;
+// SharpDX library
+using SharpDX;
+using SharpDX.DXGI;
+using SharpDX.Direct3D11;
+using SharpDX.D3DCompiler;
 
 // resolve conflict - DXGI.Device & Direct3D10.Device
-using Device = SlimDX.Direct3D11.Device;
-using Buffer = SlimDX.Direct3D11.Buffer;
-using Effect = SlimDX.Direct3D11.Effect;
-using EffectFlags = SlimDX.D3DCompiler.EffectFlags;
+using Device = SharpDX.Direct3D11.Device;
+using Buffer = SharpDX.Direct3D11.Buffer;
+using Effect = SharpDX.Direct3D11.Effect;
+using EffectFlags = SharpDX.D3DCompiler.EffectFlags;
 
 // internal librarys
 using GraphicsEngine.Core.Shaders;
+using SharpDX.Direct3D;
 
 
 namespace GraphicsEngine.Core {
     public class IncludeFX : Include {
+
         public String RelIncludeDirectory
         {
             get { return includeDirectory; }
@@ -46,6 +48,29 @@ namespace GraphicsEngine.Core {
         public void Open(IncludeType type, string fileName, Stream parentStream, out Stream stream)
         {
             stream = new FileStream(includeDirectory + fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+
+
+        public Stream Open(IncludeType type, string fileName, Stream parentStream)
+        {
+            return new FileStream(includeDirectory + fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+
+        public IDisposable Shadow
+        {
+            get
+            {
+                return this;
+            }
+            set
+            {
+             //   throw new NotImplementedException();
+            }
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -118,7 +143,8 @@ namespace GraphicsEngine.Core {
                     // close the file stream
                     fileStream.Close();
 
-                    DataStream preBuildShaderStream = new DataStream( fileByte, true, true );
+                    DataStream preBuildShaderStream = new DataStream( fileByte.Length, true, true );
+                    preBuildShaderStream.Write(fileByte, 0, fileByte.Length);
 
                     m_PixelShaderByteCode = new ShaderBytecode( preBuildShaderStream );
                     m_VertexShaderByteCode = new ShaderBytecode( preBuildShaderStream );
@@ -160,18 +186,18 @@ namespace GraphicsEngine.Core {
                                                 ShaderRootPath + Name,       /// File Path of the file containing the code 
                                                 PS_EntryPoint,               /// The entry point for the shader
                                                 CompileLevelPS,              /// What specifications (shader version) to compile with
-                                                sf, EffectFlags.None, null, includeFX, out errors);
+                                                sf, EffectFlags.None, null, includeFX);
 
                     /// compile the shader to byte code
                     m_VertexShaderByteCode = ShaderBytecode.CompileFromFile(
                                                 ShaderRootPath + Name,       /// File Path of the file containing the code 
                                                 VS_EntryPoint,               /// The entry point for the shader
                                                 CompileLevelVS,              /// What specifications (shader version) to compile with
-                                                sf, EffectFlags.None, null, includeFX, out errors);
+                                                sf, EffectFlags.None, null, includeFX);
                 }
                 catch (Exception ex)
                 {
-
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
 
                 }
             }

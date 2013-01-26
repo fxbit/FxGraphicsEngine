@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 
 using GraphicsEngine.Core;
-using SlimDX.Direct3D11;
+using SharpDX.Direct3D11;
 
 namespace GraphicsEngine.Managers {
     public static class TextureManager {
@@ -41,7 +41,7 @@ namespace GraphicsEngine.Managers {
                 newTex.ScaleU = 1f;
                 newTex.ScaleV = 1f;
                 newTex.Alpha = 1f;
-                newTex.texture2D = Texture2D.FromFile(Engine.g_device, Path);
+                newTex.texture2D = (Texture2D)Texture2D.FromFile( Engine.g_device, Path);
                 newTex.shaderResource = new ShaderResourceView(Engine.g_device, newTex.texture2D);
 
                 /// add the new texture to the list

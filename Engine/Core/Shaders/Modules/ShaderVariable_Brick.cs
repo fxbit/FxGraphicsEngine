@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SlimDX;
-using SlimDX.DXGI;
-using SlimDX.Direct3D11;
+using SharpDX;
+using SharpDX.DXGI;
+using SharpDX.Direct3D11;
 
 // resolve conflict - DXGI.Device & Direct3D10.Device
-using Device = SlimDX.Direct3D11.Device;
-using Buffer = SlimDX.Direct3D11.Buffer;
-using Effect = SlimDX.Direct3D11.Effect;
-using EffectFlags = SlimDX.D3DCompiler.EffectFlags;
+using Device = SharpDX.Direct3D11.Device;
+using Buffer = SharpDX.Direct3D11.Buffer;
+using Effect = SharpDX.Direct3D11.Effect;
+using EffectFlags = SharpDX.D3DCompiler.EffectFlags;
 using GraphicsEngine.Managers;
 using System.Drawing;
 using FXFramework;

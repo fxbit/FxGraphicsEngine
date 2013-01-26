@@ -17,7 +17,7 @@ namespace GraphicsEngine.Core.PrimaryObjects3D
         public Sphere( float radius, int zones, int sections ) : base()
         {
             // set zero position
-            base.SetPosition( new SlimDX.Vector3() );
+            base.SetPosition( new SharpDX.Vector3() );
 
             // create the sphere 
 

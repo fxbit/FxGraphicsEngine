@@ -3,14 +3,14 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 /// library for directX
-using SlimDX;
-using SlimDX.Direct3D11;
-using SlimDX.DXGI;
-using SlimDX.DirectInput;
+using SharpDX;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
+using SharpDX.DirectInput;
+using SharpDX.RawInput;
 
 /// resolve conflicts
-using Device = SlimDX.Direct3D11.Device;
-using Viewport = SlimDX.Direct3D11.Viewport;
+using Device = SharpDX.Direct3D11.Device;
 
 /// internal libraries
 using GraphicsEngine.Core;
@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using GraphicsEngine.Managers;
 
 using FxMaths;
+using SharpDX.Direct3D;
 
 namespace GraphicsEngine {
     public class Engine {
@@ -101,6 +102,11 @@ namespace GraphicsEngine {
         private IntPtr FormHandle;
 
         /// <summary>
+        /// The form that we using for rendering
+        /// </summary>
+        private Form form;
+
+        /// <summary>
         /// The handle of the rendering viewport
         /// </summary>
         private IntPtr ControlHandle;
@@ -152,18 +158,19 @@ namespace GraphicsEngine {
         /// <param name="width">The width of the Render target</param>
         /// <param name="height">The height of the Render target</param>
         /// <param name="outPutHandle">The handle of the Render target</param>
-        public Engine(int Width, int Height, IntPtr outPutHandle, IntPtr FormHandle)
+        public Engine(int Width, int Height, IntPtr outPutHandle, Form form)
         {
             // pass the settings of resolution
             Settings.Resolution = new System.Drawing.Size(Width, Height);
 
             /// set the handles for full screen or windows 
-            this.FormHandle = FormHandle;
+            this.form = form;
+            this.FormHandle = form.Handle;
             this.ControlHandle = outPutHandle;
 
             /// Create the factory which manages general graphics resources
             g_factory = new Factory();
-            g_factory.SetWindowAssociation(FormHandle, WindowAssociationFlags.IgnoreAll);
+            g_factory.MakeWindowAssociation(this.FormHandle, WindowAssociationFlags.IgnoreAll);
 
             // find correct adapter
             int adapterCount = g_factory.GetAdapterCount();
@@ -211,7 +218,7 @@ namespace GraphicsEngine {
                     g_modeDesc.RefreshRate = new Rational(60, 1);
                     /// Default
                     g_modeDesc.Scaling = DisplayModeScaling.Unspecified;
-                    g_modeDesc.ScanlineOrdering = DisplayModeScanlineOrdering.Progressive;
+                    g_modeDesc.ScanlineOrdering =  DisplayModeScanlineOrder.Progressive;
 
                     /// ClientSize is the size of the
                     /// form without the title and borders
@@ -237,7 +244,7 @@ namespace GraphicsEngine {
                     g_swapDesc.Flags = SwapChainFlags.AllowModeSwitch;
                     g_swapDesc.IsWindowed = true;
                     /// The output window (the windows being rendered to)
-                    g_swapDesc.OutputHandle = FormHandle;
+                    g_swapDesc.OutputHandle = this.FormHandle;
                     /// Scrap the contents of the buffer every frame
                     g_swapDesc.SwapEffect = SwapEffect.Discard;
                     /// Indicate that this SwapChain 
@@ -263,7 +270,7 @@ namespace GraphicsEngine {
                     /// Create the factory which manages general graphics resources
                     g_factory = g_swapChain.GetParent<Factory>();
 
-                    g_factory.SetWindowAssociation(outPutHandle, WindowAssociationFlags.IgnoreAll);
+                    g_factory.MakeWindowAssociation(outPutHandle, WindowAssociationFlags.IgnoreAll);
                     #endregion
                 }
                 else
@@ -361,6 +368,30 @@ namespace GraphicsEngine {
         #endregion
 
         #region Input Functions
+
+        void SyncInputSystemState(Boolean Active)
+        {
+            var KeyboardFlags = SharpDX.RawInput.DeviceFlags.Remove;
+            var MouseFlags = SharpDX.RawInput.DeviceFlags.Remove;
+
+            if (!Active)
+            {
+                SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericKeyboard, KeyboardFlags, this.FormHandle);
+                SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericMouse, MouseFlags, this.FormHandle);
+
+                System.Windows.Forms.Cursor.Show();
+                return;
+            }
+
+            System.Windows.Forms.Cursor.Hide();
+
+            KeyboardFlags = SharpDX.RawInput.DeviceFlags.None;
+            MouseFlags = SharpDX.RawInput.DeviceFlags.CaptureMouse | SharpDX.RawInput.DeviceFlags.NoLegacy;
+
+            SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericKeyboard, KeyboardFlags, this.FormHandle);
+            SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericMouse, MouseFlags, this.FormHandle);
+        }
+
         /// <summary>
         /// Initialize input methods and
         /// setup it's settings
@@ -368,6 +399,7 @@ namespace GraphicsEngine {
         /// <param name="_control"></param>
         public void SetupInput(Control _control)
         {
+#if false
             InputControl = _control;
             /// make sure that DirectInput has been initialized
             DirectInput dinput = new DirectInput();
@@ -376,7 +408,7 @@ namespace GraphicsEngine {
                 g_keyboard = new Keyboard(dinput);
                 g_keyboard.SetCooperativeLevel(_control, CooperativeLevel.Foreground |
                     CooperativeLevel.Exclusive | CooperativeLevel.NoWinKey);
-            } catch (DirectInputException e) {
+            } catch (MarshalDirectiveException e) {
                 MessageBox.Show(e.Message);
                 return;
             }
@@ -390,7 +422,7 @@ namespace GraphicsEngine {
                 g_mouse = new Mouse(dinput);
                 g_mouse.SetCooperativeLevel(_control,
                     CooperativeLevel.Exclusive | CooperativeLevel.Foreground);
-            } catch (DirectInputException e) {
+            } catch (MarshalDirectiveException e) {
                 MessageBox.Show(e.Message);
                 return;
             }
@@ -402,6 +434,10 @@ namespace GraphicsEngine {
 
             /// acquire the device
             releaseInput();
+#endif
+
+            SharpDX.RawInput.Device.KeyboardInput += new EventHandler<SharpDX.RawInput.KeyboardInputEventArgs>(Device_KeyboardInput);
+            SharpDX.RawInput.Device.MouseInput += new EventHandler<SharpDX.RawInput.MouseInputEventArgs>(Device_MouseInput);
         }
 
         /// <summary>
@@ -412,12 +448,7 @@ namespace GraphicsEngine {
         /// </summary>
         public void releaseInput()
         {
-            g_keyboard.Unacquire();
-            KeyboardState = InputStateEnum.Unacquire;
-            g_mouse.Unacquire();
-            g_mouse.SetCooperativeLevel(
-                InputControl,
-                CooperativeLevel.Nonexclusive | CooperativeLevel.Foreground);
+            this.form.Invoke(new Action(() => { SyncInputSystemState(false); }));
             MouseState = InputStateEnum.Unacquire;
         }
 
@@ -427,15 +458,25 @@ namespace GraphicsEngine {
         /// </summary>
         public void refocusInput()
         {
-            g_keyboard.Acquire();
-            KeyboardState = InputStateEnum.Acquire;
-
-            g_mouse.Unacquire();
-            g_mouse.SetCooperativeLevel(InputControl,
-                CooperativeLevel.Exclusive | CooperativeLevel.Foreground);
-            g_mouse.Acquire();
-
+            this.form.Invoke(new Action(() => { SyncInputSystemState(true); }));
             MouseState = InputStateEnum.Acquire;
+
+        }
+
+        void Device_KeyboardInput(object sender, KeyboardInputEventArgs e)
+        {
+            g_RenderCamera.handleKeys(e.Key);
+            if (e.Key == Keys.Escape)
+                releaseInput();
+        }
+
+        void Device_MouseInput(object sender, MouseInputEventArgs e)
+        {
+            /// get state
+            Vector2 CurMouseDelta = new Vector2(e.X, -e.Y);
+
+            /// pass the mouse state to camera handler 
+            g_RenderCamera.handleMouse(CurMouseDelta);
         }
 
 
@@ -445,17 +486,21 @@ namespace GraphicsEngine {
         /// </summary>
         private void readInput(Camera cam)
         {
+            cam.handleMouse(Vector2.Zero);
+
+#if false
             /// if keyboard state not acquired 
             /// move to read mouse state
             if (KeyboardState == InputStateEnum.Unacquire)
                 goto mouse_point;
-            if (g_keyboard.Poll().IsFailure)
-                goto mouse_point;
+            g_keyboard.Poll();
+            //if (g_keyboard.Poll().IsFailure)
+            //    goto mouse_point;
 
             /// get keyboard state
             KeyboardState state = g_keyboard.GetCurrentState();
-            if (Result.Last.IsFailure)
-                return;
+            //if (Result.Last.IsFailure)
+            //    return;
 
             /// combine the keys pressed to create 
             /// a move vector and pass
@@ -469,22 +514,25 @@ mouse_point:
 
             /// if the engine owns the mouse device
             if (MouseState == InputStateEnum.Acquire) {
-                if (g_mouse.Poll().IsFailure)
-                    return;
+                g_mouse.Poll();
+                //if (g_mouse.Poll().IsFailure)
+                  //  return;
 
                 /// get state
                 MouseState mouse_state = g_mouse.GetCurrentState();
 
                 /// get list of mouse data
-                IList<MouseState> bufferedData = g_mouse.GetBufferedData();
-                if (Result.Last.IsFailure || bufferedData.Count == 0) {
+                MouseUpdate[] bufferedData = g_mouse.GetBufferedData();
+                //if (Result.Last.IsFailure || bufferedData.Length == 0) {
+                if (bufferedData.Length == 0) {
                     cam.handleMouse(mouse_state);
                     return;
                 }
 
                 /// combine the mouse buffered data to 
                 /// create a single mouse state
-                foreach (MouseState packet in bufferedData) {
+                foreach (MouseUpdate packet in bufferedData)
+                {
                     mouse_state.X += packet.X;
                     mouse_state.Y += packet.Y;
                     mouse_state.Z += packet.Z;
@@ -496,7 +544,7 @@ mouse_point:
                 cam.handleMouse(new MouseState());
                 return;
             }
-
+#endif
         }
         #endregion
 
@@ -592,33 +640,33 @@ mouse_point:
                 DeviceContext []devCont = { selectedContext };
                 foreach ( Core.Viewport viewport in ViewportManager.ListOfViewport ) {
 
-                    Performance.BeginEvent( new Color4( System.Drawing.Color.Red ), "EnableViewport" );
+                    //Performance.BeginEvent( new Color4( System.Drawing.Color.Red ), "EnableViewport" );
                     // enable the specific viewport
                     viewport.EnableViewport( selectedContext );
                     //viewport.EnableViewport( devCont1 );
-                    Performance.EndEvent();
+                    //Performance.EndEvent();
 
 
-                    Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "PreProcessing" );
+                    //Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "PreProcessing" );
                     /// call all cb
                     RenderCBManager.RunCB( RenderCBTiming.PreProcessing );
-                    Performance.EndEvent();
+                    //Performance.EndEvent();
 
 
-                    Performance.BeginEvent( new Color4( System.Drawing.Color.Blue ), "Render" );
+                    //Performance.BeginEvent( new Color4( System.Drawing.Color.Blue ), "Render" );
                     
                     /// render mesh list
                     g_MeshManager.Render( devCont );
-                    Performance.EndEvent();
+                    //Performance.EndEvent();
 
 
-                    Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "PostProcessing" );
+                    //Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "PostProcessing" );
                     /// call all cb
                     RenderCBManager.RunCB( RenderCBTiming.PostProcessing );
-                    Performance.EndEvent();
+                    //Performance.EndEvent();
 
 
-                    Performance.BeginEvent( new Color4( System.Drawing.Color.Red ), "ExecuteCommandList" );
+                    //Performance.BeginEvent( new Color4( System.Drawing.Color.Red ), "ExecuteCommandList" );
 
                     //CommandList df_cl = devCont1.FinishCommandList( false );
                     //Engine.g_device.ImmediateContext.ExecuteCommandList( df_cl, true );
@@ -626,17 +674,19 @@ mouse_point:
                     //df_cl = devCont2.FinishCommandList( false );
                     //Engine.g_device.ImmediateContext.ExecuteCommandList( df_cl, true );
 
-                    Performance.EndEvent();
+                    //Performance.EndEvent();
 
 
 
-                    Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "Display" );
+                    //Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "Display" );
                     // display the result
                     viewport.Display();
-                    Performance.EndEvent();
+                    //Performance.EndEvent();
                 }
             }
         }
         #endregion
+
+        
     }
 }

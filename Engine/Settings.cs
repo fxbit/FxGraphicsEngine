@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Drawing;
 
-using SlimDX.Direct3D11;
+using SharpDX.Direct3D11;
+using SharpDX.Direct3D;
 
 namespace GraphicsEngine {
 
@@ -33,12 +34,12 @@ namespace GraphicsEngine {
         /// <summary>
         /// The Fill mode of the viewports
         /// </summary>
-        public static FillMode FillMode = SlimDX.Direct3D11.FillMode.Solid;
+        public static FillMode FillMode = SharpDX.Direct3D11.FillMode.Solid;
 
         /// <summary>
         /// The fill mode of the viewports
         /// </summary>
-        public static CullMode CullMode = SlimDX.Direct3D11.CullMode.None;
+        public static CullMode CullMode = SharpDX.Direct3D11.CullMode.None;
 
         /// <summary>
         /// The driver will be set as a debug 
@@ -57,7 +58,7 @@ namespace GraphicsEngine {
         /// <summary>
         /// The running Feature level.
         /// </summary>
-        public static FeatureLevel FeatureLevel = SlimDX.Direct3D11.FeatureLevel.Level_11_0;
+        public static FeatureLevel FeatureLevel = FeatureLevel.Level_11_0;
 
     }
 

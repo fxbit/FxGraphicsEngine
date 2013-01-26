@@ -5,7 +5,7 @@ using System.Text;
 
 
 using System.Runtime.InteropServices;
-using SlimDX;
+using SharpDX;
 
 namespace GraphicsEngine.Core.Shaders
 {

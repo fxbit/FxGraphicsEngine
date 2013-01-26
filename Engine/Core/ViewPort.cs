@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 
 
-using SlimDX.Direct3D11;
-using SlimDX.DXGI;
-using SlimDX;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
+using SharpDX;
+using FxGraphicsEngine.Core;
 
 namespace GraphicsEngine.Core {
     public class Viewport {
@@ -38,7 +39,7 @@ namespace GraphicsEngine.Core {
         /// <summary>
         /// Setup the camera viewport
         /// </summary>
-        public SlimDX.Direct3D11.Viewport m_Viewport;
+        public CamViewport m_Viewport;
 
         /// <summary>
         /// Rasterization state description
@@ -108,7 +109,7 @@ namespace GraphicsEngine.Core {
             ///////////////////////////////////////////////////////////////////////// Set the Viewport
 
             /// Setup the camera viewport
-            m_Viewport = new SlimDX.Direct3D11.Viewport();
+            m_Viewport = new CamViewport();
 
             /// No offset
             m_Viewport.X = 0;
@@ -126,7 +127,7 @@ namespace GraphicsEngine.Core {
             m_RasterizerStateDesc.CullMode = Settings.CullMode;
             m_RasterizerStateDesc.FillMode = Settings.FillMode;
 
-            m_RasterizerState = RasterizerState.FromDescription(Engine.g_device, m_RasterizerStateDesc);
+            m_RasterizerState = new RasterizerState(Engine.g_device, m_RasterizerStateDesc);
 
         }
 
@@ -145,7 +146,7 @@ namespace GraphicsEngine.Core {
 
             /// Default
             m_ModeDesc.Scaling = DisplayModeScaling.Centered;
-            m_ModeDesc.ScanlineOrdering = DisplayModeScanlineOrdering.Progressive;
+            m_ModeDesc.ScanlineOrdering =  DisplayModeScanlineOrder.Progressive;
 
             /// ClientSize is the size of the
             /// form without the title and borders
@@ -228,7 +229,7 @@ namespace GraphicsEngine.Core {
             DepthStencilViewDescription descDSV = new DepthStencilViewDescription();
             descDSV.Format = descDepth.Format;
             descDSV.Dimension = DepthStencilViewDimension.Texture2D;
-            descDSV.MipSlice = 0;
+            //descDSV.MipSlice = 0;
 
             m_DepthStencil = new Texture2D(Engine.g_device, descDepth);
             m_DepthStencilView = new DepthStencilView(Engine.g_device, m_DepthStencil, descDSV);
@@ -257,14 +258,15 @@ namespace GraphicsEngine.Core {
 
             /// Apply the viewport the rasterizer 
             /// (the thing that actually draws the triangle)
-            devCont.Rasterizer.SetViewports( m_Viewport );
+            devCont.Rasterizer.SetViewport( m_Viewport.X, m_Viewport.Y,
+                m_Viewport.Width, m_Viewport.Height, m_Viewport.MinZ, m_Viewport.MaxZ);
 
             if ( m_RasterizerState.Description.FillMode != Settings.FillMode || m_RasterizerState.Description.CullMode != Settings.CullMode) {
                 m_RasterizerStateDesc = new RasterizerStateDescription();
                 m_RasterizerStateDesc.CullMode = Settings.CullMode;
                 m_RasterizerStateDesc.FillMode = Settings.FillMode;
 
-                m_RasterizerState = RasterizerState.FromDescription( Engine.g_device, m_RasterizerStateDesc );
+                m_RasterizerState = new RasterizerState( Engine.g_device, m_RasterizerStateDesc );
             }
             /// set the rasterizer state
             devCont.Rasterizer.State = m_RasterizerState;
@@ -300,5 +302,18 @@ namespace GraphicsEngine.Core {
             // change the camera 
             m_Camera.SetProjParams(Width, Height, Settings.FOV, Width / (float)Height, 1.0f, Settings.NearPlane);
         }
+    }
+}
+
+namespace FxGraphicsEngine.Core
+{
+    public struct CamViewport
+    {
+        public float X;
+        public float Y;
+        public float Width;
+        public float Height;
+        public float MinZ;
+        public float MaxZ;
     }
 }

@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using SlimDX;
-using SlimDX.DXGI;
-using SlimDX.Direct3D11;
+using SharpDX;
+using SharpDX.DXGI;
+using SharpDX.Direct3D11;
 // resolve conflict - DXGI.Device & Direct3D10.Device
-using Device = SlimDX.Direct3D11.Device;
-using Buffer = SlimDX.Direct3D11.Buffer;
-using Effect = SlimDX.Direct3D11.Effect;
-using EffectFlags = SlimDX.D3DCompiler.EffectFlags;
-using SlimDX.D3DCompiler;
+using Device = SharpDX.Direct3D11.Device;
+using Buffer = SharpDX.Direct3D11.Buffer;
+using Effect = SharpDX.Direct3D11.Effect;
+using EffectFlags = SharpDX.D3DCompiler.EffectFlags;
+using SharpDX.D3DCompiler;
 using System.IO;
 using FxMaths;
 using FXFramework;
+using SharpDX.Direct3D;
 
 namespace GraphicsEngine.Core {
 
@@ -143,14 +144,9 @@ namespace GraphicsEngine.Core {
             bytecode = ShaderBytecode.CompileFromFile(
                                         ShaderRootPath + Name,               /// File Path of the file containing the code 
                                         entryPoint,                          /// The name of the executable function
-                                        CompileLevelCS,                            /// What specifications (shader version) to compile with cs_4_0 for directX10 and cs_5_0 for directx11
-                                        sf, EffectFlags.None, null, includeFX, out errors);
+                                        CompileLevelCS,                      /// What specifications (shader version) to compile with cs_4_0 for directX10 and cs_5_0 for directx11
+                                        sf, EffectFlags.None, null, includeFX);
 
-
-            if (!errors.Equals(""))
-            {
-                System.Windows.Forms.MessageBox.Show(errors);
-            }
 
             // init effect 
             m_effect = new FXEffect( dev, csByteCode: bytecode );
@@ -183,7 +179,8 @@ namespace GraphicsEngine.Core {
                 // close the file stream
                 fileStream.Close();
 
-                DataStream preBuildShaderStream = new DataStream( fileByte, true, true );
+                DataStream preBuildShaderStream = new DataStream(fileByte.Length, true, true);
+                preBuildShaderStream.Write(fileByte, 0, fileByte.Length);
 
                 bytecode = new ShaderBytecode( preBuildShaderStream );
                 
@@ -254,7 +251,7 @@ namespace GraphicsEngine.Core {
                 BindFlags = BindFlags.None,
                 StructureByteStride = sizeOfElementInByte,
                 SizeInBytes = numElements * sizeOfElementInByte,
-                OptionFlags = ResourceOptionFlags.StructuredBuffer,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
             };
 
             if (type.HasFlag(AccessViewType.SRV))
@@ -294,7 +291,7 @@ namespace GraphicsEngine.Core {
             BufferDescription stagingBufferDescription = new BufferDescription
             {
                 BindFlags = BindFlags.None,
-                OptionFlags = ResourceOptionFlags.StructuredBuffer,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
                 CpuAccessFlags = CpuAccessFlags.Read | CpuAccessFlags.Write,
                 Usage = ResourceUsage.Staging,
                 SizeInBytes = gpuBuffer.Description.SizeInBytes,

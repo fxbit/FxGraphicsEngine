@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-/// SlimDx includes
-using SlimDX;
-using SlimDX.Direct3D11;
-using SlimDX.DXGI;
+/// SharpDX includes
+using SharpDX;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
 
 /// resolve conflicts
-using Device = SlimDX.Direct3D11.Device;
-using Buffer = SlimDX.Direct3D11.Buffer;
+using Device = SharpDX.Direct3D11.Device;
+using Buffer = SharpDX.Direct3D11.Buffer;
 
 using System.Runtime.InteropServices;
-using SlimDX.D3DCompiler;
+using SharpDX.D3DCompiler;
+using SharpDX.Direct3D;
 
 namespace GraphicsEngine.Core.PrimaryObjects3D {
     public class Mesh : Object3D {
@@ -270,7 +271,7 @@ namespace GraphicsEngine.Core.PrimaryObjects3D {
             stream.Position = 0;
 
             /// Fill the buffer with the vertices
-            m_BufferVertices = new SlimDX.Direct3D11.Buffer(dev, stream, new BufferDescription() {
+            m_BufferVertices = new SharpDX.Direct3D11.Buffer(dev, stream, new BufferDescription() {
                 BindFlags = BindFlags.VertexBuffer,
                 CpuAccessFlags = CpuAccessFlags.None,
                 OptionFlags = ResourceOptionFlags.None,
@@ -293,7 +294,7 @@ namespace GraphicsEngine.Core.PrimaryObjects3D {
             /// reset the position in the stream
             stream.Position = 0;
 
-            m_BufferIndices = new SlimDX.Direct3D11.Buffer(dev, stream, new BufferDescription() {
+            m_BufferIndices = new SharpDX.Direct3D11.Buffer(dev, stream, new BufferDescription() {
                 BindFlags = BindFlags.IndexBuffer,
                 CpuAccessFlags = CpuAccessFlags.None,
                 OptionFlags = ResourceOptionFlags.None,
@@ -323,7 +324,7 @@ namespace GraphicsEngine.Core.PrimaryObjects3D {
 
             // empty the list
 
-            Performance.BeginEvent(new Color4(System.Drawing.Color.Turquoise), "Set Buffers");
+            //Performance.BeginEvent(new Color4(System.Drawing.Color.Turquoise), "Set Buffers");
             
 
             /// set the layout to the engine
@@ -342,18 +343,18 @@ namespace GraphicsEngine.Core.PrimaryObjects3D {
             /// all the change pass to the shader
             m_shader.SetThePositions(m_WorldMatrix);
 
-            Performance.EndEvent();
+            //Performance.EndEvent();
 
-            Performance.BeginEvent(new Color4(System.Drawing.Color.Tomato), "Execute Shaders");
+            //Performance.BeginEvent(new Color4(System.Drawing.Color.Tomato), "Execute Shaders");
             /// Execute all the passes of the shader
             m_shader.Execute( devCont );
-            Performance.EndEvent();
+            //Performance.EndEvent();
 
 
-            Performance.BeginEvent(new Color4(System.Drawing.Color.PaleVioletRed), "Draw");
+            //Performance.BeginEvent(new Color4(System.Drawing.Color.PaleVioletRed), "Draw");
             // Render
             devCont.Draw( m_polygons.Count * 3, 0 );
-            Performance.EndEvent();
+            //Performance.EndEvent();
 
         }
 
