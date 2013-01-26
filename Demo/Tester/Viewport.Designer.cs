@@ -52,6 +52,7 @@
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(161)));
             this.Name = "Viewport";
             this.Text = "Viewport";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Viewport_FormClosing);
             ((System.ComponentModel.ISupportInitialize)(this.RenderArea)).EndInit();
             this.ResumeLayout(false);
 

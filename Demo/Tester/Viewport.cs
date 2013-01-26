@@ -32,12 +32,10 @@ namespace Tester
 {
     public partial class Viewport : DockContent
     {
+
         #region Variables
 
-        /// <summary>
-        /// Var for direct 3d
-        /// </summary>
-        protected Engine engine;
+        Engine engine;
 
         /// <summary>
         /// The viewport
@@ -46,42 +44,25 @@ namespace Tester
 
         #endregion
 
-        public Viewport(Form form)
+
+
+        public Viewport(Engine engine)
         {
             InitializeComponent();
 
-            #region start 3D
+            // save localy the graphic engine
+            this.engine = engine;
 
-            if (!Engine.isEngineRunning)
-            {
+            // set the first viewport
+            RenderArea_Viewport = new GraphicsEngine.Core.Viewport(RenderArea.Width, RenderArea.Height, RenderArea.Handle, Format.R8G8B8A8_UNorm);
+            ViewportManager.AddViewport(RenderArea_Viewport);
 
-                UISettings settings = new UISettings();
+            // set the moving camera
+            Engine.g_MoveCamera = RenderArea_Viewport.m_Camera;
 
-                if (settings.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-
-                    // init the engine
-                    //engine = new Engine(RenderArea.Width, RenderArea.Height, RenderArea.Handle, this.Handle);
-                    engine = new Engine(1680, 1050, RenderArea.Handle, this);
-
-                    // set the first viewport
-                    RenderArea_Viewport = new GraphicsEngine.Core.Viewport(RenderArea.Width, RenderArea.Height, RenderArea.Handle, Format.R8G8B8A8_UNorm);
-                    ViewportManager.AddViewport(RenderArea_Viewport);
-
-                    // set the moving camera
-                    Engine.g_MoveCamera = RenderArea_Viewport.m_Camera;
-
-                    // setup the input 
-                    engine.SetupInput(form);
-
-                    // start the render
-                    engine.StartRender();
-                }
-            }
-
-
-            #endregion
         }
+
+
 
         #region Send the mouse focus to graphic engine
 
@@ -100,7 +81,6 @@ namespace Tester
         {
             if (engine != null)
             {
-
                 if (RenderArea_Viewport != null)
                     RenderArea_Viewport.Resize(RenderArea.Width, RenderArea.Height);
             }
@@ -108,6 +88,14 @@ namespace Tester
 
 
         #endregion
+
+
+
+        private void Viewport_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // remove from rendering the current viewport
+            ViewportManager.RemoveViewport(RenderArea_Viewport);
+        }
 
 
     }

@@ -67,7 +67,7 @@ namespace SimpleExample
 
                     // init the engine
                     //engine = new Engine(RenderArea.Width, RenderArea.Height, RenderArea.Handle, this.Handle);
-                    engine = new Engine(1680, 1050, RenderArea.Handle, this);
+                    engine = new Engine(1680, 1050, this);
 
                     // set the first viewport
                     RenderArea_Viewport = new GraphicsEngine.Core.Viewport(RenderArea.Width, RenderArea.Height, RenderArea.Handle, Format.R8G8B8A8_UNorm);

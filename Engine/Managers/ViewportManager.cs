@@ -18,5 +18,10 @@ namespace GraphicsEngine.Managers {
         {
             ListOfViewport.Add(viewport);
         }
+
+        public static void RemoveViewport(Viewport viewport)
+        {
+            ListOfViewport.Remove(viewport);
+        }
     }
 }

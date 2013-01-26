@@ -43,6 +43,7 @@ namespace GraphicsEngine {
 
         #endregion
 
+
         #region Variables
 
         public static Device g_device;
@@ -106,11 +107,6 @@ namespace GraphicsEngine {
         /// </summary>
         private Form form;
 
-        /// <summary>
-        /// The handle of the rendering viewport
-        /// </summary>
-        private IntPtr ControlHandle;
-
         #region Mesh Manager
 
         public static Object3DManager g_MeshManager;
@@ -118,6 +114,7 @@ namespace GraphicsEngine {
         #endregion
 
         #endregion
+
 
         #region Properties
         /// <summary>
@@ -148,6 +145,7 @@ namespace GraphicsEngine {
         }
         #endregion
 
+
         #region Constructors
 
         /// <summary>
@@ -157,8 +155,7 @@ namespace GraphicsEngine {
         /// </summary>
         /// <param name="width">The width of the Render target</param>
         /// <param name="height">The height of the Render target</param>
-        /// <param name="outPutHandle">The handle of the Render target</param>
-        public Engine(int Width, int Height, IntPtr outPutHandle, Form form)
+        public Engine(int Width, int Height, Form form)
         {
             // pass the settings of resolution
             Settings.Resolution = new System.Drawing.Size(Width, Height);
@@ -166,7 +163,6 @@ namespace GraphicsEngine {
             /// set the handles for full screen or windows 
             this.form = form;
             this.FormHandle = form.Handle;
-            this.ControlHandle = outPutHandle;
 
             /// Create the factory which manages general graphics resources
             g_factory = new Factory();
@@ -270,7 +266,7 @@ namespace GraphicsEngine {
                     /// Create the factory which manages general graphics resources
                     g_factory = g_swapChain.GetParent<Factory>();
 
-                    g_factory.MakeWindowAssociation(outPutHandle, WindowAssociationFlags.IgnoreAll);
+                    g_factory.MakeWindowAssociation(this.FormHandle, WindowAssociationFlags.IgnoreAll);
                     #endregion
                 }
                 else
@@ -348,6 +344,7 @@ namespace GraphicsEngine {
 
         #endregion
 
+
         #region Functions
         /// <summary>
         /// called when destroying the directx
@@ -366,6 +363,7 @@ namespace GraphicsEngine {
         }
 
         #endregion
+
 
         #region Input Functions
 
@@ -593,6 +591,7 @@ namespace GraphicsEngine {
         }
         #endregion
 
+
         #region Timing Variables
         static float TimeElapsed = 0.0f;
         static long TimeStart = 0;
@@ -609,6 +608,7 @@ namespace GraphicsEngine {
             get { return OldFPS; }
         }
         #endregion
+
 
         #region Events
         
