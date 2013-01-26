@@ -46,7 +46,7 @@ namespace Tester
 
         #endregion
 
-        public Viewport()
+        public Viewport(Form form)
         {
             InitializeComponent();
 
@@ -72,7 +72,7 @@ namespace Tester
                     Engine.g_MoveCamera = RenderArea_Viewport.m_Camera;
 
                     // setup the input 
-                    engine.SetupInput(this);
+                    engine.SetupInput(form);
 
                     // start the render
                     engine.StartRender();

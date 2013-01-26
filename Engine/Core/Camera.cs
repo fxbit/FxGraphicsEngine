@@ -168,7 +168,7 @@ namespace GraphicsEngine.Core {
             m_MoveScaler = 0.3f;
 
             m_MouseDelta = new Vector2(0, 0);
-            m_FramesToSmoothMouseData = 8.0f;
+            m_FramesToSmoothMouseData = 20.0f;
 
             m_Windows_Width = width;
             m_Windows_Height = height;
@@ -302,20 +302,21 @@ namespace GraphicsEngine.Core {
         /// </summary>
         /// <param name="key">Key from keyboard</param>
         /// <returns>Action to perform</returns>
-        private static CameraKeys MapKey(System.Windows.Forms.Keys key)
+        private static CameraKeys MapKey(Key key)
         {
-            switch (key) {
-                case System.Windows.Forms.Keys.S:
+            switch (key)
+            {
+                case Key.S:
                     return CameraKeys.MOVE_BACKWARD;
-                case System.Windows.Forms.Keys.W:
+                case Key.W:
                     return CameraKeys.MOVE_FORWARD;
-                case System.Windows.Forms.Keys.A:
+                case Key.A:
                     return CameraKeys.STRAFE_LEFT;
-                case System.Windows.Forms.Keys.D:
+                case Key.D:
                     return CameraKeys.STRAFE_RIGHT;
-                case System.Windows.Forms.Keys.Q:
+                case Key.Q:
                     return CameraKeys.MOVE_UP;
-                case System.Windows.Forms.Keys.E:
+                case Key.E:
                     return CameraKeys.MOVE_DOWN;
 
                 default:
@@ -352,7 +353,7 @@ namespace GraphicsEngine.Core {
         /// Gets the input key and alters the move direction
         /// </summary>
         /// <param name="key">Input key from keyboard</param>
-        public void handleKeys(System.Windows.Forms.Keys key)
+        public void handleKeys(SharpDX.DirectInput.Key key)
         {
             /// Get mapped action
             CameraKeys mapKey = MapKey(key);
@@ -384,8 +385,10 @@ namespace GraphicsEngine.Core {
         /// Handles the mouse events
         /// </summary>
         /// <param name="mouse_state">The state of the mouse</param>
-        public void handleMouse(Vector2 CurMouseDelta)
+        public void handleMouse(MouseState mouse_state)
         {
+            Vector2 CurMouseDelta = new Vector2(mouse_state.X, -mouse_state.Y);
+
             /// Smooth the relative mouse data over a few frames so it isn't 
             /// jerky when moving slowly at low frame rates.
             float fPercentOfNew = 1.0f / m_FramesToSmoothMouseData;

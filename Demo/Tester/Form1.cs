@@ -23,7 +23,7 @@ namespace Tester
         {
             dockPanel1.SuspendLayout(true);
 
-            Viewport viewport = new Viewport();
+            Viewport viewport = new Viewport(this);
             viewport.Show(dockPanel1, DockState.Document);
 
             dockPanel1.ResumeLayout(true, true);

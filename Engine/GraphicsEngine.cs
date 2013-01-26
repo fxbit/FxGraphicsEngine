@@ -369,28 +369,28 @@ namespace GraphicsEngine {
 
         #region Input Functions
 
-        void SyncInputSystemState(Boolean Active)
+        private void Release_KeyBoard()
         {
-            var KeyboardFlags = SharpDX.RawInput.DeviceFlags.Remove;
-            var MouseFlags = SharpDX.RawInput.DeviceFlags.Remove;
-
-            if (!Active)
+            if (KeyboardState != InputStateEnum.Unacquire)
             {
-                SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericKeyboard, KeyboardFlags, this.FormHandle);
-                SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericMouse, MouseFlags, this.FormHandle);
-
-                System.Windows.Forms.Cursor.Show();
-                return;
+                g_keyboard.Unacquire();
+                KeyboardState = InputStateEnum.Unacquire;
             }
-
-            System.Windows.Forms.Cursor.Hide();
-
-            KeyboardFlags = SharpDX.RawInput.DeviceFlags.None;
-            MouseFlags = SharpDX.RawInput.DeviceFlags.CaptureMouse | SharpDX.RawInput.DeviceFlags.NoLegacy;
-
-            SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericKeyboard, KeyboardFlags, this.FormHandle);
-            SharpDX.RawInput.Device.RegisterDevice(SharpDX.Multimedia.UsagePage.Generic, SharpDX.Multimedia.UsageId.GenericMouse, MouseFlags, this.FormHandle);
         }
+
+        private void Release_Mouse()
+        {
+            if (MouseState != InputStateEnum.Unacquire)
+            {
+                g_mouse.Unacquire();
+                g_mouse.SetCooperativeLevel(InputControl,
+                                             CooperativeLevel.NonExclusive |
+                                             CooperativeLevel.Foreground
+                                           );
+                MouseState = InputStateEnum.Unacquire;
+            }
+        }
+
 
         /// <summary>
         /// Initialize input methods and
@@ -399,22 +399,28 @@ namespace GraphicsEngine {
         /// <param name="_control"></param>
         public void SetupInput(Control _control)
         {
-#if false
+
             InputControl = _control;
             /// make sure that DirectInput has been initialized
             DirectInput dinput = new DirectInput();
             /// create the device
             try {
                 g_keyboard = new Keyboard(dinput);
-                g_keyboard.SetCooperativeLevel(_control, CooperativeLevel.Foreground |
-                    CooperativeLevel.Exclusive | CooperativeLevel.NoWinKey);
+                g_keyboard.Properties.BufferSize = 256;
+
+                g_keyboard.SetCooperativeLevel( _control, 
+                                                CooperativeLevel.Foreground |
+                                                CooperativeLevel.NonExclusive |
+                                                CooperativeLevel.NoWinKey);
+
+                g_keyboard.Acquire();
             } catch (MarshalDirectiveException e) {
                 MessageBox.Show(e.Message);
                 return;
             }
 
             /// acquire the device
-            g_keyboard.Unacquire();
+            Release_KeyBoard();
 
             /// setup Mouse
             dinput = new DirectInput();
@@ -432,12 +438,9 @@ namespace GraphicsEngine {
             /// to set up a buffer for the data
             g_mouse.Properties.BufferSize = 10;
 
-            /// acquire the device
-            releaseInput();
-#endif
+            /// acquire the device and release to OS
+            Release_Mouse();
 
-            SharpDX.RawInput.Device.KeyboardInput += new EventHandler<SharpDX.RawInput.KeyboardInputEventArgs>(Device_KeyboardInput);
-            SharpDX.RawInput.Device.MouseInput += new EventHandler<SharpDX.RawInput.MouseInputEventArgs>(Device_MouseInput);
         }
 
         /// <summary>
@@ -448,8 +451,8 @@ namespace GraphicsEngine {
         /// </summary>
         public void releaseInput()
         {
-            this.form.Invoke(new Action(() => { SyncInputSystemState(false); }));
-            MouseState = InputStateEnum.Unacquire;
+            Release_KeyBoard();
+            Release_Mouse();
         }
 
         /// <summary>
@@ -458,27 +461,25 @@ namespace GraphicsEngine {
         /// </summary>
         public void refocusInput()
         {
-            this.form.Invoke(new Action(() => { SyncInputSystemState(true); }));
-            MouseState = InputStateEnum.Acquire;
+            if (KeyboardState != InputStateEnum.Acquire)
+            {
+                g_keyboard.Acquire();
+                KeyboardState = InputStateEnum.Acquire;
+            }
 
+            if (MouseState != InputStateEnum.Acquire)
+            {
+                g_mouse.Unacquire();
+                g_mouse.SetCooperativeLevel(InputControl,
+                                             CooperativeLevel.Exclusive |
+                                             CooperativeLevel.Foreground
+                                           );
+                g_mouse.Properties.AxisMode = DeviceAxisMode.Relative;
+                g_mouse.Acquire();
+
+                MouseState = InputStateEnum.Acquire;
+            }
         }
-
-        void Device_KeyboardInput(object sender, KeyboardInputEventArgs e)
-        {
-            g_RenderCamera.handleKeys(e.Key);
-            if (e.Key == Keys.Escape)
-                releaseInput();
-        }
-
-        void Device_MouseInput(object sender, MouseInputEventArgs e)
-        {
-            /// get state
-            Vector2 CurMouseDelta = new Vector2(e.X, -e.Y);
-
-            /// pass the mouse state to camera handler 
-            g_RenderCamera.handleMouse(CurMouseDelta);
-        }
-
 
         /// <summary>
         /// Read from keyboard and mouse
@@ -486,65 +487,109 @@ namespace GraphicsEngine {
         /// </summary>
         private void readInput(Camera cam)
         {
-            cam.handleMouse(Vector2.Zero);
 
-#if false
-            /// if keyboard state not acquired 
-            /// move to read mouse state
-            if (KeyboardState == InputStateEnum.Unacquire)
-                goto mouse_point;
-            g_keyboard.Poll();
-            //if (g_keyboard.Poll().IsFailure)
-            //    goto mouse_point;
+            // if keyboard is acquired
+            if (KeyboardState == InputStateEnum.Acquire)
+            {
+                KeyboardState key_state;
 
-            /// get keyboard state
-            KeyboardState state = g_keyboard.GetCurrentState();
-            //if (Result.Last.IsFailure)
-            //    return;
+                //poll
+                try
+                {
+                    g_keyboard.Poll();
+                }
+                catch (Exception e)
+                {
+                    if (Result.GetResultFromException(e).Failure == true)
+                        goto mouse_proccess;
+                }
 
-            /// combine the keys pressed to create 
-            /// a move vector and pass
-            foreach (Key key in state.PressedKeys) {
-                cam.handleKeys(key);
-                if (key == Key.Escape)
-                    releaseInput();
+                // get keyboard state
+                key_state = g_keyboard.GetCurrentState();
+
+                /// combine the keys pressed to create 
+                /// a move vector and pass
+                foreach (Key key in key_state.PressedKeys)
+                {
+                    cam.handleKeys(key);
+                    if (key == Key.Escape)
+                        releaseInput();
+                }
             }
 
-mouse_point:
+        mouse_proccess:
 
-            /// if the engine owns the mouse device
-            if (MouseState == InputStateEnum.Acquire) {
-                g_mouse.Poll();
-                //if (g_mouse.Poll().IsFailure)
-                  //  return;
+            // if the engine owns the mouse device
+            if (MouseState == InputStateEnum.Acquire)
+            {
+                MouseState mouse_state;
 
-                /// get state
-                MouseState mouse_state = g_mouse.GetCurrentState();
-
-                /// get list of mouse data
-                MouseUpdate[] bufferedData = g_mouse.GetBufferedData();
-                //if (Result.Last.IsFailure || bufferedData.Length == 0) {
-                if (bufferedData.Length == 0) {
-                    cam.handleMouse(mouse_state);
-                    return;
-                }
-
-                /// combine the mouse buffered data to 
-                /// create a single mouse state
-                foreach (MouseUpdate packet in bufferedData)
+                try
                 {
-                    mouse_state.X += packet.X;
-                    mouse_state.Y += packet.Y;
-                    mouse_state.Z += packet.Z;
+                    g_mouse.Poll();
                 }
+                catch (Exception e)
+                {
+                    if (Result.GetResultFromException(e).Failure == true)
+                        return;
+                }
+
+                // get state
+                mouse_state = g_mouse.GetCurrentState();
+
+                // get list of mouse data
+                var bufferedData = g_mouse.GetBufferedData();
+
+                //fail check
+                if (bufferedData == null)
+                    goto mouse_exit;
+
+                //fail check
+                if (bufferedData.Length == 0)
+                    goto mouse_exit;
+
+                //counters
+                float cnt_x = 0;
+                float cnt_y = 0;
+                float cnt_z = 0;
+
+                // combine the mouse buffered data to create a single mouse state
+                foreach (var packet in bufferedData)
+                {
+                    //handle event
+                    switch (packet.Offset)
+                    {
+                        case MouseOffset.X:
+                            mouse_state.X += (int)(packet.Value);
+                            cnt_x++;
+                            break;
+                        case MouseOffset.Y:
+                            mouse_state.Y += (int)(packet.Value);
+                            cnt_y++;
+                            break;
+                        case MouseOffset.Z:
+                            mouse_state.Z += (int)(packet.Value);
+                            cnt_z++;
+                            break;
+                    }
+                }
+
+                //normalize..
+                if (cnt_x > 0) mouse_state.X = (int)(mouse_state.X / cnt_x); else mouse_state.X = 0;
+                if (cnt_y > 0) mouse_state.Y = (int)(mouse_state.Y / cnt_y); else mouse_state.Y = 0;
+                if (cnt_z > 0) mouse_state.Z = (int)(mouse_state.Z / cnt_z); else mouse_state.Z = 0;
 
                 /// pass the mouse state to camera handler 
                 cam.handleMouse(mouse_state);
-            } else {
-                cam.handleMouse(new MouseState());
-                return;
             }
-#endif
+            else
+            {
+                cam.handleMouse(new MouseState());
+            }
+
+        mouse_exit:
+            cam.handleMouse(new MouseState());
+
         }
         #endregion
 
