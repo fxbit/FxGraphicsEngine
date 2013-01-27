@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Tester</RootNamespace>
     <AssemblyName>Tester</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -57,6 +57,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConsoleOutput.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ConsoleOutput.Designer.cs">
+      <DependentUpon>ConsoleOutput.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Delaunay\BitonicSort.cs" />
+    <Compile Include="Delaunay\CSTriangulationStruct.cs" />
+    <Compile Include="Delaunay\DelaunayCS.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -77,6 +86,9 @@
     <Compile Include="Viewport2D.Designer.cs">
       <DependentUpon>Viewport2D.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="ConsoleOutput.resx">
+      <DependentUpon>ConsoleOutput.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

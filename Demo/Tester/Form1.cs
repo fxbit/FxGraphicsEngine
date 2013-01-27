@@ -27,10 +27,12 @@ using GraphicsEngine.Core;
 using GraphicsEngine.Core.PrimaryObjects3D;
 using GraphicsEngine.Core.Shaders;
 
+using Delaunay;
+
 
 namespace Tester
 {
-    public partial class Form1 : Form
+    public partial class TesterForm : Form
     {
 
         /// <summary>
@@ -38,10 +40,19 @@ namespace Tester
         /// </summary>
         protected Engine engine;
 
+        /// <summary>
+        /// Form for debuging.
+        /// You can print that console by call UIConsole.Write
+        /// </summary>
+        public static ConsoleOutput UIConsole = null;
 
-        public Form1()
+        public TesterForm()
         {
             InitializeComponent();
+
+            // init the console
+            UIConsole = new ConsoleOutput();
+
         }
 
 
@@ -71,7 +82,7 @@ namespace Tester
 
         #endregion
 
-        
+
 
         #region View Menu
 
@@ -110,6 +121,27 @@ namespace Tester
 
 
 
+
+        #region Add Output window
+        
+        private void outputToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (UIConsole == null)
+            {
+                UIConsole = new ConsoleOutput();
+
+                // add the viewport to the dock
+                UIConsole.Show(dockPanel1, DockState.Document);
+            }
+            else
+            {
+                // add the viewport to the dock
+                UIConsole.Show(dockPanel1, DockState.Document);
+            }
+        } 
+
+        #endregion
+
         #endregion
 
 
@@ -121,8 +153,8 @@ namespace Tester
         {
             if (engine != null)
             {
-               toolStripStatusLabel_fps.Text = "FPS:" + engine.FPS.ToString();
-               toolStripStatusLabel_triangles.Text = "Triangles:" + engine.NumTriangles;
+                toolStripStatusLabel_fps.Text = "FPS:" + engine.FPS.ToString();
+                toolStripStatusLabel_triangles.Text = "Triangles:" + engine.NumTriangles;
             }
             else
             {
@@ -139,8 +171,8 @@ namespace Tester
 
 
         #region Add Sample Plane
-        
-        
+
+
         private void addSamplePlaneToolStripMenuItem_Click(object sender, EventArgs e)
         {
             /////////////////////////////////////////////////////////////  Init the Shader
@@ -210,7 +242,7 @@ namespace Tester
 
             Engine.g_MoveCamera.SetViewParams(new Vector3(2000, 2000, 200),
                                               new Vector3(0, 0, 0));
-        } 
+        }
 
         #endregion
 
@@ -253,7 +285,7 @@ namespace Tester
                     viewport.AddElement(imE);
                 }
             }
-        } 
+        }
         #endregion
 
 
@@ -266,6 +298,31 @@ namespace Tester
         private void Form1_ResizeEnd(object sender, EventArgs e)
         {
         }
+
+
+
+
+        #region DirectCompute
+
+
+        #region Delaunay
+
+        private void delaunay2DToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DelaunayCS delaunay = new DelaunayCS();
+            delaunay.CreateRandomPoints(100, new FxVector2f(0, 0), new FxVector2f(100, 100));
+
+            //delaunay.InitShaders(Engine.g_device);
+
+        }
         
+        #endregion
+
+
+
+
+
+
+        #endregion
     }
 }
