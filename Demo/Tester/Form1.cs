@@ -310,9 +310,10 @@ namespace Tester
         private void delaunay2DToolStripMenuItem_Click(object sender, EventArgs e)
         {
             DelaunayCS delaunay = new DelaunayCS();
+            
             delaunay.CreateRandomPoints(100, new FxVector2f(0, 0), new FxVector2f(100, 100));
 
-            //delaunay.InitShaders(Engine.g_device);
+            delaunay.InitShaders(Engine.g_device);
 
         }
         

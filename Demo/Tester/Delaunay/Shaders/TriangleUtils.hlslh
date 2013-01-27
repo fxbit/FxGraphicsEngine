@@ -1,0 +1,867 @@
+
+#include "includes.hlslh"
+
+bool InCircle ( float2 a , float2 b , float3 c , float2 vertex);
+bool InCircle ( Circle circle , float2 vertex);
+
+Circle SmallerCircle(float2 a, float2 b);
+Circle SmallerCircle(float2 a, float2 b , float2 c);
+
+#ifdef USE_CIRCLE_TEST
+#define InGenFaceTest(face,vertex) InCircle(face.boundary,vertex)
+#else
+#ifdef USE_BOUNDARY
+#define InGenFaceTest(face,vertex) ((vertex.x >= face.Min.x && vertex.x <= face.Max.x) && \
+									(vertex.y >= face.Min.y && vertex.y <= face.Max.y))
+#else
+#define InGenFaceTest(face,vertex) false
+#endif
+#endif
+
+
+// ------------ TriangleHit  ------------ //
+
+bool TriangleHit(Face face, float2 vertex, ThreadInfo threadInfo){
+	bool result = false;
+	// check the generic circle/box test
+	if( InGenFaceTest(face,vertex) ){
+		
+		// get the half edges
+		HalfEdge he = GetHalfEdge(face.halfEdgeID , threadInfo); //  get the first he
+		float2 ver1 = GetVertex(he.startVertexID, threadInfo);	 //  get the vertex
+
+		he = GetHalfEdge(he.nextEdgeID, threadInfo);			 // move to the next he
+		float2 ver2 = GetVertex(he.startVertexID, threadInfo);	 //  get the vertex
+
+		he = GetHalfEdge(he.nextEdgeID, threadInfo);			 // move to the next he
+		float2 ver3 = GetVertex(he.startVertexID, threadInfo);	  //  get the vertex
+
+		// Compute vectors  
+		float2 vec0 = ver2	 - ver1;
+		float2 vec1 = ver3	 - ver1;
+		float2 vec2 = vertex - ver1;
+
+		// Compute dot products
+		float dot00 =  dot(vec0, vec0);
+		float dot01 =  dot(vec0, vec1);
+		float dot02 =  dot(vec0, vec2);
+		float dot11 =  dot(vec1, vec1);
+		float dot12 =  dot(vec1, vec2);
+
+		// Compute barycentric coordinates
+		float inv = 1.0 / ( dot00 * dot11 - dot01 * dot01 );
+		float z = (dot11 * dot02 - dot01 * dot12) * inv;
+		if ( z >= 0 ){
+			float y = (dot00 * dot12 - dot01 * dot02) * inv;
+			if ( y >= 0 ){
+				if ( y + z <= 1 )
+					result = true;
+			}
+		}
+	}
+	return result;
+	
+}
+
+// ------------ Side test ------------ //
+
+/// Check if a point is in the right/left of a vector
+/// re
+bool SideTest(float2 orig , float2 A, float2 B)
+{
+	float2 OA = A - orig;
+	float2 OB = B - orig;
+
+	OA = normalize( OA );
+	OB = normalize( OB );
+
+	return (OA.x * OB.y - OA.y * OB.x) < -0.0000001;
+}
+
+// ------------ InCircle test ------------ //
+
+// test if the vertex is inside of circle that generated from a triangle
+bool InCircleTest ( float2 a , float2 b , float2 c , float2 vertex)
+{
+
+	// CCW test
+	if ( ( ( b.x - a.x ) * ( c.y - a.y ) - ( c.x - a.x ) * ( b.y - a.y ) ) > 0 )  {
+		//swap vertex
+		float2 temp = b;
+		b = c;
+		c = temp;
+	}
+	
+	// finv the viff in each axes
+	float2 va = a-vertex;
+	float2 vb = b-vertex;
+	float2 vc = c-vertex;
+
+	// calc the veterminal
+	float abdet = va.x * vb.y - vb.x * va.y;
+	float bcdet = vb.x * vc.y - vc.x * vb.y;
+	float cadet = vc.x * va.y - va.x * vc.y;
+	float alift = va.x * va.x + va.y * va.y;
+	float blift = vb.x * vb.x + vb.y * vb.y;
+	float clift = vc.x * vc.x + vc.y * vc.y;
+
+	return (alift * bcdet + blift * cadet + clift * abdet < 0);
+}
+
+
+// ------------ InCircle test  ------------ //
+
+bool InCircle ( Circle circle , float2 vertex)
+{
+	float dist = distance(circle.center,vertex);
+
+	// check the generic circle test
+	if( dist > circle.radius)
+		return false;
+
+	return true;
+}
+
+// ------------ SmallerCircle  ------------ //
+
+
+//circle spanned by diameter between two points.
+Circle SmallerCircle(float2 a, float2 b) {
+	Circle result;
+	result.center = (a+b)*0.5;
+	result.radius = 0.5f*distance(a, b);
+	return result;
+}
+
+//smallest circle enclosing 3 points.
+Circle SmallerCircle(float2 a, float2 b , float2 c) {
+
+// find dist between the vectors
+	float lenAB = distance(a,b); //c
+	float lenAC = distance(a,c); //b
+	float lenBC = distance(b,c); //a
+
+	lenAB *=lenAB;
+	lenAC *=lenAC;
+	lenBC *=lenBC;
+
+// check for circle base on 2 points only
+	if (lenAC==0 || lenAB==0 || lenBC>=lenAC+lenAB) return SmallerCircle(b,c);
+	if (lenAC>=lenBC+lenAB) return SmallerCircle(a,c);
+	if (lenAB>=lenAC+lenBC) return SmallerCircle(a,c);
+
+// now compute the circle base on the 3 points
+	Circle result;
+	float2 ab = b-a;
+	float2 ac = c-a;
+	float d = 2*(ab.x*ac.y - ab.y*ac.x);//2*cross(ab,ac);
+
+	result.center.x = (ac.y * lenAB - ab.y * lenAC)/d;
+	result.center.y = (ac.x * lenAC - ab.x * lenAB)/d;
+	result.center += a;
+
+	result.radius = distance(a,result.center);
+
+	return result;
+}
+
+// ------------ UpdateFace  ------------ //
+
+// update the face boundary that have the 3 vertex
+void UpdateFaceBoundary(inout Face face, float2 ver1, float2 ver2, float2 ver3)
+{
+#ifdef USE_BOUNDARY
+#ifdef USE_CIRCLE_TEST
+
+	//smallest circle enclosing 3 points.
+	face.boundary =  SmallerCircle(ver1,ver2,ver3);
+
+#else
+
+	// set the min X 
+	if ( ver1.x < ver2.x ) {
+		face.Min.x = ( ver1.x < ver3.x ) ? ver1.x : ver3.x;
+		face.Max.x = ( ver2.x > ver3.x ) ? ver2.x : ver3.x;
+	} else {
+		face.Min.x = ( ver2.x < ver3.x ) ? ver2.x : ver3.x;
+		face.Max.x = ( ver1.x > ver3.x ) ? ver1.x : ver3.x;
+	}
+
+	// set the max min Y
+	if ( ver1.y < ver2.y ) {
+		face.Min.y = ( ver1.y < ver3.y ) ? ver1.y : ver3.y;
+		face.Max.y = ( ver2.y > ver3.y ) ? ver2.y : ver3.y;
+	} else {
+		face.Min.y = ( ver2.y < ver3.y ) ? ver2.y : ver3.y;
+		face.Max.y = ( ver1.y > ver3.y ) ? ver1.y : ver3.y;
+	}
+
+#endif
+#endif
+}
+
+// update the face boundary that have the 3 vertex
+void UpdateFaceBoundary(inout Face face, ThreadInfo threadInfo)
+{
+#ifdef USE_BOUNDARY
+	// get the half edges
+	HalfEdge he = GetHalfEdge(face.halfEdgeID , threadInfo); //  get the first he
+	float2 ver1 = GetVertex(he.startVertexID, threadInfo);	 //  get the vertex
+
+	he = GetHalfEdge(he.nextEdgeID, threadInfo);			 //  move to the next he
+	float2 ver2 = GetVertex(he.startVertexID, threadInfo);	 //  get the vertex
+
+	he = GetHalfEdge(he.nextEdgeID, threadInfo);			 //  move to the next he
+	float2 ver3 = GetVertex(he.startVertexID, threadInfo);	 //  get the vertex
+
+	// update the face with the 3 vertex of the face
+	UpdateFaceBoundary(face, ver1, ver2, ver3);
+#endif
+
+}
+
+// ------------ CreateFace  ------------ //
+
+// create a face base on the exist halfEdge
+uint2 CreateFace(inout HalfEdge he1, uint he1ID,
+				inout HalfEdge he2, uint he2ID,
+				inout HalfEdge he3, uint he3ID,
+				inout ThreadInfo threadInfo)
+{
+	uint2 newFaceID;
+	uint heID;
+	Face newFace;
+	float2 ver1,ver2,ver3;
+	
+	//set the face ID
+	newFaceID = threadInfo.lastFaceID;
+
+	// inc the last id for faces
+	threadInfo.lastFaceID.x ++;
+	
+	// get the half edges and link them with the face
+	he1.faceID 	= newFaceID;								//  link the he with the face
+	he2.faceID 	= newFaceID;								//  link the he with the face
+	he3.faceID 	= newFaceID;								//  link the he with the face
+	
+	// link the new face to the he
+	newFace.halfEdgeID = he1ID;
+
+#ifdef USE_BOUNDARY
+	// get the vertex to recalculate the min/max
+	ver1 		= GetVertex(he1.startVertexID, threadInfo);	//  get the vertex
+	ver2 		= GetVertex(he2.startVertexID, threadInfo);	//  get the vertex
+	ver3 		= GetVertex(he3.startVertexID, threadInfo);	//  get the vertex
+
+	// update the boundary of the face
+	UpdateFaceBoundary(newFace, ver1, ver2, ver3);
+#endif
+	
+	// write the face back to the memory
+	SetFace(newFace , newFaceID, threadInfo);
+	
+	// return the face ID
+	return newFaceID;
+}
+
+// ------------ CreateFace  ------------ //
+
+// create a face base on the exist halfEdge
+uint2 CreateFace(uint HalfEdgeID,inout ThreadInfo threadInfo)
+{
+	uint2 newFaceID;
+	uint heID;
+	Face newFace;
+	float2 ver1,ver2,ver3;
+	
+	//set the face ID
+	newFaceID = threadInfo.lastFaceID;
+
+	// inc the last id for faces
+	threadInfo.lastFaceID.x ++;
+	
+	// get the half edges and link them with the face
+	HalfEdge he = GetHalfEdge(HalfEdgeID , threadInfo);		//  get the first he
+	he.faceID 	= newFaceID;								//  link the he with the face
+#ifdef USE_BOUNDARY
+	ver1 		= GetVertex(he.startVertexID, threadInfo);	//  get the vertex
+#endif
+	SetHalfEdge(he , HalfEdgeID, threadInfo);				//  set back the face 
+	
+	heID 		= he.nextEdgeID;
+	he 			= GetHalfEdge(heID, threadInfo);			//  move to the next he
+	he.faceID 	= newFaceID;								//  link the he with the face
+#ifdef USE_BOUNDARY
+	ver2 		= GetVertex(he.startVertexID, threadInfo);	//  get the vertex
+#endif
+	SetHalfEdge(he , heID, threadInfo);						//  set back the face 
+
+	heID 		= he.nextEdgeID;
+	he 			= GetHalfEdge(heID, threadInfo);			//  move to the next he
+	he.faceID 	= newFaceID;								//  link the he with the face
+#ifdef USE_BOUNDARY
+	ver3 		= GetVertex(he.startVertexID, threadInfo);	//  get the vertex
+#endif
+	SetHalfEdge(he , heID, threadInfo);						//  set back the face 
+
+
+	// link the new face to the he
+	newFace.halfEdgeID = HalfEdgeID;
+#ifdef USE_BOUNDARY
+	// update the boundary of the face
+	UpdateFaceBoundary(newFace, ver1, ver2, ver3);
+#endif
+	
+	// write the face back to the memory
+	SetFace(newFace , newFaceID, threadInfo);
+	
+	// return the face ID
+	return newFaceID;
+}
+// ------------ UpdateFace  ------------ //
+
+// create a face base on the exist halfEdge
+void UpdateFace(HalfEdge he, uint HalfEdgeID,
+				ThreadInfo threadInfo)
+{
+	uint2 oldFaceID;
+	uint heID;
+	Face oldFace;
+	float2 ver1,ver2,ver3;
+
+	// get the face from the given half edge
+	oldFace 	= GetFace(he.faceID, threadInfo);
+	oldFace.halfEdgeID = HalfEdgeID;
+	oldFaceID 	= he.faceID;
+
+	// get the half edges and link them with the face
+	he.faceID 	= oldFaceID;								//  link the he with the face
+#ifdef USE_BOUNDARY
+	ver1 		= GetVertex(he.startVertexID, threadInfo);	//  get the vertex
+#endif
+	SetHalfEdge(he , HalfEdgeID, threadInfo);				//  set back the face 
+
+	
+	heID 		= he.nextEdgeID;
+	he 			= GetHalfEdge(heID, threadInfo);			//  move to the next he
+	he.faceID 	= oldFaceID;								//  link the he with the face
+#ifdef USE_BOUNDARY
+	ver2 		= GetVertex(he.startVertexID, threadInfo);	//  get the vertex
+#endif
+	SetHalfEdge(he , heID, threadInfo);						//  set back the face 
+
+	
+	heID 		= he.nextEdgeID;
+	he 			= GetHalfEdge(heID, threadInfo);			//  move to the next he
+	he.faceID 	= oldFaceID;								//  link the he with the face
+#ifdef USE_BOUNDARY
+	ver3 		= GetVertex(he.startVertexID, threadInfo);	//  get the vertex
+#endif
+	SetHalfEdge(he , heID, threadInfo);						//  set back the face 
+
+#ifdef USE_BOUNDARY
+	// update the boundary of the face
+	UpdateFaceBoundary(oldFace, ver1, ver2, ver3);
+#endif
+	
+	// write the face back to the memory
+	SetFace(oldFace , oldFaceID, threadInfo);
+}
+
+// create a face base on the exist halfEdge
+void UpdateFace(inout HalfEdge he1, uint he1ID,
+				inout HalfEdge he2, uint he2ID,
+				inout HalfEdge he3, uint he3ID,
+				float2 he1_v, float2 he2_v, float2 he3_v,
+				ThreadInfo threadInfo)
+{
+	uint2 oldFaceID;
+	Face oldFace;
+
+	// get the face from the given half edge
+	oldFace 	= GetFace(he1.faceID);
+	oldFace.halfEdgeID = he1ID;
+	oldFaceID 	= he1.faceID;
+
+#ifdef USE_BOUNDARY
+	// get the half edges and link them with the face
+	he1.faceID 	= oldFaceID;								//  link the he with the face
+	he2.faceID 	= oldFaceID;								//  link the he with the face
+	he3.faceID 	= oldFaceID;								//  link the he with the face
+
+	// update the boundary of the face
+	UpdateFaceBoundary(oldFace, he1_v, he2_v, he3_v);
+#endif
+	
+	// write the face back to the memory
+	SetFace(oldFace , oldFaceID);
+}
+
+// ------------ CreateTriangle  ------------ //
+
+// create triangle(link the he) base on 3 vertex
+void CreateTriangle(uint Vert1ID ,uint Vert2ID ,uint Vert3ID ,
+				    out HalfEdge  he1, out uint he1ID,
+					out HalfEdge  he2, out uint he2ID,
+					out HalfEdge  he3, out uint he3ID,
+					bool saveHE ,inout ThreadInfo threadInfo, inout bool ccw)
+{
+	// create 3 new he
+	he1ID = InitNewHalfEdge(Vert1ID, he1, threadInfo);
+	he2ID = InitNewHalfEdge(Vert2ID, he2, threadInfo);
+	he3ID = InitNewHalfEdge(Vert3ID, he3, threadInfo);
+
+	// read the 3 points
+	float2 vert1 = GetVertex(Vert1ID , threadInfo);
+	float2 vert2 = GetVertex(Vert2ID , threadInfo);
+	float2 vert3 = GetVertex(Vert3ID , threadInfo);
+
+	ccw =  ( ( vert2.x - vert1.x ) * ( vert3.y - vert1.y ) - ( vert3.x - vert1.x ) * ( vert2.y - vert1.y ) ) > 0;
+	
+	// ccw test
+	if ( ccw ) {
+		he1.nextEdgeID = he2ID;
+		he2.nextEdgeID = he3ID;
+		he3.nextEdgeID = he1ID;
+	} else {
+		he1.nextEdgeID = he3ID;
+		he3.nextEdgeID = he2ID;
+		he2.nextEdgeID = he1ID;
+	}
+	
+	if(saveHE){
+		// update the new he in the memory
+		SetHalfEdge(he1 , he1ID, threadInfo);
+		SetHalfEdge(he2 , he2ID, threadInfo);
+		SetHalfEdge(he3 , he3ID, threadInfo);
+	}
+}
+
+// ------------ CreateTriangle  ------------ //
+
+// create triangle(link the he) base on 2 vertex and a know he
+void CreateTriangleHEVert(inout HalfEdge he1 , uint he1ID,
+						  uint Vert2ID , uint Vert3ID ,
+						  out HalfEdge he2, out uint he2ID,
+						  out HalfEdge he3, out uint he3ID,
+						  bool saveHE, inout ThreadInfo threadInfo)
+{
+	// create 2 new he
+	he2ID = InitNewHalfEdge(Vert2ID, he2, threadInfo);
+	he3ID = InitNewHalfEdge(Vert3ID, he3, threadInfo);
+
+	he1.nextEdgeID = he2ID;
+	he2.nextEdgeID = he3ID;
+	he3.nextEdgeID = he1ID;
+	
+	if(saveHE)
+	{
+		// update the new he in the memory
+		SetHalfEdge(he1 , he1ID, threadInfo);
+		SetHalfEdge(he2 , he2ID, threadInfo);
+		SetHalfEdge(he3 , he3ID, threadInfo);
+	}
+}
+
+/*
+// create triangle(link the he) base on 2 vertex and a know he
+void CreateTriangleHEVert(inout HalfEdge he1 , uint he1ID,
+						  uint Vert2ID , uint Vert3ID ,
+						  out HalfEdge he2, out uint he2ID,
+						  out HalfEdge he3, out uint he3ID,
+						  bool saveHE, inout ThreadInfo threadInfo)
+{
+	// create 2 new he
+	he2ID = InitNewHalfEdge(Vert2ID, he2, threadInfo);
+	he3ID = InitNewHalfEdge(Vert3ID, he3, threadInfo);
+
+	// read the 3 points
+	float2 vert1 = GetVertex(he1.startVertexID , threadInfo);
+	float2 vert2 = GetVertex(Vert2ID , threadInfo);
+	float2 vert3 = GetVertex(Vert3ID , threadInfo);
+	
+	// ccw test
+	//if ( ( ( vert2.x - vert1.x ) * ( vert3.y - vert1.y ) - ( vert3.x - vert1.x ) * ( vert2.y - vert1.y ) ) > 0 ) {
+		he1.nextEdgeID = he2ID;
+		he2.nextEdgeID = he3ID;
+		he3.nextEdgeID = he1ID;
+	/*} else {
+		he1.nextEdgeID = he3ID;
+		he3.nextEdgeID = he2ID;
+		he2.nextEdgeID = he1ID;
+	}* /
+	
+	if(saveHE)
+	{
+		// update the new he in the memory
+		SetHalfEdge(he1 , he1ID, threadInfo);
+		SetHalfEdge(he2 , he2ID, threadInfo);
+		SetHalfEdge(he3 , he3ID, threadInfo);
+	}
+}
+*/
+
+// ------------ Find Face  ------------ //
+
+bool FindFace(float2 vert, out Face foundFace,out uint hitFaceID, ThreadInfo threadInfo)
+{
+	// TODO: create a tree to store the faces
+	uint2 end = threadInfo.lastFaceID;
+	uint i=0;
+	
+	// pass all the faces and find a hit
+	[allow_uav_condition] [loop] while(i<end.x)
+	{
+		// read the face that we want
+		foundFace = GetFace(i, threadInfo);
+		
+		// try to see if we hit it
+		if(TriangleHit(foundFace, vert, threadInfo)){
+			// set the id of the face
+			hitFaceID = i;
+			return true;
+		}
+		
+		i++;
+	}
+
+	foundFace = (Face)0; // init with zeros 
+	hitFaceID = 0;
+	
+	return false;
+}
+
+// ------------ Min Dist  ------------ //
+
+// return the minimum distance for 
+float FaceMinDis(Face face, float2 vert, out uint HalfEdgeID, ThreadInfo threadInfo)
+{
+	// get the 3 edge of the face
+	// and calc the dist for the 3 he
+	HalfEdge he1 = GetHalfEdge(face.halfEdgeID, threadInfo);
+	HalfEdge he2 = GetHalfEdge(he1.nextEdgeID, threadInfo);
+	HalfEdge he3 = GetHalfEdge(he2.nextEdgeID, threadInfo);
+
+	float dist1 = HalfEdgeDist(vert, he1, threadInfo);
+	float dist2 = HalfEdgeDist(vert, he2, threadInfo);
+	float dist3 = HalfEdgeDist(vert, he3, threadInfo);
+
+	// find the minimum
+	if (dist1 < dist2){
+		
+		if (dist1 < dist3)
+		{
+			HalfEdgeID = face.halfEdgeID;
+			return dist1;
+		}
+		else
+		{
+			HalfEdgeID = he2.nextEdgeID;
+			return dist3;
+		}
+	}else if (dist2 < dist3){
+
+		HalfEdgeID = he1.nextEdgeID;
+		return dist2;
+	}else{
+		
+		HalfEdgeID = he2.nextEdgeID;
+		return dist3;
+	}
+}
+
+
+// ------------ SplitFace ------------ //
+
+// return the minimum distance for 
+void SplitFace(Face hitFace, uint hitFaceID, 
+			   float2 vert,uint vertID,  
+			   inout ThreadInfo threadInfo)
+{
+	// get the he of the prev face
+	uint he1ID = hitFace.halfEdgeID;
+	HalfEdge he1 = GetHalfEdge(he1ID, threadInfo);
+	uint he2ID = he1.nextEdgeID;
+	HalfEdge he2 = GetHalfEdge(he2ID, threadInfo);
+	uint he3ID = he2.nextEdgeID;
+	HalfEdge he3 = GetHalfEdge(he3ID, threadInfo);
+
+	// TODO: remove the old face and not reuse it
+
+	// ------------------------------------------------------------------------------ //
+	// create the first triangle
+	
+	HalfEdge 	he_a1, he_a2;
+	uint 		he_a1ID, he_a2ID;
+	CreateTriangleHEVert( he1, he1ID, 		// old half edge
+						  he2.startVertexID,// the next old vertex
+						  vertID, 			// the new vertex 
+						  he_a1, he_a1ID, 	// the new half edge
+						  he_a2, he_a2ID, 	// the new half edge
+						  false, threadInfo); // don't save the change
+	
+	// ------------------------------------------------------------------------------ //
+	// create the sec triangle
+	
+	HalfEdge 	he_b1, he_b2;
+	uint 		he_b1ID, he_b2ID;
+	CreateTriangleHEVert( he2, he2ID, 		// old half edge
+						  he3.startVertexID,// the next old vertex
+						  vertID, 		 	// the new vertex 
+						  he_b1, he_b1ID,  	// the new half edge
+						  he_b2, he_b2ID, 	// the new half edge
+						  false, threadInfo); // don't save the change
+	
+	// ------------------------------------------------------------------------------ //
+	// create the third triangle
+	
+	HalfEdge 	he_c1, he_c2;
+	uint 		he_c1ID, he_c2ID;
+	CreateTriangleHEVert( he3, he3ID, 		// old half edge
+						  he1.startVertexID,// the next old vertex
+						  vertID,  			// the new vertex
+						  he_c1, he_c1ID,   // the new half edge
+						  he_c2, he_c2ID, 	// the new half edge
+						  false, threadInfo); // don't save the change
+	
+	// ------------------------------------------------------------------------------ //
+	
+	// link he twin edge
+	he_a1.twinEdgeID = he_b2ID;
+	he_b2.twinEdgeID = he_a1ID;
+	
+	he_a2.twinEdgeID = he_c1ID;
+	he_c1.twinEdgeID = he_a2ID;
+	
+	he_b1.twinEdgeID = he_c2ID;
+	he_c2.twinEdgeID = he_b1ID;
+	
+	// TODO: create a 3 vertex here and add them to the list
+
+	// create 2 new faces and reuse the old one
+	//CreateFace(he1 , he1ID,
+	//		   he_a1, he_a1ID,
+	//		   he_a2, he_a2ID,
+	//		   threadInfo);
+	
+	CreateFace(he2 , he2ID,
+			   he_b1, he_b1ID,
+			   he_b2, he_b2ID,
+			   threadInfo);
+	
+	CreateFace(he3 , he3ID,
+			   he_c1, he_c1ID,
+			   he_c2, he_c2ID,
+			   threadInfo);
+
+	// save the changes of the link
+	SetHalfEdge(he_a1, he_a1ID, threadInfo);
+	SetHalfEdge(he_a2, he_a2ID, threadInfo);
+	SetHalfEdge(he_b1, he_b1ID, threadInfo);
+	SetHalfEdge(he_b2, he_b2ID, threadInfo);
+	SetHalfEdge(he_c1, he_c1ID, threadInfo);
+	SetHalfEdge(he_c2, he_c2ID, threadInfo);
+	
+	SetHalfEdge(he1, he1ID, threadInfo);
+	SetHalfEdge(he2, he2ID, threadInfo);
+	SetHalfEdge(he3, he3ID, threadInfo);
+	
+	// reuse the old he1-face
+	UpdateFace( he1, he1ID, threadInfo);
+	
+	// add to stack all the corrections that want to have
+	{
+		// push the faces that we want to fix
+		
+		// push face1
+		if( he1.twinEdgeID != UNSET )
+		{
+			DelaunayNode newNode1;
+			newNode1.RootHalfEdgeID 	= he_a2ID;
+			newNode1.NextFaceHalfEdgeID = he1.twinEdgeID;
+			
+			PushDelaunayNode( newNode1 , threadInfo );
+		}
+		
+		
+		// push face2
+		if( he2.twinEdgeID != UNSET )
+		{
+			DelaunayNode newNode2;
+			newNode2.RootHalfEdgeID 	= he_b2ID;
+			newNode2.NextFaceHalfEdgeID = he2.twinEdgeID;
+			
+			PushDelaunayNode( newNode2 , threadInfo );
+		}
+		
+		// push face
+		if( he3.twinEdgeID != UNSET )
+		{
+			DelaunayNode newNode3;
+			newNode3.RootHalfEdgeID 	= he_c2ID;
+			newNode3.NextFaceHalfEdgeID = he3.twinEdgeID;
+		
+			PushDelaunayNode( newNode3 , threadInfo );
+		}
+		
+	}
+}
+
+
+// ------------ FixTheFaces ------------ //
+
+
+// Fix all the delaunay nodes that exist in the stack
+void FixStackFaces(inout ThreadInfo threadInfo)
+{
+	int g=0;
+	// fix the faces
+	[allow_uav_condition] [fastopt]while(g<MAX_FACE_CORRECTIONS)
+	{
+		DelaunayNode node;
+		bool testPull = PullDelaunayNode(node, threadInfo);
+		
+		// pull the first node
+		[branch] if( testPull ){
+			
+			// get the face that is under test
+			uint he_a1ID = node.RootHalfEdgeID;
+			HalfEdge he_a1 = GetHalfEdge( he_a1ID, threadInfo);
+			float2 he_a1v = GetVertex( he_a1.startVertexID, threadInfo);
+			
+			uint he_a2ID = he_a1.nextEdgeID;
+			HalfEdge he_a2 = GetHalfEdge( he_a2ID, threadInfo);
+			float2 he_a2v = GetVertex( he_a2.startVertexID, threadInfo);
+			
+			uint he_a3ID = he_a2.nextEdgeID;
+			HalfEdge he_a3 = GetHalfEdge( he_a3ID, threadInfo);
+			float2 he_a3v = GetVertex( he_a3.startVertexID, threadInfo);
+			
+			
+			// get the oposide point 
+			uint he_b1ID = node.NextFaceHalfEdgeID;
+			HalfEdge he_b1 = GetHalfEdge( he_b1ID, threadInfo);
+			float2 he_b1v = GetVertex( he_b1.startVertexID, threadInfo);
+			
+			uint he_b2ID = he_b1.nextEdgeID;
+			HalfEdge he_b2 = GetHalfEdge( he_b2ID, threadInfo);
+			float2 he_b2v = GetVertex( he_b2.startVertexID, threadInfo);
+			
+			uint he_b3ID = he_b2.nextEdgeID;
+			HalfEdge he_b3 = GetHalfEdge( he_b3ID, threadInfo);
+			float2 he_b3v = GetVertex( he_b3.startVertexID, threadInfo);
+			
+			
+			bool test = InCircleTest(he_a1v, he_a2v, he_a3v, he_b3v);
+			
+			// test if the face need correction
+			[branch] if(test){
+				
+				HalfEdge he_a2_new = he_a2;
+				HalfEdge he_b1_new = he_b1;
+				
+				// copy the start vertex
+				he_a2_new.startVertexID = he_b3.startVertexID;
+				he_b1_new.startVertexID = he_a1.startVertexID;
+				
+				// copy the twin edge
+				he_a2_new.twinEdgeID  = he_b1ID;
+				he_b1_new.twinEdgeID  = he_a2ID;
+				
+				// change the next edge
+				he_a1.nextEdgeID 		= he_b2ID;
+				he_b3.nextEdgeID 		= he_a3ID;
+				he_b1_new.nextEdgeID 	= he_b3ID;
+				he_a3.nextEdgeID 		= he_b1ID;
+				he_a2_new.nextEdgeID 	= he_a1ID;
+				he_b2.nextEdgeID 		= he_a2ID;
+				
+				
+				// update the faces
+				UpdateFace(he_a1, 		he_a1ID,
+						   he_b2, 		he_b2ID,
+						   he_a2_new, 	he_a2ID,
+						   he_a1v, he_b2v, he_b3v,
+						   threadInfo);
+				
+				UpdateFace(he_b1_new, 	he_b1ID,
+						   he_a3, 		he_a3ID,
+						   he_b3, 		he_b3ID,
+						   he_a3v, he_a1v, he_b3v,
+						   threadInfo);
+				
+				// store the new half edge
+				SetHalfEdge(he_a1, 		he_a1ID, 		threadInfo);
+				SetHalfEdge(he_a2_new, 	he_a2ID,	 	threadInfo);
+				SetHalfEdge(he_a3, 		he_a3ID, 		threadInfo);
+				SetHalfEdge(he_b1_new, 	he_b1ID,	 	threadInfo);
+				SetHalfEdge(he_b2, 		he_b2ID, 		threadInfo);
+				SetHalfEdge(he_b3, 		he_b3ID, 		threadInfo);
+				
+				
+				// add to the stack and the 2 new twin faces
+				// push the oposide of he_b1
+				if( he_b3.twinEdgeID != UNSET )
+				{
+					DelaunayNode newNode;
+					newNode.RootHalfEdgeID 	= he_b1ID;
+					newNode.NextFaceHalfEdgeID = he_b3.twinEdgeID;
+					
+					PushDelaunayNode( newNode , threadInfo );
+				}
+				
+				// push the oposide of he_b1
+				if( he_b2.twinEdgeID != UNSET )
+				{
+					DelaunayNode newNode;
+					newNode.RootHalfEdgeID 	= he_a1ID;
+					newNode.NextFaceHalfEdgeID = he_b2.twinEdgeID;
+					
+					PushDelaunayNode( newNode , threadInfo );
+				}
+					
+			}
+		}else
+			break;
+		
+		g++;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

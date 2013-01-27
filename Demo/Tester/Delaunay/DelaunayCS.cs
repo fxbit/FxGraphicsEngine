@@ -412,9 +412,9 @@ namespace Delaunay
             TimeStatistics.StartClock();
 
             // compile the shader
-            CSSubRegions = new ComputeShader(@"ComputeHLSL\Triangulation\Triangulation.hlslo");
-            CSVMerging = new ComputeShader(@"ComputeHLSL\Triangulation\MergeVertical.hlslo");
-            CSHMerging = new ComputeShader(@"ComputeHLSL\Triangulation\MergeHorizontal.hlslo");
+            CSSubRegions = new ComputeShader(@"Delaunay\Shaders\Triangulation.hlsl", "main",@"Delaunay\Shaders\");
+            CSVMerging = new ComputeShader(@"Delaunay\Shaders\MergeVertical.hlsl", "main", @"Delaunay\Shaders\");
+            CSHMerging = new ComputeShader(@"Delaunay\Shaders\MergeHorizontal.hlsl", "main", @"Delaunay\Shaders\");
             bitonicSort = new BitonicSort(NumVertex, device);
 
             float time = TimeStatistics.ClockLap("Load Shaders");

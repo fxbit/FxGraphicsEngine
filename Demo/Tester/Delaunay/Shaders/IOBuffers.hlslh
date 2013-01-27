@@ -1,0 +1,279 @@
+
+#include "includes.hlslh"
+
+#ifndef H_IO_BUFFERS
+#define H_IO_BUFFERS
+
+StructuredBuffer<float2> InputVertex;
+StructuredBuffer<RegionInfo> RegionInfoBuffer;
+RWStructuredBuffer<Face> FaceList;
+RWStructuredBuffer<HalfEdge> HalfEdgeList;
+RWStructuredBuffer<BoundaryNode> BoundaryList;
+RWStructuredBuffer<ThreadInfo> ThreadInfoList;
+RWStructuredBuffer<DelaunayNode> DeleanayNodeStack;
+//RWStructuredBuffer<MergeVInfo> MergeVInfoBuffer;
+//RWStructuredBuffer<MergeHInfo> MergeHInfoBuffer;
+RWStructuredBuffer<uint2> FaceNodeStack;
+
+#ifdef USE_SHARED_MEM
+groupshared uint UintStack[2 * STACK_MAX_NUM * MERGE_VERTICAL_X * MERGE_VERTICAL_Y]; // 25 thread
+#else
+RWStructuredBuffer<uint> UintStack;
+#endif
+
+// ------------ ThreadInfo  ------------ //
+
+inline void SetThreadInfo(ThreadInfo threadInfo)
+{
+	ThreadInfoList[threadInfo.threadID] = threadInfo;
+}
+
+inline ThreadInfo GetThreadInfo(uint threadID)
+{
+	return ThreadInfoList[threadID];
+}
+
+#if 0
+// ------------ MergeVInfo  ------------ //
+
+inline void SetMergeVInfo(MergeVInfo threadInfo)
+{
+	MergeVInfoBuffer[threadInfo.threadID] = threadInfo;
+}
+
+inline MergeVInfo GetMergeVInfo(uint threadID)
+{
+	return MergeVInfoBuffer[threadID];
+}
+
+// ------------ MergeHInfo  ------------ //
+
+inline void SetMergeHInfo(MergeHInfo threadInfo)
+{
+	MergeHInfoBuffer[threadInfo.threadID] = threadInfo;
+}
+
+inline MergeHInfo GetMergeHInfo(uint threadID)
+{
+	return MergeHInfoBuffer[threadID];
+}
+#endif
+
+// ------------ InputVertex  ------------ //
+
+inline RegionInfo GetRegionInfo(int index)
+{
+	return RegionInfoBuffer[index];
+}
+
+// ------------ InputVertex  ------------ //
+
+inline float2 GetVertex(uint index , ThreadInfo threadInfo)
+{
+	return InputVertex[index];
+}
+
+// ------------ Face  ------------ //
+
+inline Face GetFace(uint index, ThreadInfo threadInfo)
+{
+	return FaceList[index + threadInfo.offsetFaceList];
+}
+
+inline Face GetFace(uint2 index, ThreadInfo threadInfo)
+{
+	return FaceList[index.x + threadInfo.offsetFaceList];
+}
+
+inline Face GetFace(uint2 index)
+{
+	return FaceList[index.x + index.y];
+}
+
+
+inline void SetFace(Face value , uint2 index, ThreadInfo threadInfo)
+{
+	FaceList[index.x + threadInfo.offsetFaceList] = value;
+}
+
+inline void SetFace(Face value , uint2 index)
+{
+	FaceList[index.x + index.y] = value;
+}
+
+// ------------ HalfEdge  ------------ //
+
+inline HalfEdge GetHalfEdge(uint index, ThreadInfo threadInfo)
+{
+	return HalfEdgeList[index];
+}
+
+inline void SetHalfEdge(HalfEdge value , uint index, ThreadInfo threadInfo)
+{
+	HalfEdgeList[index] = value;
+}
+
+// ------------ Boundary  ------------ //
+
+inline BoundaryNode GetBoundaryNode(uint index, ThreadInfo threadInfo)
+{
+	return BoundaryList[index + threadInfo.offsetBoundaryList];
+}
+
+inline void SetBoundaryNode(BoundaryNode value , uint index, ThreadInfo threadInfo)
+{
+	BoundaryList[index + threadInfo.offsetBoundaryList] = value;
+}
+
+// ------------ Delaunay Stack  ------------ //
+#if 1
+
+inline void PushDelaunayNode(DelaunayNode newNode , inout ThreadInfo threadInfo)
+{
+	// get the id of the new node
+	uint newNodeId = threadInfo.endDNOfStack;
+	
+	// inc the stack head
+	threadInfo.endDNOfStack++;
+	
+	if(threadInfo.numDNinStack < threadInfo.endDNOfStack){
+		threadInfo.numDNinStack=threadInfo.endDNOfStack;
+	}
+	
+	// store the node
+	DeleanayNodeStack[threadInfo.offsetDNStack + newNodeId] = newNode;
+}
+
+inline bool PullDelaunayNode(out DelaunayNode node , inout ThreadInfo threadInfo)
+{
+	bool result = false;
+	
+	// set to zero
+	node = (DelaunayNode)0;
+	
+	if(threadInfo.endDNOfStack > 0){
+		
+		// dec the end offset
+		threadInfo.endDNOfStack--;
+		
+		// dec the num of stack nodes
+		//threadInfo.numDNinStack--;
+		
+		// get the node
+		node = DeleanayNodeStack[threadInfo.offsetDNStack + threadInfo.endDNOfStack];
+		
+		// set to true
+		result = true;
+	}
+	
+	return result;
+}
+
+#else
+
+inline void PushDelaunayNode(DelaunayNode newNode , inout ThreadInfo threadInfo)
+{
+	// get the id of the new node
+	uint newNodeId = threadInfo.endDNOfStack;
+	
+	// inc the stack head
+	threadInfo.endDNOfStack++;
+	threadInfo.numDNinStack++;
+	
+	// store the node
+	DeleanayNodeStack[threadInfo.offsetDNStack + newNodeId] = newNode;
+}
+
+inline bool PullDelaunayNode(out DelaunayNode node , inout ThreadInfo threadInfo)
+{
+	bool result = false;
+	
+	// set to zero
+	node = (DelaunayNode)0;
+	
+	if(threadInfo.numDNinStack > 0){
+		
+		// get the node
+		node = DeleanayNodeStack[threadInfo.offsetDNStack + threadInfo.startDNOfStack];
+		
+		// inc the start offset
+		threadInfo.startDNOfStack++;
+		
+		// dec the num of stack nodes
+		threadInfo.numDNinStack--;
+		
+		// set to true
+		result = true;
+	}
+	
+	return result;
+}
+#endif
+
+inline void ResetDelaunayStack(inout ThreadInfo threadInfo)
+{
+	threadInfo.endDNOfStack 		=  0; // no DN in stack yet
+	//threadInfo.startDNOfStack 		=  0; // no DN in stack yet
+	threadInfo.numDNinStack			=  0; // no DN in stack yet
+}
+
+
+// ------------ generic Stack  ------------ // 
+
+void StackReset(inout stack stack)
+{
+	stack.end = 0; // no nodes in stack yet
+	stack.start = 0; // no nodes in stack yet
+}
+
+void StackPush(uint id, inout stack stack)
+{
+	if (id == UNSET)
+		return;
+
+	// get the id of the new node
+	uint newNodeId = stack.end;
+
+	// inc the stack head
+	stack.end++;
+
+	// store the node
+	UintStack[stack.offset + newNodeId] = id;
+}
+
+bool StackPull(out uint id, inout stack stack)
+{
+	id = 0;
+	
+	if (stack.end > 0)
+	{
+		// dec the stack head
+		stack.end--;
+
+		// get the node
+		id = UintStack[stack.offset + stack.end];
+
+		return true;
+	}
+	
+	return false;
+}
+
+
+
+
+
+#endif /* H_IO_BUFFERS */
+
+
+
+
+
+
+
+
+
+
+
+
+

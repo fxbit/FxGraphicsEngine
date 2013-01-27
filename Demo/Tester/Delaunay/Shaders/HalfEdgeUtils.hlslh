@@ -1,0 +1,56 @@
+#include "includes.hlslh"
+
+#ifndef H_HALF_EDGE_UTILS
+#define H_HALF_EDGE_UTILS
+
+// ------------ InitNewHalfEdge  ------------ //
+
+// init a new HalfEdge with know startVertex and return the id
+uint InitNewHalfEdge(uint StartVertexID, out HalfEdge newHE,inout ThreadInfo threadInfo)
+{
+	
+	// get and inc the last id for halfEdge
+	uint newHeID = threadInfo.lastHalfEdgeID;
+	threadInfo.lastHalfEdgeID ++;
+
+	// fill the fielts
+	newHE.startVertexID = StartVertexID;
+
+	// link the edge with infinity...
+	newHE.twinEdgeID = UNSET;
+	newHE.nextEdgeID = UNSET;
+	
+	// set the face it to unset
+	newHE.faceID = UNSET;
+
+	// update the new he to the memory 
+	//SetHalfEdge(newHE , newHeID, threadInfo)
+
+	// return the new halfEdgeID
+	return newHeID;
+}
+
+
+// ------------ HalfEdgeDist  ------------ //
+
+float HalfEdgeDist(float2 vert, HalfEdge he, ThreadInfo threadInfo)
+{
+	float dist;
+
+	// get the start of the he
+	float2 startVert = GetVertex(he.startVertexID, threadInfo);
+
+	// get the end of the he
+	HalfEdge heEnd = GetHalfEdge(he.nextEdgeID, threadInfo);
+	float2 endVert = GetVertex(heEnd.startVertexID, threadInfo);
+
+	// find the diff of the 2 vertex
+	float2 d = endVert - startVert;
+	
+	//find the abs distance 
+	dist = abs( d.x * (startVert.y - vert.y) - d.y * (startVert.x - vert.x) ) / distance(endVert, startVert);
+
+	return dist;
+}
+
+#endif /* H_HALF_EDGE_UTILS */

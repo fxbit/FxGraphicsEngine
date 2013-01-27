@@ -1,0 +1,636 @@
+
+#include "includes.hlslh"
+
+#ifndef H_BOUNDARY_UTILS
+#define H_BOUNDARY_UTILS
+
+// ------------ Update Boundary Min/Max ------------ //
+
+void UpdateBoundaryMinMax(uint BN_ID, float2 vert, inout ThreadInfo threadInfo){
+    
+	return;
+	
+    // get max/min boundary
+	{
+		// y_min
+		BoundaryNode node = GetBoundaryNode( threadInfo.Boundary_Y_MinID , threadInfo);
+		HalfEdge currentEdge = GetHalfEdge( node.halfEdgeID , threadInfo);
+		float2 currentVert = GetVertex( currentEdge.startVertexID , threadInfo);
+		
+		if( vert.y <= currentVert.y)
+			threadInfo.Boundary_Y_MinID = BN_ID;
+	}
+	
+	{
+		// y_max
+		BoundaryNode node = GetBoundaryNode( threadInfo.Boundary_Y_MaxID , threadInfo);
+		HalfEdge currentEdge = GetHalfEdge( node.halfEdgeID , threadInfo);
+		float2 currentVert = GetVertex( currentEdge.startVertexID , threadInfo);
+		
+		if( vert.y >= currentVert.y)
+			threadInfo.Boundary_Y_MaxID = BN_ID;
+		
+	}
+	
+	{
+		// x_max
+		BoundaryNode node = GetBoundaryNode( threadInfo.Boundary_X_MaxID , threadInfo);
+		HalfEdge currentEdge = GetHalfEdge( node.halfEdgeID , threadInfo);
+		float2 currentVert = GetVertex( currentEdge.startVertexID , threadInfo);
+		
+		if( vert.x >= currentVert.x)
+			threadInfo.Boundary_X_MaxID = BN_ID;
+    }
+	
+
+	
+	{
+		// x_min
+		BoundaryNode node = GetBoundaryNode( threadInfo.Boundary_X_MinID , threadInfo);
+		HalfEdge currentEdge = GetHalfEdge( node.halfEdgeID , threadInfo);
+		float2 currentVert = GetVertex( currentEdge.startVertexID , threadInfo);
+		
+		if( vert.x <= currentVert.x)
+			threadInfo.Boundary_X_MinID = BN_ID;
+		
+	}
+	
+
+}
+
+// ------------ InitNewBoundaryNode ------------ //
+
+// init a new HalfEdge with know startVertex and return the id
+uint InitNewBoundaryNode(uint halfEdgeID, out BoundaryNode newBN,inout ThreadInfo threadInfo)
+{
+    // get and inc the last id for halfEdge
+    uint newBN_ID = threadInfo.lastBoundaryNodeID;
+    threadInfo.lastBoundaryNodeID ++;
+
+    // fill the fields
+    newBN.halfEdgeID = halfEdgeID;
+
+    // link the node with infinity...
+    newBN.PrevNodeID = UNSET;
+    newBN.NextNodeID = UNSET;
+    
+	// update max/min of the boundary
+	HalfEdge he = GetHalfEdge(halfEdgeID, threadInfo);
+	float2 vert = GetVertex(he.startVertexID, threadInfo);
+	UpdateBoundaryMinMax( newBN_ID, vert, threadInfo);
+	
+    // return the new newBN_ID
+    return newBN_ID;
+}
+
+// ------------ RemoveBoundaryNode ------------ //
+
+void RemoveBoundaryNode( BoundaryNode node, uint nodeID, inout ThreadInfo threadInfo)
+{
+    // get prev/next nodes
+    BoundaryNode prevNode = GetBoundaryNode(node.PrevNodeID, threadInfo);
+    BoundaryNode nextNode = GetBoundaryNode(node.NextNodeID, threadInfo);
+    
+    // change the prev/next pointers
+    prevNode.NextNodeID = node.NextNodeID;
+    nextNode.PrevNodeID = node.PrevNodeID;
+    
+    // store the changes
+    SetBoundaryNode(prevNode, node.PrevNodeID, threadInfo);
+    SetBoundaryNode(nextNode, node.NextNodeID, threadInfo);
+    
+    // TODO : use bit array to save space
+}
+
+
+// ------------ InsertNewBNAfter ------------ //
+
+// insert a new BN after the given node
+// return the new node id
+uint  InsertNewBNAfter( inout BoundaryNode prevNode, uint prevNodeID, uint heID, inout ThreadInfo threadInfo)
+{
+    BoundaryNode newNode;
+    uint newNodeID;
+
+    // get the next node 
+    uint nextNodeID = prevNode.NextNodeID;
+    BoundaryNode nextNode = GetBoundaryNode(prevNode.NextNodeID, threadInfo);
+    
+    // create a new node 
+    newNodeID = InitNewBoundaryNode(heID, newNode, threadInfo);
+    
+    // set the next node to point to the new node
+    nextNode.PrevNodeID = newNodeID;
+    
+    // set the new node to point to the next node
+    newNode.NextNodeID = nextNodeID;
+    
+    // set this node to point to the new node
+    prevNode.NextNodeID = newNodeID;
+    
+    // link the new node to point to this node
+    newNode.PrevNodeID = prevNodeID;
+    
+    // store all the changes
+    SetBoundaryNode(nextNode, nextNodeID, threadInfo);
+    SetBoundaryNode(prevNode, prevNodeID, threadInfo);
+    SetBoundaryNode(newNode, newNodeID, threadInfo);
+    
+    return newNodeID;
+}
+
+
+// ------------ AddOutsideVertex ------------ //
+
+void AddOutsideVertex( float2 vert, uint vertID,
+                       inout ThreadInfo threadInfo)
+{
+    
+    // start the node from the start
+    uint 			tmpNodeID 	= threadInfo.boundaryNodeRootID;
+    BoundaryNode 	tmpNode 	= GetBoundaryNode(tmpNodeID, threadInfo);
+    
+    // help variables
+    uint 			firstNodeID = UNSET;
+    uint		 	lastNodeID  = UNSET;
+    BoundaryNode	firstNode, lastNode;
+    
+    bool			foundTheFirst 		= false; 
+    bool			firstMatchIsRoot 	= false;
+    bool			TooClose 			= false;
+    bool 			AcceptSide 			= false;
+    
+    // =============================================================================== //
+    // Forward Test
+    // pass all the nodes and find the first and the last one that we can use
+    [allow_uav_condition]do
+    {
+        // load the current edge in the boundary list
+        HalfEdge he = GetHalfEdge(tmpNode.halfEdgeID, threadInfo);
+        
+        // load the vertex of the half edge
+        float2 heStartVertex = GetVertex(he.startVertexID, threadInfo);
+        
+        // load the current edge in the boundary list
+        HalfEdge heNext = GetHalfEdge(he.nextEdgeID, threadInfo);
+        
+        // load the next start vertex
+        float2 heNextStartVertex = GetVertex(heNext.startVertexID, threadInfo);
+        
+        
+        // check if we very close
+        /*
+        if (((vert.x - heStartVertex.x)*(vert.x - heStartVertex.x) +
+                (vert.y - heStartVertex.y)*(vert.y - heStartVertex.y))  < 0.1){
+            
+            TooClose = true;
+            break;
+        }
+        */
+        
+        AcceptSide = SideTest(heStartVertex, heNextStartVertex, vert );
+        
+        // test the angle if is negative
+        // (neg mean that we are outside from the mesh )
+        [flatten]if(AcceptSide)
+        {
+            // check if we have find allready the first accepted node
+            if(foundTheFirst){
+                lastNodeID = tmpNodeID;
+            }else{
+                
+                // set the first node
+                firstNodeID = tmpNodeID;
+                
+                // set the last node
+                lastNodeID = tmpNodeID;
+                
+                // set the flag that we have find the first 
+                foundTheFirst = true;
+                /*
+                // check if the first accepted node is the root
+                if(tmpNodeID == threadInfo.boundaryNodeRootID){
+                    firstMatchIsRoot = true;
+                }*/
+            }
+            
+        } else {
+            [branch] if (foundTheFirst)
+                break;
+        }
+        
+        // go to the next node
+        tmpNodeID = tmpNode.NextNodeID;
+        
+        // load the next node
+        tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+    } while (tmpNodeID != threadInfo.boundaryNodeRootID);
+
+    // =============================================================================== //
+    
+    if (!foundTheFirst)
+        return;
+    
+    
+    //if (TooClose)
+    //	return;
+
+    
+    // =============================================================================== //
+    // Backward Test
+    if(false){
+    // pass all the nodes and find the first and the last one that we can use
+    if(firstMatchIsRoot){
+        // reset the variables to go the prev node from the root
+        tmpNodeID 	= threadInfo.boundaryNodeRootID;
+        tmpNode 	= GetBoundaryNode(tmpNodeID, threadInfo);
+        tmpNodeID 	= tmpNode.PrevNodeID;
+        tmpNode 	= GetBoundaryNode(tmpNodeID, threadInfo);
+        
+        [allow_uav_condition]  while (true)
+        {
+            // load the current edge in the boundary list
+            HalfEdge he = GetHalfEdge(tmpNode.halfEdgeID, threadInfo);
+            
+            // load the vertex of the half edge
+            float2 heStartVertex = GetVertex(he.startVertexID, threadInfo);
+            
+            
+            // check if we very close
+            /*
+            if (((vert.x - heStartVertex.x)*(vert.x - heStartVertex.x) +
+                    (vert.y - heStartVertex.y)*(vert.y - heStartVertex.y))  < 0.1){
+                
+                TooClose = true;
+                break;
+            }
+            */
+            
+            // load the current edge in the boundary list
+            HalfEdge heNext = GetHalfEdge(he.nextEdgeID, threadInfo);
+            float2 heNextStartVertex = GetVertex(heNext.startVertexID, threadInfo);
+            
+            // test the angle if is negative
+            // (neg mean that we are outside from the mesh )
+            if( SideTest(heStartVertex, heNextStartVertex, vert ) )
+            {
+                // set the first node 
+                firstNodeID = tmpNodeID;
+            }
+            else
+                break;
+            
+            // go to the prev node
+            tmpNodeID = tmpNode.PrevNodeID;
+            
+            // check that we are in the beginning 
+            if(tmpNodeID == threadInfo.boundaryNodeRootID)
+                break;
+            
+            // load the prev node
+            tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+        }
+        
+    }
+
+    // =============================================================================== //
+    }
+    //if (TooClose)
+    //	return;
+    
+    
+    // =============================================================================== //
+    // Link the new nodes
+    
+    // pass the nodes from the first to last 
+    tmpNodeID 	= firstNodeID;
+    tmpNode 	= GetBoundaryNode(tmpNodeID, threadInfo);
+    
+    foundTheFirst 	= false;
+    
+    BoundaryNode prevEndNode = GetBoundaryNode(lastNodeID, threadInfo);
+    uint endNodeID = prevEndNode.NextNodeID;
+    
+    [allow_uav_condition] while( tmpNodeID != endNodeID)
+    {
+        // load the current edge in the boundary list
+        uint heID = tmpNode.halfEdgeID;
+        HalfEdge he 	= GetHalfEdge(heID, threadInfo);
+        HalfEdge heNext = GetHalfEdge(he.nextEdgeID,threadInfo);
+        
+        
+        // create 3 new he
+        HalfEdge he1, he2, he3;
+        uint 	 he1ID, he2ID, he3ID;
+        bool	 ccw;
+        
+        CreateTriangle(he.startVertexID, vertID, heNext.startVertexID,	
+                       he1, he1ID,			// get the first he
+                       he2, he2ID,			// get the sec he
+                       he3, he3ID, 			// get the third he
+                       false, threadInfo, ccw);	// don't store the results
+        
+        // link the twin edge
+        he.twinEdgeID 	= he3ID;
+        he3.twinEdgeID 	= heID;
+        
+        // if we are in the mid of the search 
+        // link the prev edge to the triangle
+        if (foundTheFirst)
+        {
+            BoundaryNode prevNode = GetBoundaryNode(tmpNode.PrevNodeID, threadInfo);
+            HalfEdge prevHe = GetHalfEdge(prevNode.halfEdgeID, threadInfo);
+            
+            // link the twin edges
+            he1.twinEdgeID = prevNode.halfEdgeID;
+            prevHe.twinEdgeID = he1ID;
+            
+            // store the prev he
+            SetHalfEdge(prevHe, prevNode.halfEdgeID, threadInfo);
+            
+            // check if we are going to remove the root node
+            if(  tmpNode.PrevNodeID == threadInfo.boundaryNodeRootID)
+            {
+                // change the root node	
+                threadInfo.boundaryNodeRootID  = prevNode.PrevNodeID;
+            }
+            
+            // remove the prev node
+            {
+                // get prev/next nodes
+                BoundaryNode prevPrevNode = GetBoundaryNode(prevNode.PrevNodeID, threadInfo);
+                
+                // change the prev/next pointers
+                prevPrevNode.NextNodeID = tmpNodeID;
+                tmpNode.PrevNodeID = prevNode.PrevNodeID;
+                
+                // store the changes
+                SetBoundaryNode(prevPrevNode, prevNode.PrevNodeID, threadInfo);
+            }
+            
+            // replace the half edge id of the tmpNode
+            tmpNode.halfEdgeID = he2ID;
+            
+            // update max/min of the boundary
+            float2 he2_vert = GetVertex(he2.startVertexID, threadInfo);
+            UpdateBoundaryMinMax( tmpNodeID, he2_vert, threadInfo);
+            
+            // store the changed bn
+            SetBoundaryNode(tmpNode,tmpNodeID,threadInfo);
+        }else{ /* !foundTheFirst */
+            
+            // replace the boundary node with the 2 news by using the old one and add one new
+            tmpNode.halfEdgeID = he1ID;
+            
+            // update max/min of the boundary
+            float2 he1_vert = GetVertex(he1.startVertexID, threadInfo);
+            UpdateBoundaryMinMax( tmpNodeID, he1_vert, threadInfo);
+            
+            // add a new BN after the current one
+            {
+                BoundaryNode newNode;
+                uint newNodeID;
+                
+                // get the next node 
+                uint nextNodeID = tmpNode.NextNodeID;
+                BoundaryNode nextNode = GetBoundaryNode(nextNodeID, threadInfo);
+                
+                // create a new node 
+                newNodeID = InitNewBoundaryNode(he2ID, newNode, threadInfo);
+                
+                // set the next node to point to the new node
+                nextNode.PrevNodeID = newNodeID;
+                
+                // set the new node to point to the next node
+                newNode.NextNodeID = tmpNode.NextNodeID;
+                
+                // set this node to point to the new node
+                tmpNode.NextNodeID = newNodeID;
+                
+                // link the new node to point to this node
+                newNode.PrevNodeID = tmpNodeID;
+                
+                
+                //// store all the changes
+                SetBoundaryNode(nextNode, nextNodeID, threadInfo);
+                SetBoundaryNode(newNode, newNodeID, threadInfo);
+                SetBoundaryNode(tmpNode, tmpNodeID, threadInfo);	
+                
+                // move to the next one 
+                tmpNodeID = newNodeID;
+                tmpNode= newNode;
+            }
+            
+            // update max/min of the boundary
+            float2 he2_vert = GetVertex(he2.startVertexID, threadInfo);
+            UpdateBoundaryMinMax( tmpNodeID, he2_vert, threadInfo);
+            
+            // set that we have find the first that is correct
+            foundTheFirst = true;
+        }
+        
+        // store the he
+        SetHalfEdge(he, heID, threadInfo);
+        SetHalfEdge(he1, he1ID, threadInfo);
+        SetHalfEdge(he2, he2ID, threadInfo);
+        SetHalfEdge(he3, he3ID, threadInfo);
+        
+        // create a new face
+        CreateFace(he1ID,  threadInfo);
+        
+        // TODO: delaunay correction
+        // add to stack all the corrections that want to have
+        if(true)
+        {
+            // create face for fixes
+            DelaunayNode newNode;
+            newNode.RootHalfEdgeID 	= he1.nextEdgeID;
+            HalfEdge h = GetHalfEdge( he1.nextEdgeID , threadInfo);
+            h = GetHalfEdge( h.nextEdgeID , threadInfo);
+            newNode.NextFaceHalfEdgeID = h.twinEdgeID;
+            
+            // push the face that we want to fix
+            PushDelaunayNode( newNode , threadInfo );
+        }
+        
+        // move to the next node
+        tmpNodeID = tmpNode.NextNodeID;
+        
+        // load the next node
+        tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+    }
+    
+    // =============================================================================== //
+}
+
+// ------------ CalcSideRightBoundary ------------ //
+
+void CalcSideLeftBoundary(inout ThreadInfo threadInfo)
+{
+	
+    // Start Node
+    uint startNodeID = threadInfo.Boundary_X_MaxID;
+    BoundaryNode startNode = GetBoundaryNode(startNodeID, threadInfo);
+    
+    // ======================= Forward search
+    uint tmpNodeID = startNode.NextNodeID;
+    BoundaryNode tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+    float Y_limit = GetVertex( GetHalfEdge( startNode.halfEdgeID, threadInfo).startVertexID, threadInfo).y;
+    
+    // loop until we have change in Y limit
+    [fastopt][allow_uav_condition]  while(true){
+        
+        uint heID = tmpNode.halfEdgeID;
+        HalfEdge he = GetHalfEdge(heID, threadInfo);
+        float2 he_vert = GetVertex(he.startVertexID, threadInfo);
+        
+        // check if we have change in y limit
+        [branch] if( he_vert.y > Y_limit ){
+            Y_limit = he_vert.y;
+        }else
+            break;
+        
+        // move to the next node
+        tmpNodeID = tmpNode.NextNodeID;
+        tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+        
+        // check if we are in the start
+        [branch] if( tmpNodeID == startNodeID)
+            break;
+    }
+    
+    // set the end node ( go one backward to get the correct node )
+    threadInfo.Boundary_Y_MaxID = tmpNode.PrevNodeID;
+    
+    
+    // ======================= Backward search
+    tmpNodeID = startNode.PrevNodeID;
+    tmpNode = GetBoundaryNode( tmpNodeID, threadInfo);
+	Y_limit = GetVertex( GetHalfEdge( startNode.halfEdgeID, threadInfo).startVertexID, threadInfo).y;
+    
+    // loop until we have change in Y limit
+    [fastopt][allow_uav_condition]  while(true){
+        
+        uint heID = tmpNode.halfEdgeID;
+        HalfEdge he = GetHalfEdge(heID, threadInfo);
+        float2 he_vert = GetVertex(he.startVertexID, threadInfo);
+        
+        // check if we have change in y limit
+        [branch] if( he_vert.y < Y_limit ){
+            Y_limit = he_vert.y;
+        }else
+            break;
+        
+        // move to the prev node
+        tmpNodeID = tmpNode.PrevNodeID;
+        tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+        
+        // check if we are in the start
+        [branch] if( tmpNodeID == startNodeID)
+            break;
+    }
+    
+    // set the start node ( go one forward to get the correct node )
+    threadInfo.Boundary_Y_MinID = tmpNode.NextNodeID;
+}
+
+// ------------ CalcSideLeftBoundary ------------ //
+
+void CalcSideRightBoundary(inout ThreadInfo threadInfo)
+{
+	
+    // Start Node
+	uint startNodeID = threadInfo.Boundary_X_MinID;
+    BoundaryNode startNode = GetBoundaryNode(startNodeID, threadInfo);
+    
+    // ======================= Forward search
+    uint tmpNodeID = startNode.NextNodeID;
+    BoundaryNode tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+	float Y_limit = GetVertex( GetHalfEdge( startNode.halfEdgeID, threadInfo).startVertexID, threadInfo).y;
+    
+    // loop until we have change in Y limit
+    [fastopt][allow_uav_condition]  while(true){
+        
+        uint heID = tmpNode.halfEdgeID;
+        HalfEdge he = GetHalfEdge(heID, threadInfo);
+        float2 he_vert = GetVertex(he.startVertexID, threadInfo);
+        
+        // check if we have change in y limit
+        [branch] if( he_vert.y < Y_limit ){
+            Y_limit = he_vert.y;
+        }else
+            break;
+        
+        // move to the next node
+        tmpNodeID = tmpNode.NextNodeID;
+        tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+        
+        // check if we are in the start
+        [branch] if( tmpNodeID == startNodeID)
+            break;
+    }
+    
+    // set the end node ( go one backward to get the correct node )
+    threadInfo.Boundary_Y_MinID = tmpNode.PrevNodeID;
+    
+    
+    // ======================= Backward search
+    tmpNodeID = startNode.PrevNodeID;
+    tmpNode = GetBoundaryNode( tmpNodeID, threadInfo);
+	Y_limit = GetVertex( GetHalfEdge( startNode.halfEdgeID, threadInfo).startVertexID, threadInfo).y;
+    
+    // loop until we have change in Y limit
+    [fastopt][allow_uav_condition]  while(true){
+        
+        uint heID = tmpNode.halfEdgeID;
+        HalfEdge he = GetHalfEdge(heID, threadInfo);
+        float2 he_vert = GetVertex(he.startVertexID, threadInfo);
+        
+        // check if we have change in y limit
+        [branch] if( he_vert.y > Y_limit ){
+            Y_limit = he_vert.y;
+        }else
+            break;
+        
+        // move to the prev node
+        tmpNodeID = tmpNode.PrevNodeID;
+        tmpNode = GetBoundaryNode(tmpNodeID, threadInfo);
+        
+        // check if we are in the start
+        [branch] if( tmpNodeID == startNodeID)
+            break;
+    }
+    
+    // set the start node ( go one forward to get the correct node )
+    threadInfo.Boundary_Y_MaxID = tmpNode.NextNodeID;
+}
+
+#endif /* H_BOUNDARY_UTILS */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

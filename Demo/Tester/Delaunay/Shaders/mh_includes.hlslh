@@ -1,0 +1,23 @@
+
+#ifndef H_MV_INCLUDES
+#define H_MV_INCLUDES
+
+cbuffer threadParam{
+	
+// num of the threads
+	uint ThreadNum;
+
+// calc only even or odd threads
+	uint depth;
+
+// num of the max number of elements in stack
+	uint stackMaxSize;
+	
+// Num of thread per row
+	uint ThreadNumPerRow;
+	
+}
+
+#include "includes.hlslh"
+
+#endif

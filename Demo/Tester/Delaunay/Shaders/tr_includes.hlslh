@@ -1,0 +1,23 @@
+
+#ifndef H_TR_INCLUDES
+#define H_TR_INCLUDES
+
+cbuffer threadParam{
+
+// max faces per thread
+	uint maxFacesPerThread;
+
+// max Half edge per thread
+	uint maxHalfEdgePerThread;
+
+// max boundary nodes per thread
+	uint maxBoundaryNodesPerThread;
+
+// num of the regions
+	uint RegionsNum;
+
+}
+
+#include "includes.hlslh"
+
+#endif

@@ -1,0 +1,214 @@
+
+#include "includes.hlslh"
+
+#ifndef H_STRUCTS
+#define H_STRUCTS
+
+// ------------ HalfEdge  ------------ //
+
+struct ThreadInfo {
+
+	// The id of the thread
+	uint threadID;
+
+	// offset for the face list
+	uint offsetFaceList;
+
+	// offset for the Half edge list
+	uint offsetHalfEdgeList;
+
+	// offset for the Vertex list
+	uint offsetVertexList;
+
+	// offset for the Boundary list
+	uint offsetBoundaryList;
+
+	// offset for the delaunay node 
+	uint offsetDNStack;
+	
+	// The Next Face ID (max face id)
+	uint2 lastFaceID;
+
+	// The Next HalfEdge ID (max HalfEdge id)
+	uint lastHalfEdgeID;
+
+	// The Next Boundary Node ID (max Boundary Node id)
+	uint lastBoundaryNodeID;
+
+	// The rood index of the boundary
+	uint boundaryNodeRootID;
+	
+	// the start of the DelaunayNode in the stack
+	uint startDNOfStack;
+	
+	// the end of the DelaunayNode in the stack
+	uint endDNOfStack;
+
+	// the num of node in the stack
+	uint numDNinStack;
+	
+	// Boundary Min/Max {
+	
+		/// The Max boundary node in the X axis
+		uint Boundary_X_MaxID;
+		
+		/// The Max boundary node in the Y axis
+		uint Boundary_Y_MaxID;
+		
+		/// The Min boundary node in the X axis
+		uint Boundary_X_MinID;
+		
+		/// The Min boundary node in the Y axis
+		uint Boundary_Y_MinID;
+		
+	//}
+	
+		// emergency HE id
+		uint LeftLastMergingHEID;
+		uint RightLastMergingHEID;
+		uint LeftFirstMergingHEID;
+		uint RightFirstMergingHEID;
+};
+
+// ------------ HalfEdge  ------------ //
+
+struct HalfEdge {
+	//	Start Vertex index
+	uint startVertexID;
+
+	//	twin edge of the face
+	uint twinEdgeID;
+
+	//  next edge in the face
+	uint nextEdgeID;
+	
+	//  face this edge belong
+	uint2 faceID;
+};
+
+// ------------ BoundaryNodes  ------------ //
+
+struct BoundaryNode {
+	//	The next node on the boundary
+	uint PrevNodeID;
+
+	//	The prev node on the boundary
+	uint NextNodeID;
+
+	//  The edge in the boundary
+	uint halfEdgeID;
+};
+
+// ------------ Circle  ------------ //
+
+struct Circle{
+	
+	// Center
+	float2 center;
+
+	// radius 
+	float radius;
+
+};
+
+
+// ------------ Face  ------------ //
+
+struct Face {
+
+	//  Start of the Face 
+	uint  halfEdgeID; 
+	
+#ifdef USE_BOUNDARY
+#ifdef USE_CIRCLE_TEST
+
+	//  Boundary circle
+	Circle boundary;
+
+#else
+
+	// The Min point of the boundary
+	float2 Min;
+
+	// The Max point of the boundary
+	float2 Max;
+
+#endif
+#endif 
+};
+
+// ------------ Region Info  ------------ //
+
+struct RegionInfo {
+
+	// the offset of the vertex
+	uint VertexOffset;
+	
+	// the number of the vertex
+	uint VertexNum;
+
+};
+
+// ------------ Region Info  ------------ //
+
+struct DelaunayNode {
+
+	// the start half edge
+	uint RootHalfEdgeID;
+	
+	// the half edge of the next face
+	uint NextFaceHalfEdgeID;
+	
+};
+
+struct MergeVParams {
+	
+	// the id of the 2 sides of the 
+	// x: left
+	// y: right
+	uint2 RegionSidesID; 
+	
+};
+
+// ------------ Stack struct  ------------ //
+
+struct stack {
+	uint start;
+	uint end;
+	uint offset;
+};
+
+// ------------ VMerge thread Info  ------------ //
+
+struct MergeVInfo {
+	
+	// current thread id
+	uint threadID;
+
+	// stack for the he merging
+	stack LeftHEStack;
+	stack RightHEStack;
+	
+};
+
+
+// ------------ HMerge thread Info  ------------ //
+
+struct MergeHInfo {
+	
+	// current thread id
+	uint threadID;
+
+	// stack for the he merging
+	stack UpHEStack;
+	stack DownHEStack;
+	
+	// the first left Thread Info
+	uint UpFirstThreadID;
+	uint DownFirstThreadID;
+	uint UpLastThreadID;
+	uint DownLastThreadID;
+};
+
+
+#endif /* H_STRUCTS  */
