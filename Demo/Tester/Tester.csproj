@@ -135,6 +135,36 @@
     <None Include="Delaunay\Shaders\tr_includes.hlslh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Delaunay\Shaders_Prebuild\BitonicSort.BitonicSort.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\BitonicSort.MatrixTranspose.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\MergeHorizontal.main.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\MergeVertical.main.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\RegionSplit.CopyRegion.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\RegionSplit.CopySubBuffer.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\RegionSplit.FillRegionInfo.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\RegionSplit.FindSplitIndexH.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\RegionSplit.FindSplitIndexV.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Delaunay\Shaders_Prebuild\Triangulation.main.fxo">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -150,7 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\DockPanelSuite\WinFormsUI\WinFormsUI.csproj">
-      <Project>{C75532C4-765B-418E-B09B-46D36B2ABDB1}</Project>
+      <Project>{c75532c4-765b-418e-b09b-46d36b2abdb1}</Project>
       <Name>WinFormsUI</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Engine\GraphicsEngine.csproj">
