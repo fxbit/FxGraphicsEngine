@@ -47,13 +47,13 @@ namespace GraphicsEngine.Core {
 
         public void Open(IncludeType type, string fileName, Stream parentStream, out Stream stream)
         {
-            stream = new FileStream(includeDirectory + fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            stream = new FileStream(includeDirectory + "\\" + fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
 
         public Stream Open(IncludeType type, string fileName, Stream parentStream)
         {
-            return new FileStream(includeDirectory + fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return new FileStream(includeDirectory + "\\" + fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
 
         public IDisposable Shadow

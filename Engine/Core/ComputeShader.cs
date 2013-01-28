@@ -179,10 +179,7 @@ namespace GraphicsEngine.Core {
                 // close the file stream
                 fileStream.Close();
 
-                DataStream preBuildShaderStream = new DataStream(fileByte.Length, true, true);
-                preBuildShaderStream.Write(fileByte, 0, fileByte.Length);
-
-                bytecode = new ShaderBytecode( preBuildShaderStream );
+                bytecode = new ShaderBytecode(fileByte);
                 
             } else {
                 System.Windows.Forms.MessageBox.Show( "Shader:" + ShaderRootPath + Name + "   is not exist " );
