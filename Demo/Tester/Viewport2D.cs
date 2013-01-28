@@ -22,12 +22,12 @@ namespace Tester
 
         public void AddElement(FxMaths.GUI.CanvasElements elements)
         {
-            canvas1.AddElements(elements);
+            canvas.AddElements(elements);
         }
 
         private void Viewport2D_ResizeEnd(object sender, EventArgs e)
         {
-            canvas1.ReDraw();
+            canvas.ReDraw();
         }
     }
 }

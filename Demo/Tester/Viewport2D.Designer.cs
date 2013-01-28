@@ -28,28 +28,28 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.canvas1 = new FxMaths.GUI.Canvas();
+            this.canvas = new FxMaths.GUI.Canvas();
             this.SuspendLayout();
             // 
             // canvas1
             // 
-            this.canvas1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.canvas.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.canvas1.EditBorderColor = new SharpDX.Color(((byte)(165)), ((byte)(42)), ((byte)(42)), ((byte)(255)));
-            this.canvas1.Location = new System.Drawing.Point(-1, -1);
-            this.canvas1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.canvas1.Name = "canvas1";
-            this.canvas1.SelectedBorderColor = new SharpDX.Color(((byte)(245)), ((byte)(245)), ((byte)(220)), ((byte)(255)));
-            this.canvas1.Size = new System.Drawing.Size(285, 256);
-            this.canvas1.TabIndex = 0;
+            this.canvas.EditBorderColor = new SharpDX.Color(((byte)(165)), ((byte)(42)), ((byte)(42)), ((byte)(255)));
+            this.canvas.Location = new System.Drawing.Point(-1, -1);
+            this.canvas.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.canvas.Name = "canvas1";
+            this.canvas.SelectedBorderColor = new SharpDX.Color(((byte)(245)), ((byte)(245)), ((byte)(220)), ((byte)(255)));
+            this.canvas.Size = new System.Drawing.Size(285, 256);
+            this.canvas.TabIndex = 0;
             // 
             // Viewport2D
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(282, 253);
-            this.Controls.Add(this.canvas1);
+            this.Controls.Add(this.canvas);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(161)));
             this.Name = "Viewport2D";
             this.Text = "Viewport2D";
@@ -60,6 +60,6 @@
 
         #endregion
 
-        private FxMaths.GUI.Canvas canvas1;
+        public FxMaths.GUI.Canvas canvas;
     }
 }

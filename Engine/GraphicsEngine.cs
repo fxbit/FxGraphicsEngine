@@ -579,14 +579,13 @@ namespace GraphicsEngine {
 
                 /// pass the mouse state to camera handler 
                 cam.handleMouse(mouse_state);
-            }
-            else
-            {
-                cam.handleMouse(new MouseState());
+
+                return;
             }
 
         mouse_exit:
-            cam.handleMouse(new MouseState());
+            if (cam != null)
+                cam.handleMouse(new MouseState());
 
         }
         #endregion
@@ -670,12 +669,14 @@ namespace GraphicsEngine {
 
                 TimeStart = TimeCurrent;
 
-                /// read the input from the keyboard
-                readInput( g_MoveCamera );
+                if (g_MoveCamera != null)
+                {
+                    /// read the input from the keyboard
+                    readInput(g_MoveCamera);
 
-                /// move the camera
-                g_MoveCamera.FrameMove( TimeElapsed );
-
+                    /// move the camera
+                    g_MoveCamera.FrameMove(TimeElapsed);
+                }
 
                 //DeviceContext selectedContext  = Engine.DeferredDev;
 

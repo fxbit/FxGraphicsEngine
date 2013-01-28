@@ -10,6 +10,8 @@ using GraphicsEngine.Core;
 using FxMaths;
 using FxMaths.GMaps;
 using FxMaths.Vector;
+using FxMaths.GUI;
+using FxMaths.Geometry;
 
 using FXFramework;
 
@@ -19,6 +21,9 @@ using Buffer        = SharpDX.Direct3D11.Buffer;
 using D3D           = SharpDX.Direct3D11;
 using ComputeShader = GraphicsEngine.Core.ComputeShader;
 using GraphicsEngine;
+using SharpDX;
+
+
 
 namespace Delaunay
 {
@@ -26,9 +31,9 @@ namespace Delaunay
     {
         ////////////////////////////////////// Parameters
 
-        int NumVertex = 1000000;
+        int NumVertex;
         const int stackMaxSize = 64;
-        int MaxPointsPerRegion = 500;
+        int MaxPointsPerRegion = 200;
 
         const float MergeVXThread = 4.0f;
         const float MergeVYThread = 8.0f;
@@ -203,7 +208,7 @@ namespace Delaunay
         {
             // clean the prev list
             listAllVertex.Clear();
-        } 
+        }
 
         #endregion
 
@@ -340,8 +345,8 @@ namespace Delaunay
             uavDelaunayStackBuffer = FXResourceVariable.InitUAVResource(Engine.g_device, DelaunayStackBuffer);
 
             rvlDelaunayStackBuffer.AddResourceFromShader(CSSubRegions.m_effect, "DeleanayNodeStack");
-            rvlDelaunayStackBuffer.AddResourceFromShader(CSVMerging.m_effect, "DeleanayNodeStack");
-            rvlDelaunayStackBuffer.AddResourceFromShader(CSHMerging.m_effect, "DeleanayNodeStack");
+            //rvlDelaunayStackBuffer.AddResourceFromShader(CSVMerging.m_effect, "DeleanayNodeStack");
+            //rvlDelaunayStackBuffer.AddResourceFromShader(CSHMerging.m_effect, "DeleanayNodeStack");
 
             #endregion
 
@@ -383,7 +388,7 @@ namespace Delaunay
         public void InitShaders(Device device)
         {
             WriteLine("MaxPointsPerRegion : " + MaxPointsPerRegion.ToString());
-
+            NumVertex = listAllVertex.Count;
 
             // select the spliting numbers
             // find the split points 
@@ -491,9 +496,364 @@ namespace Delaunay
             WriteLine("===================================== Overall size in Mbytes:" + (sum / (1024 * 1024)).ToString());
 
 
-        } 
+        }
 
         #endregion
+
+
+
+        public void RunTheAlgorithm(Canvas canvas)
+        {
+            float time;
+            TimeStatistics.StartClock();
+            FXConstantBuffer<csMergeVThreadParam> cbMVTP;
+            csMergeVThreadParam local_cbMVTP;
+
+            FXConstantBuffer<csMergeHThreadParam> cbMHTP;
+            csMergeHThreadParam local_cbMHTP;
+
+            /////////////////////////////   Create regions
+
+
+
+            WriteLine("============== Split =================");
+
+            bitonicSort.Split(MaxPointsPerRegion);
+
+            //time = TimeStatistics.ClockLap("Split regions");
+
+
+
+
+
+            /////////////////////////////   Triangulate the regions
+
+
+
+            #region Triangulation of the regions
+            WriteLine("============== Triangulation =================");
+
+
+            #region Exec
+
+            #region Bind and update the threadParam constant buffer
+
+            FXConstantBuffer<cbThreadParam> cbTP;
+            cbThreadParam local_cbTP;
+
+            // init the cb
+            local_cbTP.maxFacesPerThread = (uint)maxFacesPerThread;
+            local_cbTP.maxHalfEdgePerThread = (uint)maxHalfEdgePerThread;
+            local_cbTP.maxBoundaryNodesPerThread = (uint)maxBoundaryNodesPerThread;
+            local_cbTP.RegionsNum = (uint)NumRegions;
+
+            /// Bind the constant buffer with local buffer
+            cbTP = CSSubRegions.m_effect.GetConstantBufferByName<cbThreadParam>("threadParam");
+
+            // update the value of cb 
+            cbTP.UpdateValue(local_cbTP);
+
+            #endregion
+
+            CSSubRegions.Execute(kenrelNum, 1);
+
+            #endregion
+
+
+            //time = TimeStatistics.ClockLap("Triangulate"); 
+            #endregion
+
+
+
+
+            /////////////////////////////   Merge Vertical
+
+
+
+
+            #region Vertical Merging
+
+            local_cbMVTP = new csMergeVThreadParam();
+            local_cbMVTP.ThreadNum = (uint)mergeVthreadNum;
+            local_cbMVTP.ThreadNumPerRow = (uint)(mergeVXthreadNum);
+            local_cbMVTP.HorizontalThreadNum = (uint)(mergeVYthreadNum);
+            local_cbMVTP.stackMaxSize = stackMaxSize;
+            local_cbMVTP.depth = (uint)0;
+
+            /// Bind the constant buffer with local buffer
+            cbMVTP = CSVMerging.m_effect.GetConstantBufferByName<csMergeVThreadParam>("threadParam");
+
+            // update the value of cb 
+            cbMVTP.UpdateValue(local_cbMVTP);
+
+
+            WriteLine("============== Vertical Merging =================");
+
+            int maxDepth = (int)Math.Ceiling(Math.Log(mergeVXthreadNum + 1, 2));
+
+            WriteLine("maxDepth:" + maxDepth.ToString());
+
+            for (int i = 0; i < maxDepth; i++)
+            {
+                // calc the number the number of the thread that we need for the merging
+                int threadNumX = (int)Math.Ceiling((float)mergeVXthreadNum / Math.Pow(2, i + 1));
+                int kernelNumX = (int)Math.Ceiling((float)threadNumX / MergeVXThread);
+
+                // calc the number the number of the thread that we need for the merging
+                int threadNumY = (int)Math.Ceiling((float)mergeVYthreadNum / Math.Pow(2, i + 1));
+                int kernelNumY = (int)Math.Ceiling((float)threadNumY / MergeVYThread);
+
+
+                //WriteLine("threadNumX:" + threadNumX.ToString() + "    kernelNumX:" + kernelNumX.ToString());
+                //WriteLine("mergeVYkernelNum:" + mergeVYkernelNum.ToString() + "    mergeVXkernelNum:" + mergeVXkernelNum.ToString());
+
+                local_cbMVTP.depth = (uint)i;
+
+                // update the value of cb 
+                cbMVTP.UpdateValue(local_cbMVTP);
+
+                #region Exec
+
+                CSVMerging.Execute(kernelNumX, mergeVYkernelNum);
+
+                #endregion
+
+            }
+
+            #endregion
+
+
+
+            /////////////////////////////   Merge Horizontal
+
+
+
+            #region Horizontal Merge
+
+            WriteLine("============== Horizontal Merging =================");
+
+            maxDepth = (int)Math.Ceiling(Math.Log(mergeHthreadNum + 1, 2));
+
+            WriteLine("maxDepth:" + maxDepth.ToString());
+
+            local_cbMHTP = new csMergeHThreadParam();
+            local_cbMHTP.depth = (uint)0;
+            local_cbMHTP.stackMaxSize = stackMaxSize;
+            local_cbMHTP.ThreadNum = (uint)mergeHthreadNum;
+            local_cbMHTP.ThreadNumPerRow = local_cbMVTP.ThreadNumPerRow;
+
+            /// Bind the constant buffer with local buffer
+            cbMHTP = CSHMerging.m_effect.GetConstantBufferByName<csMergeHThreadParam>("threadParam");
+
+            // update the value of cb 
+            cbMHTP.UpdateValue(local_cbMHTP);
+
+            for (int i = 0; i < maxDepth; i++)
+            {
+                // calc the number the number of the thread that we need for the merging
+                int threadNum = (int)Math.Ceiling((float)mergeHthreadNum / Math.Pow(2, i + 1));
+                int kernelNum = (int)Math.Ceiling((float)threadNum / MergeThread);
+
+                //WriteLine("threadNum:" + threadNum.ToString() + "    kernelNum:" + kernelNum.ToString());
+
+                local_cbMHTP.depth = (uint)i;
+
+                // update the value of cb 
+                cbMHTP.UpdateValue(local_cbMHTP);
+
+                #region Exec H
+
+                CSHMerging.Execute(kernelNum, 1);
+
+                #endregion
+
+                //break;
+            }
+            #endregion
+
+
+
+            /////////////////////////////  Read result  the regions
+
+
+            #region Read the threadInfo buffer
+
+            csThreadInfo[] csThreadListResult = new csThreadInfo[ThreadInfoListBuffer.Description.SizeInBytes / ThreadInfoListBuffer.Description.StructureByteStride];
+            FXResourceVariable.ReadBuffer<csThreadInfo>(Engine.g_device, stagingThreadInfoListBuffer, ThreadInfoListBuffer, ref csThreadListResult);
+
+            #endregion
+
+            time = TimeStatistics.ClockLap("ExecFinish:");
+            WriteLine("ExecFinish:" + time.ToString());
+
+#if true
+
+
+            #region Read the threadInfo buffer
+
+            IVertex<float>[] listPoints = new IVertex<float>[NumVertex];
+            FXResourceVariable.ReadBufferVector<float>(Engine.g_device, stagingInputPointsBuffer, InputPoints, ref listPoints);
+
+            #endregion
+
+
+
+            #region Read the HalfEdge buffer
+
+            csHalfEdge[] csHalfEdgeListResult = new csHalfEdge[HalfEdgeListBuffer.Description.SizeInBytes / HalfEdgeListBuffer.Description.StructureByteStride];
+            FXResourceVariable.ReadBuffer<csHalfEdge>(Engine.g_device, stagingHalfEdgeListBuffer, HalfEdgeListBuffer, ref csHalfEdgeListResult);
+
+            #endregion
+
+
+
+            #region Read the boundary buffer
+
+            csBoundaryNode[] csBoundaryListResult = new csBoundaryNode[BoundaryListBuffer.Description.SizeInBytes / BoundaryListBuffer.Description.StructureByteStride];
+            FXResourceVariable.ReadBuffer<csBoundaryNode>(Engine.g_device, stagingBoundaryListBuffer, BoundaryListBuffer, ref csBoundaryListResult);
+
+            #endregion
+
+
+
+            #region Read the FaceList buffer
+
+            csFace[] csFaceListResult = new csFace[maxFacesPerThread * NumRegions];
+            FXResourceVariable.ReadBuffer<csFace>(Engine.g_device, stagingFaceListBuffer, FaceListBuffer, ref csFaceListResult);
+
+            #endregion
+
+
+            time = TimeStatistics.ClockLap("ExecFinish:");
+            WriteLine("ExecFinish:" + time.ToString());
+
+            #region show Result to 2d Canvas
+
+            if (canvas != null)
+            {
+                Color[] lineColor = { Color.Aqua, Color.Beige, Color.Aqua, Color.Red, Color.Orchid };
+                // pass all regions
+                for (int i = 0; i < NumRegions; i++)
+                {
+                    //if (i < 0 * (local_cbMVTP.ThreadNumPerRow + 1))
+                    //  continue;
+                    //if (i > 10 * (local_cbMVTP.ThreadNumPerRow + 1))
+                    //  continue;
+
+                    // pass all the faces pre region
+                    for (int j = maxFacesPerThread * i; j < maxFacesPerThread * (i + 1); j++)
+                    {
+
+                        csFace tmpFace = csFaceListResult[j];
+
+                        if (tmpFace.halfEdgeID != uint.MaxValue)
+                        {
+                            GeometryPlotElement trianglesPlot = new GeometryPlotElement();
+                            canvas.AddElements(trianglesPlot, false);
+                            float lineWidth = 1.5f;
+
+                            //csHalfEdge he = csHalfEdgeListResult[tmpFace.halfEdgeID + i * maxHalfEdgePerThread];
+                            int he1ID = (int)tmpFace.halfEdgeID;
+                            csHalfEdge he = csHalfEdgeListResult[he1ID];
+                            int vert1ID = (int)he.startVertexID;
+                            IVertex<float> vert1 = listPoints[vert1ID];
+
+                            // move to next edge
+                            int he2ID = (int)he.nextEdgeID;
+                            he = csHalfEdgeListResult[he2ID];
+                            int vert2ID = (int)he.startVertexID;
+                            IVertex<float> vert2 = listPoints[vert2ID];
+
+                            // move to next edgex
+                            int he3ID = (int)he.nextEdgeID;
+                            he = csHalfEdgeListResult[he3ID];
+                            int vert3ID = (int)he.startVertexID;
+                            IVertex<float> vert3 = listPoints[vert3ID];
+
+                            FxMaths.Geometry.Line line = new FxMaths.Geometry.Line(vert1, vert2);
+                            line.UseDefaultColor = false;
+                            line.LineColor = lineColor[2];
+                            line.LineWidth = lineWidth;
+                            trianglesPlot.AddGeometry(line, false);
+
+                            line = new FxMaths.Geometry.Line(vert2, vert3);
+                            line.UseDefaultColor = false;
+                            line.LineColor = lineColor[2];
+                            line.LineWidth = lineWidth;
+                            trianglesPlot.AddGeometry(line, false);
+
+                            line = new FxMaths.Geometry.Line(vert3, vert1);
+                            line.UseDefaultColor = false;
+                            line.LineColor = lineColor[2];
+                            line.LineWidth = lineWidth;
+                            trianglesPlot.AddGeometry(line, false);
+
+                            if (false)// || he1ID == 1755525 || he2ID == 1755525 || he3ID == 1755525)
+                            {
+                                FxMaths.GUI.TextElement text1;
+                                float fontSize = 7;
+                                FxVector2f tmp1, tmp2, tmp3;
+                                tmp1 = vert1 as FxVector2f? ?? new FxVector2f(0, 0);
+                                tmp2 = vert2 as FxVector2f? ?? new FxVector2f(0, 0);
+                                tmp3 = vert3 as FxVector2f? ?? new FxVector2f(0, 0);
+
+                                text1 = new TextElement(vert1ID.ToString() + "->" + tmp1.ToString("0.00"));
+                                text1.Position = vert1 as FxVector2f? ?? new FxVector2f(0, 0);
+                                text1._TextFormat.fontSize = fontSize;
+                                canvas.AddElements(text1, false);
+
+                                text1 = new TextElement(vert2ID.ToString() + "->" + tmp2.ToString("0.00"));
+                                text1.Position = vert2 as FxVector2f? ?? new FxVector2f(0, 0);
+                                text1._TextFormat.fontSize = fontSize;
+                                canvas.AddElements(text1, false);
+
+                                text1 = new TextElement(vert3ID.ToString() + "->" + tmp3.ToString("0.00"));
+                                text1.Position = vert3 as FxVector2f? ?? new FxVector2f(0, 0);
+                                text1._TextFormat.fontSize = fontSize;
+                                canvas.AddElements(text1, false);
+
+                                text1 = new TextElement(he1ID.ToString());
+                                text1.FontColor = new Color4(Color.Brown.R, Color.Brown.G, Color.Brown.B, 1.0f);
+                                text1._TextFormat.fontSize = fontSize;
+                                text1.Position = (2 * tmp1 + 2 * tmp2 + tmp3) / 5.0f;
+                                canvas.AddElements(text1, false);
+
+                                text1 = new TextElement(he2ID.ToString());
+                                text1.FontColor = new Color4(Color.Brown.R, Color.Brown.G, Color.Brown.B, 1.0f);
+                                text1._TextFormat.fontSize = fontSize;
+                                text1.Position = (tmp1 + 2 * tmp2 + 2 * tmp3) / 5.0f;
+                                canvas.AddElements(text1, false);
+
+                                text1 = new TextElement(he3ID.ToString());
+                                text1.FontColor = new Color4(Color.Brown.R, Color.Brown.G, Color.Brown.B, 1.0f);
+                                text1._TextFormat.fontSize = fontSize;
+                                text1.Position = (2 * tmp1 + tmp2 + 2 * tmp3) / 5.0f;
+                                canvas.AddElements(text1, false);
+
+                                text1 = new TextElement(j.ToString());
+                                text1.FontColor = new Color4(Color.Yellow.R, Color.Yellow.G, Color.Yellow.B, 1.0f);
+                                text1._TextFormat.fontSize = fontSize;
+                                text1.Position = (tmp1 + tmp2 + tmp3) / 3.0f;
+                                canvas.AddElements(text1, false);
+                            }
+
+
+                        }
+                    }
+
+                }
+
+                canvas.ReDraw();
+            }
+
+            #endregion
+
+#endif
+
+
+
+        }
+
 
 
         void WriteLine(String str)
@@ -502,9 +862,34 @@ namespace Delaunay
             //Console_Text.Text += str + "\n";
 
             // write to the console
-            Console.WriteLine(str);
+            //Console.WriteLine(str);
 
             Tester.TesterForm.UIConsole.WriteLine(str);
         }
+
+
+
+
+
+        #region Drawing
+
+        internal void DrawPoints(Canvas canvas)
+        {
+            GeometryPlotElement plot = new GeometryPlotElement();
+            foreach (FxVector2f vec in listAllVertex)
+            {
+
+                plot.AddGeometry(new Circle(vec, 5));
+
+            }
+            canvas.AddElements(plot);
+        }
+
+        internal void DrawTriangles(Canvas canvas)
+        {
+
+        } 
+
+        #endregion
     }
 }

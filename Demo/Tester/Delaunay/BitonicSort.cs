@@ -274,14 +274,14 @@ namespace Delaunay
             rvInput.AddResourceFromShader(CSCopyRegion.m_effect, "Input");
             rvInput.AddResourceFromShader(CSCopySubBuffer.m_effect, "Input");
 
-            rvRegionsInput.AddResourceFromShader(CSFindSplitIndexH.m_effect, "RegionInfoInput");
+            //rvRegionsInput.AddResourceFromShader(CSFindSplitIndexH.m_effect, "RegionInfoInput");
             rvRegionsInput.AddResourceFromShader(CSFindSplitIndexV.m_effect, "RegionInfoInput");
             rvRegionsInput.AddResourceFromShader(CSCopyRegion.m_effect, "RegionInfoInput");
             rvRegionsInput.AddResourceFromShader(CSFillRegionInfo.m_effect, "RegionInfoInput");
 
             rvRegionsOutput.AddResourceFromShader(CSFindSplitIndexH.m_effect, "RegionInfoOutput");
             rvRegionsOutput.AddResourceFromShader(CSFindSplitIndexV.m_effect, "RegionInfoOutput");
-            rvRegionsOutput.AddResourceFromShader(CSCopyRegion.m_effect, "RegionInfoOutput");
+            //rvRegionsOutput.AddResourceFromShader(CSCopyRegion.m_effect, "RegionInfoOutput");
             rvRegionsOutput.AddResourceFromShader(CSFillRegionInfo.m_effect, "RegionInfoOutput");
 
             // Bind the CB

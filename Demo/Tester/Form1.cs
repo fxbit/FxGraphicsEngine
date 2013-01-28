@@ -52,7 +52,8 @@ namespace Tester
 
             // init the console
             UIConsole = new ConsoleOutput();
-
+            UIConsole.Show(dockPanel1, DockState.DockBottom);
+            outputToolStripMenuItem.Checked = true;
         }
 
 
@@ -126,17 +127,26 @@ namespace Tester
         
         private void outputToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (UIConsole == null)
+            if (outputToolStripMenuItem.Checked)
             {
-                UIConsole = new ConsoleOutput();
-
-                // add the viewport to the dock
-                UIConsole.Show(dockPanel1, DockState.Document);
+                UIConsole.Hide();
+                outputToolStripMenuItem.Checked = false;
             }
             else
             {
-                // add the viewport to the dock
-                UIConsole.Show(dockPanel1, DockState.Document);
+                if (UIConsole == null)
+                {
+                    UIConsole = new ConsoleOutput();
+
+                    // add the viewport to the dock
+                    UIConsole.Show(dockPanel1, DockState.DockBottom);
+                }
+                else
+                {
+                    // add the viewport to the dock
+                    UIConsole.Show(dockPanel1, DockState.DockBottom);
+                }
+                outputToolStripMenuItem.Checked = true;
             }
         } 
 
@@ -309,12 +319,30 @@ namespace Tester
 
         private void delaunay2DToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Viewport2D viewport = new Viewport2D();
+
+            viewport.Show(dockPanel1, DockState.Document);
+
+            // start the graphic engine
+            StartGraphicEngine();
+
+            // init  a local delaunay
             DelaunayCS delaunay = new DelaunayCS();
             
-            delaunay.CreateRandomPoints(100, new FxVector2f(0, 0), new FxVector2f(100, 100));
+            // add a random points  TODO: add external source (ex. file)
+            delaunay.CreateRandomPoints(10000, new FxVector2f(0, 0), new FxVector2f(10000, 10000));
 
+            // init the shader part of delaunay
             delaunay.InitShaders(Engine.g_device);
 
+            // show the points
+            delaunay.DrawPoints(viewport.canvas);
+            
+            // run the algorithm 
+            delaunay.RunTheAlgorithm(viewport.canvas);
+
+            // show the triangles
+            delaunay.DrawTriangles(viewport.canvas);
         }
         
         #endregion
