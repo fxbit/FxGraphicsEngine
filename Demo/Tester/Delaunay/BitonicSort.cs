@@ -190,13 +190,26 @@ namespace Delaunay
             TimeStatistics.StartClock();
 
             // compile the shaders
-            CSBitonicSort = new ComputeShader(@"Delaunay\Shaders\BitonicSort.hlsl", "BitonicSort", @"Delaunay\Shaders\");
-            CSMatrixTranspose = new ComputeShader(@"Delaunay\Shaders\BitonicSort.hlsl", "MatrixTranspose", @"Delaunay\Shaders\");
-            CSFindSplitIndexH = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "FindSplitIndexH", @"Delaunay\Shaders\");
-            CSFindSplitIndexV = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "FindSplitIndexV", @"Delaunay\Shaders\");
-            CSFillRegionInfo = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "FillRegionInfo", @"Delaunay\Shaders\");
-            CSCopyRegion = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "CopyRegion", @"Delaunay\Shaders\");
-            CSCopySubBuffer = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "CopySubBuffer", @"Delaunay\Shaders\");
+            if (false)
+            {
+                CSBitonicSort = new ComputeShader(@"Delaunay\Shaders\BitonicSort.hlsl", "BitonicSort", @"Delaunay\Shaders\");
+                CSMatrixTranspose = new ComputeShader(@"Delaunay\Shaders\BitonicSort.hlsl", "MatrixTranspose", @"Delaunay\Shaders\");
+                CSFindSplitIndexH = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "FindSplitIndexH", @"Delaunay\Shaders\");
+                CSFindSplitIndexV = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "FindSplitIndexV", @"Delaunay\Shaders\");
+                CSFillRegionInfo = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "FillRegionInfo", @"Delaunay\Shaders\");
+                CSCopyRegion = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "CopyRegion", @"Delaunay\Shaders\");
+                CSCopySubBuffer = new ComputeShader(@"Delaunay\Shaders\RegionSplit.hlsl", "CopySubBuffer", @"Delaunay\Shaders\");
+            }
+            else
+            {
+                CSBitonicSort = new ComputeShader(@"Delaunay\Shaders_Prebuild\BitonicSort.BitonicSort.fxo");
+                CSMatrixTranspose = new ComputeShader(@"Delaunay\Shaders_Prebuild\BitonicSort.MatrixTranspose.fxo");
+                CSFindSplitIndexH = new ComputeShader(@"Delaunay\Shaders_Prebuild\RegionSplit.FindSplitIndexH.fxo");
+                CSFindSplitIndexV = new ComputeShader(@"Delaunay\Shaders_Prebuild\RegionSplit.FindSplitIndexV.fxo");
+                CSFillRegionInfo = new ComputeShader(@"Delaunay\Shaders_Prebuild\RegionSplit.FillRegionInfo.fxo");
+                CSCopyRegion = new ComputeShader(@"Delaunay\Shaders_Prebuild\RegionSplit.CopyRegion.fxo");
+                CSCopySubBuffer = new ComputeShader(@"Delaunay\Shaders_Prebuild\RegionSplit.CopySubBuffer.fxo");
+            }
 
             TimeStatistics.ClockLap("Load Shaders");
 
