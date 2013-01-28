@@ -113,40 +113,40 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="SharpDX">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.D3DCompiler">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.D3DCompiler.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.D3DCompiler.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.Direct2D1">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.Direct2D1.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.Direct2D1.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.Direct3D11">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.Direct3D11.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.Direct3D11.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.Direct3D11.Effects">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.Direct3D11.Effects.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.Direct3D11.Effects.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.DirectInput">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.DirectInput.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.DirectInput.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.DXGI">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.DXGI.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.DXGI.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.MediaFoundation">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.MediaFoundation.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.MediaFoundation.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.RawInput">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.RawInput.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.RawInput.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.XACT3">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.XACT3.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.XACT3.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.XAudio2">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.XAudio2.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.XAudio2.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.XInput">
-      <HintPath>..\..\..\SharpDX\Bin\Signed-net40\SharpDX.XInput.dll</HintPath>
+      <HintPath>..\SharpDX\SharpDX.XInput.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
