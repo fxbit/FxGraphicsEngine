@@ -1,0 +1,45 @@
+Shader:0
+ShaderPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders\BitonicSort.hlsl
+EntryPoint=2
+BitonicSort
+MatrixTranspose
+OutputPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\bin\Debug\Delaunay\Shaders
+IncludePath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders
+BuildLevel=Level_11_0
+Flags=OptimizationLevel1, Debug, OptimizationLevel3
+Shader:1
+ShaderPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders\MergeHorizontal.hlsl
+EntryPoint=1
+main
+OutputPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\bin\Debug\Delaunay\Shaders
+IncludePath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders
+BuildLevel=Level_11_0
+Flags=OptimizationLevel1, Debug, OptimizationLevel3
+Shader:2
+ShaderPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders\MergeVertical.hlsl
+EntryPoint=1
+main
+OutputPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\bin\Debug\Delaunay\Shaders
+IncludePath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders
+BuildLevel=Level_11_0
+Flags=OptimizationLevel1, Debug, OptimizationLevel3
+Shader:3
+ShaderPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders\RegionSplit.hlsl
+EntryPoint=5
+FindSplitIndexH
+FindSplitIndexV
+FillRegionInfo
+CopyRegion
+CopySubBuffer
+OutputPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\bin\Debug\Delaunay\Shaders
+IncludePath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders
+BuildLevel=Level_11_0
+Flags=OptimizationLevel1, Debug, OptimizationLevel3
+Shader:4
+ShaderPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders\Triangulation.hlsl
+EntryPoint=1
+main
+OutputPath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\bin\Debug\Delaunay\Shaders
+IncludePath=Z:\Ray\Delaunay_GPU\git\FxGraphicsEngine\Demo\Tester\Delaunay\Shaders
+BuildLevel=Level_11_0
+Flags=OptimizationLevel1, Debug, OptimizationLevel3
