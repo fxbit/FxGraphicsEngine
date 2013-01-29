@@ -425,9 +425,9 @@ namespace Delaunay
             }
             else
             {
-                CSSubRegions = new ComputeShader(@"Delaunay\Shaders\Triangulation.main.fxo");
-                CSVMerging = new ComputeShader(@"Delaunay\Shaders\MergeVertical.main.fxo");
-                CSHMerging = new ComputeShader(@"Delaunay\Shaders\MergeHorizontal.main.fxo");
+                CSSubRegions = new ComputeShader(@"Delaunay\Shaders_Prebuild\Triangulation.main.fxo");
+                CSVMerging = new ComputeShader(@"Delaunay\Shaders_Prebuild\MergeVertical.main.fxo");
+                CSHMerging = new ComputeShader(@"Delaunay\Shaders_Prebuild\MergeHorizontal.main.fxo");
             }
 
 
