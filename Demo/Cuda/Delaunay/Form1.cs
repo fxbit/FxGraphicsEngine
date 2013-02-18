@@ -30,10 +30,14 @@ namespace Delaunay
         CudaDeviceVariable<cbThreadParam> d_threadParam;
         CudaDeviceVariable<FxVector2f>    d_vertex;
 
+        MergeSort<FxVector2f> mergeSort;
+        CudaKernel triangulation;
+
         /// <summary>
         /// List with all vertex
         /// </summary>
         List<FxVector2f> listAllVertex;
+        FxVector2f[] Vertex;
 
         /// <summary>
         /// The number of vertex that we try to triangulate.
@@ -90,6 +94,7 @@ namespace Delaunay
         {
             InitializeComponent();
             cuda = new FxCuda();
+            listAllVertex = new List<FxVector2f>();
         }
 
 
@@ -119,10 +124,10 @@ namespace Delaunay
 
         private void button1_Click(object sender, EventArgs e)
         {
-            CudaKernel triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
+            triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(10000, new FxVector2f(0, 0), new FxVector2f(10000, 10000));
+            CreateRandomPoints(1024*64, new FxVector2f(0, 0), new FxVector2f(100000, 100000));
 
 
             #region Set the max face/he/ve/boundary
@@ -181,6 +186,37 @@ namespace Delaunay
 
             // Update the region info by sort the vertex
 
+            
+            // try to sort the list 
+            Vertex = listAllVertex.ToArray();
+            mergeSort = new MergeSort<FxVector2f>(cuda, Vertex, d_vertex);
+
+        }
+
+
+        void WriteLine(String str)
+        {
+            // write to the form
+            //Console_Text.Text += str + "\n";
+
+            // write to the console
+            Console.WriteLine(str);
+
+            //Tester.TesterForm.UIConsole.WriteLine(str);
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            TimeStatistics.StartClock();
+            mergeSort.Sort(true);
+            TimeStatistics.StopClock();
+
+            FxVector2f[] results = mergeSort.GetResults();
 
             // Invoke kernel
             triangulation.BlockDimensions = TriangulationThread;
@@ -194,18 +230,6 @@ namespace Delaunay
             d_regionInfo.Dispose();
             d_threadParam.Dispose();
             cuda.Dispose();
-        }
-
-
-        void WriteLine(String str)
-        {
-            // write to the form
-            //Console_Text.Text += str + "\n";
-
-            // write to the console
-            Console.WriteLine(str);
-
-            //Tester.TesterForm.UIConsole.WriteLine(str);
         }
     }
 }
