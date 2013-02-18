@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{C4B9ED83-D7AE-4390-BB0C-F3C73748C114}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Delaunay</RootNamespace>
+    <AssemblyName>Delaunay</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CudaBitmapSource">
+      <HintPath>..\..\..\ManagedCuda\Release\CudaBitmapSource.dll</HintPath>
+    </Reference>
+    <Reference Include="CudaBlas">
+      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaBlas.dll</HintPath>
+    </Reference>
+    <Reference Include="CudaFFT">
+      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaFFT.dll</HintPath>
+    </Reference>
+    <Reference Include="CudaRand">
+      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaRand.dll</HintPath>
+    </Reference>
+    <Reference Include="CudaSparse">
+      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaSparse.dll</HintPath>
+    </Reference>
+    <Reference Include="ManagedCuda">
+      <HintPath>..\..\..\ManagedCuda\Release\ManagedCuda.dll</HintPath>
+    </Reference>
+    <Reference Include="NPP">
+      <HintPath>..\..\..\ManagedCuda\x64\Release\NPP.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CSTriangulationStruct.cs" />
+    <Compile Include="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FxCuda.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <None Include="Cuda\test.cu" />
+    <None Include="Cuda\Triangulation.cu" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <None Include="PTX\test.ptx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="PTX\test_64.ptx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="PTX\Triangulation.ptx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="PTX\Triangulation_64.ptx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\DockPanelSuite\WinFormsUI\WinFormsUI.csproj">
+      <Project>{C75532C4-765B-418E-B09B-46D36B2ABDB1}</Project>
+      <Name>WinFormsUI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Engine\GraphicsEngine.csproj">
+      <Project>{9EF91B9B-2B93-42A0-B499-4B087661D29E}</Project>
+      <Name>GraphicsEngine</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\FxFramework\FXFramework.csproj">
+      <Project>{4E19CD47-7824-4C5B-99A7-E25978CE2DAA}</Project>
+      <Name>FXFramework</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\FxMath\FxMaths\FxMaths.csproj">
+      <Project>{4191B0A0-0064-4673-9FEE-A33B70E3D3F0}</Project>
+      <Name>FxMaths</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Cuda\includes.h" />
+    <Content Include="Cuda\structs.h" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>call "%25VS100COMNTOOLS%25vsvars32.bat" 
+for /f %25%25a IN ('dir /b "$(ProjectDir)Cuda\*.cu"') do nvcc -ptx -arch sm_21 -m 64 -o "$(ProjectDir)PTX\%25%25~na_64.ptx" "$(ProjectDir)Cuda\%25%25~na.cu" 
+for /f %25%25a IN ('dir /b "$(ProjectDir)Cuda\*.cu"') do nvcc -ptx -arch sm_21 -m 32 -o "$(ProjectDir)PTX\%25%25~na.ptx" "$(ProjectDir)Cuda\%25%25~na.cu"</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
