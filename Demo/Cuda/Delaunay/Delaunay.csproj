@@ -37,23 +37,28 @@
     <Reference Include="CudaBitmapSource">
       <HintPath>..\..\..\ManagedCuda\Release\CudaBitmapSource.dll</HintPath>
     </Reference>
-    <Reference Include="CudaBlas">
-      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaBlas.dll</HintPath>
+    <Reference Include="CudaBlas, Version=5.0.4728.41787, Culture=neutral, PublicKeyToken=539d54d12e99fedb, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ManagedCuda\x86\Release\CudaBlas.dll</HintPath>
     </Reference>
-    <Reference Include="CudaFFT">
-      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaFFT.dll</HintPath>
+    <Reference Include="CudaFFT, Version=5.0.4728.41787, Culture=neutral, PublicKeyToken=f066edfa1acb2f23, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ManagedCuda\x86\Release\CudaFFT.dll</HintPath>
     </Reference>
-    <Reference Include="CudaRand">
-      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaRand.dll</HintPath>
+    <Reference Include="CudaRand, Version=5.0.4728.41787, Culture=neutral, PublicKeyToken=fe981579f4e9a066, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ManagedCuda\x86\Release\CudaRand.dll</HintPath>
     </Reference>
-    <Reference Include="CudaSparse">
-      <HintPath>..\..\..\ManagedCuda\x64\Release\CudaSparse.dll</HintPath>
+    <Reference Include="CudaSparse, Version=5.0.4728.41787, Culture=neutral, PublicKeyToken=f65ee2ae6b331585, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ManagedCuda\x86\Release\CudaSparse.dll</HintPath>
     </Reference>
     <Reference Include="ManagedCuda">
       <HintPath>..\..\..\ManagedCuda\Release\ManagedCuda.dll</HintPath>
     </Reference>
-    <Reference Include="NPP">
-      <HintPath>..\..\..\ManagedCuda\x64\Release\NPP.dll</HintPath>
+    <Reference Include="NPP, Version=5.0.4728.41788, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\ManagedCuda\x86\Release\NPP.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
