@@ -10,9 +10,18 @@ namespace Delaunay
 {
     public class MergeSort<T> where T : struct
     {
+
+        #region Constant Variables
+
         const uint MAX_SAMPLE_COUNT = 32768;
         const uint SHARED_SIZE_LIMIT = 1024;
         const uint SAMPLE_STRIDE = 128;
+
+        #endregion
+
+
+
+        #region Private Variables
 
         /// <summary>
         /// Internal pointers to the lists that we 
@@ -35,11 +44,14 @@ namespace Delaunay
         private CudaKernel mergeElementaryIntervalsKernelUp;
         private CudaKernel mergeElementaryIntervalsKernelDown;
 
-        public MergeSort(FxCuda cuda, T[] h_list, CudaDeviceVariable<T> d_list)
+        #endregion
+
+
+
+        #region Constructor
+
+        public MergeSort(FxCuda cuda)
         {
-            // link the external list with the internals 
-            this.h_list = h_list;
-            this.d_list = d_list;
 
             // init the support variables
             uint[] dummy_rank = new uint[MAX_SAMPLE_COUNT];
@@ -48,19 +60,6 @@ namespace Delaunay
             d_LimitsA = dummy_rank;
             d_LimitsB = dummy_rank;
 
-            // store the number of elements
-            numElements = h_list.Length;
-
-            // init the big buffers
-            uint[] h_SrcVal = new uint[numElements];
-            for (uint i = 0; i < numElements; i++)
-                h_SrcVal[i] = i;
-            d_SrcVal = h_SrcVal;
-
-            d_DstKey = new CudaDeviceVariable<T>(numElements);
-            d_DstVal = new CudaDeviceVariable<uint>(numElements);
-            d_BufKey = new CudaDeviceVariable<T>(numElements);
-            d_BufVal = new CudaDeviceVariable<uint>(numElements);
 
             // init the Cuda functions
             mergeSortSharedKernelUp = cuda.LoadPTX("MergeSort", "PTX", "mergeSortSharedKernelUp");
@@ -74,13 +73,19 @@ namespace Delaunay
             mergeElementaryIntervalsKernelUp = cuda.LoadPTX("MergeSort", "PTX", "mergeElementaryIntervalsKernelUp");
             mergeElementaryIntervalsKernelDown = cuda.LoadPTX("MergeSort", "PTX", "mergeElementaryIntervalsKernelDown");
 
-        }
+        } 
+        #endregion
+
+
+
+        #region mergeSortShared
 
         private void mergeSortShared(CudaDeviceVariable<T> d_DstKey,
                                      CudaDeviceVariable<uint> d_DstVal,
                                      CudaDeviceVariable<T> d_SrcKey,
                                      CudaDeviceVariable<uint> d_SrcVal,
-                                     Boolean Ascending)
+                                     Boolean Ascending,
+                                     uint element)
         {
             uint arrayLength = SHARED_SIZE_LIMIT;
             int batchSize = (int)(numElements / SHARED_SIZE_LIMIT);
@@ -96,7 +101,8 @@ namespace Delaunay
                     d_DstVal.DevicePointer,
                     d_SrcKey.DevicePointer,
                     d_SrcVal.DevicePointer,
-                    arrayLength);
+                    arrayLength,
+                    element);
             }
             else
             {
@@ -106,27 +112,34 @@ namespace Delaunay
                     d_DstVal.DevicePointer,
                     d_SrcKey.DevicePointer,
                     d_SrcVal.DevicePointer,
-                    arrayLength);
+                    arrayLength,
+                    element);
             }
-        }
+        } 
+
+        #endregion
 
 
+
+        #region Utilities
 
         private uint iDivUp(uint a, uint b)
         {
             return ((a % b) == 0) ? (a / b) : (a / b + 1);
-        }
+        } 
+
+        #endregion
 
 
 
-
-
+        #region generateSampleRanks
 
         private void generateSampleRanks(CudaDeviceVariable<uint> d_RanksA,
                                          CudaDeviceVariable<uint> d_RanksB,
                                          CudaDeviceVariable<T> d_SrcKey,
                                          uint stride,
-                                         Boolean Ascending)
+                                         Boolean Ascending,
+                                         uint element)
         {
             uint lastSegmentElements = (uint)(numElements % (2 * stride));
             uint threadCount = (uint)((lastSegmentElements > stride) ?
@@ -140,7 +153,7 @@ namespace Delaunay
                 generateSampleRanksKernelUp.Run(d_RanksA.DevicePointer,
                     d_RanksB.DevicePointer,
                     d_SrcKey.DevicePointer,
-                    stride, numElements, threadCount);
+                    stride, numElements, threadCount, element);
             }
             else
             {
@@ -149,15 +162,15 @@ namespace Delaunay
                 generateSampleRanksKernelDown.Run(d_RanksA.DevicePointer,
                     d_RanksB.DevicePointer,
                     d_SrcKey.DevicePointer,
-                    stride, numElements, threadCount);
+                    stride, numElements, threadCount, element);
             }
         }
+        
+        #endregion
 
 
 
-
-
-
+        #region mergeRanksAndIndices
 
         private void mergeRanksAndIndices(CudaDeviceVariable<uint> d_LimitsA,
                                           CudaDeviceVariable<uint> d_LimitsB,
@@ -187,11 +200,14 @@ namespace Delaunay
                 numElements,
                 threadCount
             );
-        }
+        } 
+
+        #endregion
 
 
 
 
+        #region mergeElementaryIntervals
 
         private void mergeElementaryIntervals(CudaDeviceVariable<T> d_DstKey,
                                               CudaDeviceVariable<uint> d_DstVal,
@@ -200,7 +216,8 @@ namespace Delaunay
                                               CudaDeviceVariable<uint> d_LimitsA,
                                               CudaDeviceVariable<uint> d_LimitsB,
                                               uint stride,
-                                              Boolean Ascending)
+                                              Boolean Ascending,
+                                              uint element)
         {
             uint lastSegmentElements = (uint)(numElements % (2 * stride));
             uint mergePairs = (uint)((lastSegmentElements > stride) ?
@@ -219,7 +236,8 @@ namespace Delaunay
                     d_LimitsA.DevicePointer,
                     d_LimitsB.DevicePointer,
                     stride,
-                    numElements
+                    numElements,
+                    element
                 );
             }
             else
@@ -234,21 +252,18 @@ namespace Delaunay
                     d_LimitsA.DevicePointer,
                     d_LimitsB.DevicePointer,
                     stride,
-                    numElements
+                    numElements,
+                    element
                 );
             }
-        }
+        } 
+        #endregion
 
 
 
+        #region Sort
 
-
-
-
-
-
-
-        public void Sort(Boolean Ascending)
+        public void Sort(Boolean Ascending, uint element)
         {
             uint stageCount = 0;
             CudaDeviceVariable<T> ikey, okey;
@@ -273,21 +288,21 @@ namespace Delaunay
                 oval = d_BufVal;
             }
 
-            mergeSortShared(ikey, ival, d_list, d_SrcVal, Ascending);
+            mergeSortShared(ikey, ival, d_list, d_SrcVal, Ascending, element);
 
-           
+
             for (uint stride = SHARED_SIZE_LIMIT; stride < numElements; stride <<= 1)
             {
                 uint lastSegmentElements = (uint)(numElements % (2 * stride));
 
                 //Find sample ranks and prepare for limiters merge
-                generateSampleRanks(d_RanksA, d_RanksB, ikey, stride, Ascending);
+                generateSampleRanks(d_RanksA, d_RanksB, ikey, stride, Ascending, element);
 
                 //Merge ranks and indices
                 mergeRanksAndIndices(d_LimitsA, d_LimitsB, d_RanksA, d_RanksB, stride);
 
                 //Merge elementary intervals
-                mergeElementaryIntervals(okey, oval, ikey, ival, d_LimitsA, d_LimitsB, stride, Ascending);
+                mergeElementaryIntervals(okey, oval, ikey, ival, d_LimitsA, d_LimitsB, stride, Ascending, element);
 
                 if (lastSegmentElements <= stride)
                 {
@@ -296,7 +311,7 @@ namespace Delaunay
                     oval.CopyToDevice(ival.DevicePointer, (numElements - lastSegmentElements), (numElements - lastSegmentElements), lastSegmentElements * 4);
                 }
 
-                
+
                 t = ikey;
                 ikey = okey;
                 okey = t;
@@ -305,14 +320,42 @@ namespace Delaunay
                 ival = oval;
                 oval = v;
             }
+        } 
 
-            // copy the results back
-            h_list = d_DstKey;
-        }
+        #endregion
+
+
+
+        #region Set/Get Data/Results
 
         public T[] GetResults()
         {
+            // copy the results back
+            h_list = d_DstKey;
             return h_list;
         }
+
+        public void SetData(T[] h_list, CudaDeviceVariable<T> d_list)
+        {
+            // link the external list with the internals 
+            this.h_list = h_list;
+            this.d_list = d_list;
+
+            // store the number of elements
+            numElements = h_list.Length;
+
+            // init the big buffers
+            uint[] h_SrcVal = new uint[numElements];
+            for (uint i = 0; i < numElements; i++)
+                h_SrcVal[i] = i;
+            d_SrcVal = h_SrcVal;
+
+            d_DstKey = new CudaDeviceVariable<T>(numElements);
+            d_DstVal = new CudaDeviceVariable<uint>(numElements);
+            d_BufKey = new CudaDeviceVariable<T>(numElements);
+            d_BufVal = new CudaDeviceVariable<uint>(numElements);
+        } 
+
+        #endregion
     }
 }

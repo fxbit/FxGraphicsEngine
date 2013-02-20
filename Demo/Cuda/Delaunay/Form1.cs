@@ -189,7 +189,7 @@ namespace Delaunay
             
             // try to sort the list 
             Vertex = listAllVertex.ToArray();
-            mergeSort = new MergeSort<FxVector2f>(cuda, Vertex, d_vertex);
+            mergeSort = new MergeSort<FxVector2f>(cuda);
 
         }
 
@@ -213,7 +213,8 @@ namespace Delaunay
         private void button2_Click(object sender, EventArgs e)
         {
             TimeStatistics.StartClock();
-            mergeSort.Sort(true);
+            mergeSort.SetData(Vertex, d_vertex);
+            mergeSort.Sort(true,0);
             TimeStatistics.StopClock();
 
             FxVector2f[] results = mergeSort.GetResults();

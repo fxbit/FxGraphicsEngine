@@ -26,20 +26,20 @@ typedef struct{
 
 #define KEY_TYPE float2
 
-template<typename T> __device__ int compare_l(T A, T B);
-template<typename T> __device__ int compare_le(T A, T B);
-template<typename T> __device__ int compare_g(T A, T B);
-template<typename T> __device__ int compare_ge(T A, T B);
+template<typename T> __device__ int compare_l(T A, T B, const uint element);
+template<typename T> __device__ int compare_le(T A, T B, const uint element);
+template<typename T> __device__ int compare_g(T A, T B, const uint element);
+template<typename T> __device__ int compare_ge(T A, T B, const uint element);
 
-template<> __device__ int compare_l(KEY_TYPE A, KEY_TYPE B) { return A.x<B.x;}
-template<> __device__ int compare_g(KEY_TYPE A, KEY_TYPE B) { return A.x>B.x;}
-template<> __device__ int compare_le(KEY_TYPE A, KEY_TYPE B) { return A.x<=B.x;}
-template<> __device__ int compare_ge(KEY_TYPE A, KEY_TYPE B) { return A.x>=B.x;}
+template<> __device__ int compare_l(float2 A, float2 B,const uint element) { return (element == 0)? (A.x<B.x) : (A.y<B.y);}
+template<> __device__ int compare_g(float2 A, float2 B,const uint element) { return (element == 0)? (A.x>B.x) : (A.y>B.y);}
+template<> __device__ int compare_le(float2 A, float2 B,const uint element) { return (element == 0)? (A.x<=B.x) : (A.y<=B.y);}
+template<> __device__ int compare_ge(float2 A, float2 B,const uint element) { return (element == 0)? (A.x>=B.x) : (A.y>=B.y);}
 
-template<> __device__ int compare_l(uint A, uint B) { return A<B;}
-template<> __device__ int compare_g(uint A, uint B) { return A>B;}
-template<> __device__ int compare_le(uint A, uint B) { return A<=B;}
-template<> __device__ int compare_ge(uint A, uint B) { return A>=B;}
+template<> __device__ int compare_l(uint A, uint B,const uint element) { return A<B;}
+template<> __device__ int compare_g(uint A, uint B,const uint element) { return A>B;}
+template<> __device__ int compare_le(uint A, uint B,const uint element) { return A<=B;}
+template<> __device__ int compare_ge(uint A, uint B,const uint element) { return A>=B;}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ static inline __device__ uint nextPowerOfTwo(uint x)
 
 
 template<uint sortDir,typename T> static inline __device__ 
-uint binarySearchExclusive(T val, T *data, uint L, uint stride)
+uint binarySearchExclusive(T val, T *data, uint L, uint stride, uint element)
 {
     if (L == 0)
     {
@@ -85,7 +85,7 @@ uint binarySearchExclusive(T val, T *data, uint L, uint stride)
     {
         uint newPos = umin(pos + stride, L);
     
-        if ((sortDir && compare_l<T>(data[newPos - 1],val)) || (!sortDir && compare_g<T>(data[newPos - 1],val)))
+        if ((sortDir && compare_l<T>(data[newPos - 1],val,element)) || (!sortDir && compare_g<T>(data[newPos - 1],val,element)))
         {
             pos = newPos;
         }
@@ -95,7 +95,7 @@ uint binarySearchExclusive(T val, T *data, uint L, uint stride)
 }
     
 template<uint sortDir,typename T> static inline __device__ 
-uint binarySearchInclusive(T val, T *data, uint L, uint stride)
+uint binarySearchInclusive(T val, T *data, uint L, uint stride, uint element)
 {
     if (L == 0)
     {
@@ -108,7 +108,7 @@ uint binarySearchInclusive(T val, T *data, uint L, uint stride)
     {
         uint newPos = umin(pos + stride, L);
             
-        if ((sortDir && compare_le<T>(data[newPos - 1],val)) || (!sortDir && compare_ge<T>(data[newPos - 1],val)))
+        if ((sortDir && compare_le<T>(data[newPos - 1],val, element)) || (!sortDir && compare_ge<T>(data[newPos - 1],val, element)))
         {
             pos = newPos;
         }
@@ -125,7 +125,8 @@ __global__ void generateSampleRanksKernelUp(uint *d_RanksA,
                                             KEY_TYPE *d_SrcKey,
                                             uint stride,
                                             uint N,
-                                            uint threadCount)
+                                            uint threadCount,
+                                            uint element)
 {
     uint pos = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -150,7 +151,8 @@ __global__ void generateSampleRanksKernelUp(uint *d_RanksA,
         d_RanksA[i] = i * SAMPLE_STRIDE;
         d_RanksB[i] = binarySearchExclusive<1, KEY_TYPE>(
                           d_SrcKey[i * SAMPLE_STRIDE], d_SrcKey + stride,
-                          segmentElementsB, nextPowerOfTwo(segmentElementsB)
+                          segmentElementsB, nextPowerOfTwo(segmentElementsB),
+                          element
                       );
     }
 
@@ -159,7 +161,8 @@ __global__ void generateSampleRanksKernelUp(uint *d_RanksA,
         d_RanksB[(stride / SAMPLE_STRIDE) + i] = i * SAMPLE_STRIDE;
         d_RanksA[(stride / SAMPLE_STRIDE) + i] = binarySearchInclusive<1, KEY_TYPE>(
                     d_SrcKey[stride + i * SAMPLE_STRIDE], d_SrcKey + 0,
-                    segmentElementsA, nextPowerOfTwo(segmentElementsA)
+                    segmentElementsA, nextPowerOfTwo(segmentElementsA),
+                    element
                 );
     }
 }
@@ -171,7 +174,8 @@ __global__ void generateSampleRanksKernelDown(uint *d_RanksA,
         KEY_TYPE *d_SrcKey,
         uint stride,
         uint N,
-        uint threadCount)
+        uint threadCount,
+        uint element)
 {
     uint pos = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -196,7 +200,8 @@ __global__ void generateSampleRanksKernelDown(uint *d_RanksA,
         d_RanksA[i] = i * SAMPLE_STRIDE;
         d_RanksB[i] = binarySearchExclusive<0, KEY_TYPE>(
                           d_SrcKey[i * SAMPLE_STRIDE], d_SrcKey + stride,
-                          segmentElementsB, nextPowerOfTwo(segmentElementsB)
+                          segmentElementsB, nextPowerOfTwo(segmentElementsB),
+                          element
                       );
     }
 
@@ -205,56 +210,58 @@ __global__ void generateSampleRanksKernelDown(uint *d_RanksA,
         d_RanksB[(stride / SAMPLE_STRIDE) + i] = i * SAMPLE_STRIDE;
         d_RanksA[(stride / SAMPLE_STRIDE) + i] = binarySearchInclusive<0, KEY_TYPE>(
                     d_SrcKey[stride + i * SAMPLE_STRIDE], d_SrcKey + 0,
-                    segmentElementsA, nextPowerOfTwo(segmentElementsA)
+                    segmentElementsA, nextPowerOfTwo(segmentElementsA),
+                    element
                 );
     }
 }
 
 extern "C"  
 __global__ void mergeSortSharedKernelUp(KEY_TYPE *d_DstKey,
-										uint *d_DstVal,
-										KEY_TYPE *d_SrcKey,
-										uint *d_SrcVal,
-										uint arrayLength)
+                                        uint *d_DstVal,
+                                        KEY_TYPE *d_SrcKey,
+                                        uint *d_SrcVal,
+                                        uint arrayLength,
+                                        uint element)
 {
-	__shared__ KEY_TYPE s_key[SHARED_SIZE_LIMIT];
-	__shared__ uint s_val[SHARED_SIZE_LIMIT];
+    __shared__ KEY_TYPE s_key[SHARED_SIZE_LIMIT];
+    __shared__ uint s_val[SHARED_SIZE_LIMIT];
 
-	d_SrcKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	d_SrcVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	d_DstKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	d_DstVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	s_key[threadIdx.x +                       0] = d_SrcKey[                      0];
-	s_val[threadIdx.x +                       0] = d_SrcVal[                      0];
-	s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcKey[(SHARED_SIZE_LIMIT / 2)];
-	s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcVal[(SHARED_SIZE_LIMIT / 2)];
+    d_SrcKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    d_SrcVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    d_DstKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    d_DstVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    s_key[threadIdx.x +                       0] = d_SrcKey[                      0];
+    s_val[threadIdx.x +                       0] = d_SrcVal[                      0];
+    s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcKey[(SHARED_SIZE_LIMIT / 2)];
+    s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcVal[(SHARED_SIZE_LIMIT / 2)];
 
-	for (uint stride = 1; stride < arrayLength; stride <<= 1)
-	{
-		uint     lPos = threadIdx.x & (stride - 1);
-		KEY_TYPE *baseKey = s_key + 2 * (threadIdx.x - lPos);
-		uint *baseVal = s_val + 2 * (threadIdx.x - lPos);
+    for (uint stride = 1; stride < arrayLength; stride <<= 1)
+    {
+        uint     lPos = threadIdx.x & (stride - 1);
+        KEY_TYPE *baseKey = s_key + 2 * (threadIdx.x - lPos);
+        uint *baseVal = s_val + 2 * (threadIdx.x - lPos);
 
-		__syncthreads();
-		KEY_TYPE keyA = baseKey[lPos +      0];
-		uint valA = baseVal[lPos +      0];
-		KEY_TYPE keyB = baseKey[lPos + stride];
-		uint valB = baseVal[lPos + stride];
-		uint posA = binarySearchExclusive<1, KEY_TYPE>(keyA, baseKey + stride, stride, stride) + lPos;
-		uint posB = binarySearchInclusive<1, KEY_TYPE>(keyB, baseKey +      0, stride, stride) + lPos;
+        __syncthreads();
+        KEY_TYPE keyA = baseKey[lPos +      0];
+        uint valA = baseVal[lPos +      0];
+        KEY_TYPE keyB = baseKey[lPos + stride];
+        uint valB = baseVal[lPos + stride];
+        uint posA = binarySearchExclusive<1, KEY_TYPE>(keyA, baseKey + stride, stride, stride, element) + lPos;
+        uint posB = binarySearchInclusive<1, KEY_TYPE>(keyB, baseKey +      0, stride, stride, element) + lPos;
 
-		__syncthreads();
-		baseKey[posA] = keyA;
-		baseVal[posA] = valA;
-		baseKey[posB] = keyB;
-		baseVal[posB] = valB;
-	}
-		 
-	__syncthreads();
-	d_DstKey[                      0] = s_key[threadIdx.x +                       0];
-	d_DstVal[                      0] = s_val[threadIdx.x +                       0];
-	d_DstKey[(SHARED_SIZE_LIMIT / 2)] = s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
-	d_DstVal[(SHARED_SIZE_LIMIT / 2)] = s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
+        __syncthreads();
+        baseKey[posA] = keyA;
+        baseVal[posA] = valA;
+        baseKey[posB] = keyB;
+        baseVal[posB] = valB;
+    }
+         
+    __syncthreads();
+    d_DstKey[                      0] = s_key[threadIdx.x +                       0];
+    d_DstVal[                      0] = s_val[threadIdx.x +                       0];
+    d_DstKey[(SHARED_SIZE_LIMIT / 2)] = s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
+    d_DstVal[(SHARED_SIZE_LIMIT / 2)] = s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
 }
 
 extern "C"  
@@ -262,46 +269,47 @@ __global__ void mergeSortSharedKernelDown(KEY_TYPE *d_DstKey,
                                           uint *d_DstVal,
                                           KEY_TYPE *d_SrcKey,
                                           uint *d_SrcVal,
-                                          uint arrayLength)
+                                          uint arrayLength,
+                                          uint element)
 {
-	__shared__ KEY_TYPE s_key[SHARED_SIZE_LIMIT];
-	__shared__ uint s_val[SHARED_SIZE_LIMIT];
+    __shared__ KEY_TYPE s_key[SHARED_SIZE_LIMIT];
+    __shared__ uint s_val[SHARED_SIZE_LIMIT];
 
-	d_SrcKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	d_SrcVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	d_DstKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	d_DstVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
-	s_key[threadIdx.x +                       0] = d_SrcKey[                      0];
-	s_val[threadIdx.x +                       0] = d_SrcVal[                      0];
-	s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcKey[(SHARED_SIZE_LIMIT / 2)];
-	s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcVal[(SHARED_SIZE_LIMIT / 2)];
+    d_SrcKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    d_SrcVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    d_DstKey += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    d_DstVal += blockIdx.x * SHARED_SIZE_LIMIT + threadIdx.x;
+    s_key[threadIdx.x +                       0] = d_SrcKey[                      0];
+    s_val[threadIdx.x +                       0] = d_SrcVal[                      0];
+    s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcKey[(SHARED_SIZE_LIMIT / 2)];
+    s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)] = d_SrcVal[(SHARED_SIZE_LIMIT / 2)];
 
-	for (uint stride = 1; stride < arrayLength; stride <<= 1)
-	{
-		uint     lPos = threadIdx.x & (stride - 1);
-		KEY_TYPE *baseKey = s_key + 2 * (threadIdx.x - lPos);
-		uint *baseVal = s_val + 2 * (threadIdx.x - lPos);
+    for (uint stride = 1; stride < arrayLength; stride <<= 1)
+    {
+        uint     lPos = threadIdx.x & (stride - 1);
+        KEY_TYPE *baseKey = s_key + 2 * (threadIdx.x - lPos);
+        uint *baseVal = s_val + 2 * (threadIdx.x - lPos);
 
-		__syncthreads();
-		KEY_TYPE keyA = baseKey[lPos +      0];
-		uint valA = baseVal[lPos +      0];
-		KEY_TYPE keyB = baseKey[lPos + stride];
-		uint valB = baseVal[lPos + stride];
-		uint posA = binarySearchExclusive<0, KEY_TYPE>(keyA, baseKey + stride, stride, stride) + lPos;
-		uint posB = binarySearchInclusive<0, KEY_TYPE>(keyB, baseKey +      0, stride, stride) + lPos;
+        __syncthreads();
+        KEY_TYPE keyA = baseKey[lPos +      0];
+        uint valA = baseVal[lPos +      0];
+        KEY_TYPE keyB = baseKey[lPos + stride];
+        uint valB = baseVal[lPos + stride];
+        uint posA = binarySearchExclusive<0, KEY_TYPE>(keyA, baseKey + stride, stride, stride, element) + lPos;
+        uint posB = binarySearchInclusive<0, KEY_TYPE>(keyB, baseKey +      0, stride, stride, element) + lPos;
 
-		__syncthreads();
-		baseKey[posA] = keyA;
-		baseVal[posA] = valA;
-		baseKey[posB] = keyB;
-		baseVal[posB] = valB;
-	}
+        __syncthreads();
+        baseKey[posA] = keyA;
+        baseVal[posA] = valA;
+        baseKey[posB] = keyB;
+        baseVal[posB] = valB;
+    }
     
-	__syncthreads();
-	d_DstKey[                      0] = s_key[threadIdx.x +                       0];
-	d_DstVal[                      0] = s_val[threadIdx.x +                       0];
-	d_DstKey[(SHARED_SIZE_LIMIT / 2)] = s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
-	d_DstVal[(SHARED_SIZE_LIMIT / 2)] = s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
+    __syncthreads();
+    d_DstKey[                      0] = s_key[threadIdx.x +                       0];
+    d_DstVal[                      0] = s_val[threadIdx.x +                       0];
+    d_DstKey[(SHARED_SIZE_LIMIT / 2)] = s_key[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
+    d_DstVal[(SHARED_SIZE_LIMIT / 2)] = s_val[threadIdx.x + (SHARED_SIZE_LIMIT / 2)];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -334,13 +342,13 @@ __global__ void mergeRanksAndIndicesKernel( uint *d_Limits,
 
     if (i < segmentSamplesA)
     {
-        uint dstPos = binarySearchExclusive<1U, uint>(d_Ranks[i], d_Ranks + segmentSamplesA, segmentSamplesB, nextPowerOfTwo(segmentSamplesB)) + i;
+        uint dstPos = binarySearchExclusive<1U, uint>(d_Ranks[i], d_Ranks + segmentSamplesA, segmentSamplesB, nextPowerOfTwo(segmentSamplesB), 0) + i;
         d_Limits[dstPos] = d_Ranks[i];
     }
 
     if (i < segmentSamplesB)
     {
-        uint dstPos = binarySearchInclusive<1U, uint>(d_Ranks[segmentSamplesA + i], d_Ranks, segmentSamplesA, nextPowerOfTwo(segmentSamplesA)) + i;
+        uint dstPos = binarySearchInclusive<1U, uint>(d_Ranks[segmentSamplesA + i], d_Ranks, segmentSamplesA, nextPowerOfTwo(segmentSamplesA), 0) + i;
         d_Limits[dstPos] = d_Ranks[segmentSamplesA + i];
     }
 }
@@ -348,34 +356,33 @@ __global__ void mergeRanksAndIndicesKernel( uint *d_Limits,
 ////////////////////////////////////////////////////////////////////////////////
 // Merge step 3: merge elementary intervals
 ////////////////////////////////////////////////////////////////////////////////
-template<uint sortDir> inline __device__ void merge(
-    KEY_TYPE *dstKey,
-    uint *dstVal,
-    KEY_TYPE *srcAKey,
-    uint *srcAVal,
-    KEY_TYPE *srcBKey,
-    uint *srcBVal,
-    uint lenA,
-    uint nPowTwoLenA,
-    uint lenB,
-    uint nPowTwoLenB
-)
+template<uint sortDir> inline __device__ void merge(KEY_TYPE *dstKey,
+                                                    uint *dstVal,
+                                                    KEY_TYPE *srcAKey,
+                                                    uint *srcAVal,
+                                                    KEY_TYPE *srcBKey,
+                                                    uint *srcBVal,
+                                                    uint lenA,
+                                                    uint nPowTwoLenA,
+                                                    uint lenB,
+                                                    uint nPowTwoLenB,
+                                                    uint element)
 {
-	KEY_TYPE keyA, keyB;
+    KEY_TYPE keyA, keyB;
     uint valA, valB, dstPosA, dstPosB;
 
     if (threadIdx.x < lenA)
     {
         keyA = srcAKey[threadIdx.x];
         valA = srcAVal[threadIdx.x];
-        dstPosA = binarySearchExclusive<sortDir>(keyA, srcBKey, lenB, nPowTwoLenB) + threadIdx.x;
+        dstPosA = binarySearchExclusive<sortDir, KEY_TYPE>(keyA, srcBKey, lenB, nPowTwoLenB, element) + threadIdx.x;
     }
 
     if (threadIdx.x < lenB)
     {
         keyB = srcBKey[threadIdx.x];
         valB = srcBVal[threadIdx.x];
-        dstPosB = binarySearchInclusive<sortDir>(keyB, srcAKey, lenA, nPowTwoLenA) + threadIdx.x;
+        dstPosB = binarySearchInclusive<sortDir, KEY_TYPE>(keyB, srcAKey, lenA, nPowTwoLenA, element) + threadIdx.x;
     }
 
     __syncthreads();
@@ -394,16 +401,15 @@ template<uint sortDir> inline __device__ void merge(
 }
 
 extern "C"
-__global__ void mergeElementaryIntervalsKernelUp(
-    KEY_TYPE *d_DstKey,
-    uint *d_DstVal,
-    KEY_TYPE *d_SrcKey,
-    uint *d_SrcVal,
-    uint *d_LimitsA,
-    uint *d_LimitsB,
-    uint stride,
-    uint N
-)
+__global__ void mergeElementaryIntervalsKernelUp(KEY_TYPE *d_DstKey,
+                                                uint *d_DstVal,
+                                                KEY_TYPE *d_SrcKey,
+                                                uint *d_SrcVal,
+                                                uint *d_LimitsA,
+                                                uint *d_LimitsB,
+                                                uint stride,
+                                                uint N,
+                                                uint element)
 {
     __shared__ KEY_TYPE s_key[2 * SAMPLE_STRIDE];
     __shared__ uint s_val[2 * SAMPLE_STRIDE];
@@ -430,9 +436,7 @@ __global__ void mergeElementaryIntervalsKernelUp(
         startSrcB    = d_LimitsB[blockIdx.x];
         uint endSrcA = (intervalI + 1 < segmentSamples) ? d_LimitsA[blockIdx.x + 1] : segmentElementsA;
         uint endSrcB = (intervalI + 1 < segmentSamples) ? d_LimitsB[blockIdx.x + 1] : segmentElementsB;
-        if(endSrcA<startSrcA)
-			lenSrcA=0;
-		lenSrcA      = endSrcA - startSrcA;
+        lenSrcA      = endSrcA - startSrcA;
         lenSrcB      = endSrcB - startSrcB;
         startDstA    = startSrcA + startSrcB;
         startDstB    = startDstA + lenSrcA;
@@ -464,7 +468,8 @@ __global__ void mergeElementaryIntervalsKernelUp(
         s_key + SAMPLE_STRIDE,
         s_val + SAMPLE_STRIDE,
         lenSrcA, SAMPLE_STRIDE,
-        lenSrcB, SAMPLE_STRIDE
+        lenSrcB, SAMPLE_STRIDE,
+        element
     );
 
     //Store merged data
@@ -485,16 +490,15 @@ __global__ void mergeElementaryIntervalsKernelUp(
 
 
 extern "C"
-__global__ void mergeElementaryIntervalsKernelDown(
-    KEY_TYPE *d_DstKey,
-    uint *d_DstVal,
-    KEY_TYPE *d_SrcKey,
-    uint *d_SrcVal,
-    uint *d_LimitsA,
-    uint *d_LimitsB,
-    uint stride,
-    uint N
-)
+__global__ void mergeElementaryIntervalsKernelDown( KEY_TYPE *d_DstKey,
+                                                    uint *d_DstVal,
+                                                    KEY_TYPE *d_SrcKey,
+                                                    uint *d_SrcVal,
+                                                    uint *d_LimitsA,
+                                                    uint *d_LimitsB,
+                                                    uint stride,
+                                                    uint N,
+                                                    uint element)
 {
     __shared__ KEY_TYPE s_key[2 * SAMPLE_STRIDE];
     __shared__ uint s_val[2 * SAMPLE_STRIDE];
@@ -552,7 +556,8 @@ __global__ void mergeElementaryIntervalsKernelDown(
         s_key + SAMPLE_STRIDE,
         s_val + SAMPLE_STRIDE,
         lenSrcA, SAMPLE_STRIDE,
-        lenSrcB, SAMPLE_STRIDE
+        lenSrcB, SAMPLE_STRIDE,
+        element
     );
 
     //Store merged data
