@@ -5,6 +5,7 @@ using System.Text;
 
 using ManagedCuda;
 using FxMaths.Vector;
+using ManagedCuda.BasicTypes;
 
 namespace Delaunay
 {
@@ -27,10 +28,10 @@ namespace Delaunay
         /// Internal pointers to the lists that we 
         /// want to sort
         /// </summary>
-        private T[] h_list;
         private CudaDeviceVariable<T> d_list;
 
         private int numElements = 0;
+        private int MaxNumElements = 0;
         private CudaDeviceVariable<uint> d_RanksA, d_RanksB;
         private CudaDeviceVariable<uint> d_LimitsA, d_LimitsB;
         private CudaDeviceVariable<T> d_BufKey, d_DstKey;
@@ -43,6 +44,12 @@ namespace Delaunay
         private CudaKernel mergeRanksAndIndicesKernel;
         private CudaKernel mergeElementaryIntervalsKernelUp;
         private CudaKernel mergeElementaryIntervalsKernelDown;
+
+
+        /// <summary>
+        /// The max representation of class T
+        /// </summary>
+        private T MaxMinT;
 
         #endregion
 
@@ -61,18 +68,20 @@ namespace Delaunay
             d_LimitsB = dummy_rank;
 
 
+            FxCudaPTX ptxFile = new FxCudaPTX(cuda, "MergeSort", "PTX");
             // init the Cuda functions
-            mergeSortSharedKernelUp = cuda.LoadPTX("MergeSort", "PTX", "mergeSortSharedKernelUp");
-            mergeSortSharedKernelDown = cuda.LoadPTX("MergeSort", "PTX", "mergeSortSharedKernelDown");
+            mergeSortSharedKernelUp = ptxFile.LoadKernel("mergeSortSharedKernelUp");
+            mergeSortSharedKernelDown = ptxFile.LoadKernel("mergeSortSharedKernelDown");
 
-            generateSampleRanksKernelUp = cuda.LoadPTX("MergeSort", "PTX", "generateSampleRanksKernelUp");
-            generateSampleRanksKernelDown = cuda.LoadPTX("MergeSort", "PTX", "generateSampleRanksKernelDown");
+            generateSampleRanksKernelUp = ptxFile.LoadKernel("generateSampleRanksKernelUp");
+            generateSampleRanksKernelDown = ptxFile.LoadKernel("generateSampleRanksKernelDown");
 
-            mergeRanksAndIndicesKernel = cuda.LoadPTX("MergeSort", "PTX", "mergeRanksAndIndicesKernel");
+            mergeRanksAndIndicesKernel = ptxFile.LoadKernel("mergeRanksAndIndicesKernel");
 
-            mergeElementaryIntervalsKernelUp = cuda.LoadPTX("MergeSort", "PTX", "mergeElementaryIntervalsKernelUp");
-            mergeElementaryIntervalsKernelDown = cuda.LoadPTX("MergeSort", "PTX", "mergeElementaryIntervalsKernelDown");
+            mergeElementaryIntervalsKernelUp = ptxFile.LoadKernel("mergeElementaryIntervalsKernelUp");
+            mergeElementaryIntervalsKernelDown = ptxFile.LoadKernel("mergeElementaryIntervalsKernelDown");
 
+            ptxFile.Dispose();
         } 
         #endregion
 
@@ -320,7 +329,7 @@ namespace Delaunay
                 ival = oval;
                 oval = v;
             }
-        } 
+        }
 
         #endregion
 
@@ -331,31 +340,125 @@ namespace Delaunay
         public T[] GetResults()
         {
             // copy the results back
-            h_list = d_DstKey;
-            return h_list;
+            return d_DstKey;
         }
 
-        public void SetData(T[] h_list, CudaDeviceVariable<T> d_list)
+        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offset, int dataLen, uint primSize)
         {
-            // link the external list with the internals 
-            this.h_list = h_list;
-            this.d_list = d_list;
+            // check if the memory that we want to copy exist to the internal data
+            if (numElements >= dataLen)
+            {
+                out_data.CopyToDevice(d_DstKey.DevicePointer, 0, offset, dataLen * primSize);
+            }
+        }
 
-            // store the number of elements
-            numElements = h_list.Length;
+        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offsetSrc, SizeT offsetDst, int dataLen, uint primSize)
+        {
+            // check if the memory that we want to copy exist to the internal data
+            if (numElements >= dataLen + offsetSrc)
+            {
+                out_data.CopyToDevice(d_DstKey.DevicePointer, offsetSrc, offsetDst, dataLen * primSize);
+            }
+        }
+
+        public void SetData(CudaDeviceVariable<T> in_data, SizeT offset, int dataLen, uint primSize)
+        {
+
+            // calculate the next correct size
+            this.numElements = (int)(Math.Pow(2, Math.Log(dataLen, 2)));
+
+            // check if we can use the internal memory for the sorting
+            // if not reset the internal memory to be able
+            if (this.numElements > this.MaxNumElements)
+                Prepare(dataLen, MaxMinT);
+
+            // fill the data with max value
+            this.d_list.Memset(byte.MaxValue);
+
+            // copy the external data to the internal one
+            this.d_list.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * primSize);
 
             // init the big buffers
             uint[] h_SrcVal = new uint[numElements];
             for (uint i = 0; i < numElements; i++)
                 h_SrcVal[i] = i;
             d_SrcVal = h_SrcVal;
+        } 
 
+        #endregion
+
+
+
+
+        #region Prepare phase
+
+        /// <summary>
+        /// Prepare the internal state with the max 
+        /// size of internal variables
+        /// </summary>
+        /// <param name="dataLen"></param>
+        /// <param name="MaxMinT"></param>
+        public void Prepare(int dataLen, T MaxMinT)
+        {
+            // remoeve any previus memory that we have allocate
+            DisposeMemory();
+
+            // store the max/min representation of type T
+            // this will be help us with the
+            this.MaxMinT = MaxMinT;
+
+            // store the number of elements
+            this.numElements = (int)(Math.Pow(2, Math.Log(dataLen, 2)));
+            this.MaxNumElements = this.numElements;
+
+            // allocate the hw variables
+            d_list = new CudaDeviceVariable<T>(numElements);
             d_DstKey = new CudaDeviceVariable<T>(numElements);
             d_DstVal = new CudaDeviceVariable<uint>(numElements);
             d_BufKey = new CudaDeviceVariable<T>(numElements);
             d_BufVal = new CudaDeviceVariable<uint>(numElements);
-        } 
+        }
 
         #endregion
+
+
+
+        #region Dispose
+
+        /// <summary>
+        /// Clean all the internal memorys that we 
+        /// have allocate from the HW
+        /// </summary>
+        public void DisposeMemory()
+        {
+            if (d_list != null)
+                d_list.Dispose();
+            if (d_DstKey != null)
+                d_DstKey.Dispose();
+            if (d_DstVal != null)
+                d_DstVal.Dispose();
+            if (d_BufKey != null)
+                d_BufKey.Dispose();
+            if (d_BufVal != null)
+                d_BufVal.Dispose();
+
+            d_list = null;
+            d_DstKey = null;
+            d_DstVal = null;
+            d_BufKey = null;
+            d_BufVal = null;
+
+        }
+
+        /// <summary>
+        /// Clean all internal memory and code
+        /// </summary>
+        public void Dispose()
+        {
+            // dispose memory
+            DisposeMemory();
+        } 
+        #endregion
+
     }
 }

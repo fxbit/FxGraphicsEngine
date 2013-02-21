@@ -9,6 +9,7 @@ using System.Windows.Forms;
 
 using ManagedCuda;
 using ManagedCuda.NPP;
+using ManagedCuda.VectorTypes;
 
 using FxMaths;
 using FxMaths.Vector;
@@ -182,13 +183,11 @@ namespace Delaunay
             d_threadInfo    = threadInfo;
             d_regionInfo    = regionInfo;
             d_threadParam   = threadParam;
-            d_vertex        = listAllVertex.ToArray();
 
             // Update the region info by sort the vertex
 
             
             // try to sort the list 
-            Vertex = listAllVertex.ToArray();
             mergeSort = new MergeSort<FxVector2f>(cuda);
 
         }
@@ -210,16 +209,35 @@ namespace Delaunay
 
         }
 
+
+        private void SortPartitions()
+        {
+            /* copy the data to the HW */
+            d_vertex = listAllVertex.ToArray();
+
+            // prepare the sorting
+            mergeSort.Prepare(NumVertex, new FxVector2f(float.MaxValue));
+
+            // set the internal data
+            mergeSort.SetData(d_vertex, 0, NumVertex, 4 * 2);
+
+            // sort the x axis
+            mergeSort.Sort(true, 0);
+
+            // copy the results back
+            mergeSort.GetResults(d_vertex, 0, NumVertex, 4 * 2);
+        }
+
         private void button2_Click(object sender, EventArgs e)
         {
             TimeStatistics.StartClock();
-            mergeSort.SetData(Vertex, d_vertex);
-            mergeSort.Sort(true,0);
+            SortPartitions();
             TimeStatistics.StopClock();
 
-            FxVector2f[] results = mergeSort.GetResults();
-
-            // Invoke kernel
+            FxVector2f[] results = d_vertex;
+            for (int i = 0; i < 20; i++)
+                Console.WriteLine(results[i].ToString() + " - " + listAllVertex[i].ToString());
+                // Invoke kernel
             triangulation.BlockDimensions = TriangulationThread;
             triangulation.GridDimensions = (NumRegions + TriangulationThread - 1) / TriangulationThread;
             triangulation.Run(d_threadInfo.DevicePointer, d_regionInfo.DevicePointer, d_threadParam.DevicePointer, NumRegions);
@@ -230,6 +248,8 @@ namespace Delaunay
             d_threadInfo.Dispose();
             d_regionInfo.Dispose();
             d_threadParam.Dispose();
+
+            mergeSort.Dispose();
             cuda.Dispose();
         }
     }

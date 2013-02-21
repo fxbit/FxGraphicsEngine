@@ -11,7 +11,7 @@ namespace Delaunay
 {
     public class FxCuda
     {
-        static CudaContext ctx;
+        public CudaContext ctx;
 
         public FxCuda()
         {
