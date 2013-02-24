@@ -2,6 +2,9 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delaunay", "Delaunay.csproj", "{C4B9ED83-D7AE-4390-BB0C-F3C73748C114}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DC9212B8-C32A-4509-A5F3-4FE2771BFE00} = {DC9212B8-C32A-4509-A5F3-4FE2771BFE00}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FxMaths", "..\..\..\FxMath\FxMaths\FxMaths.csproj", "{4191B0A0-0064-4673-9FEE-A33B70E3D3F0}"
 EndProject

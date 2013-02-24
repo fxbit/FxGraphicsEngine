@@ -6,6 +6,7 @@ using System.Text;
 using ManagedCuda;
 using FxMaths.Vector;
 using ManagedCuda.BasicTypes;
+using System.Threading;
 
 namespace Delaunay
 {
@@ -28,7 +29,7 @@ namespace Delaunay
         /// Internal pointers to the lists that we 
         /// want to sort
         /// </summary>
-        private CudaDeviceVariable<T> d_list;
+        private CudaDeviceVariable<T> d_SrcKey;
 
         private int numElements = 0;
         private int MaxNumElements = 0;
@@ -45,12 +46,9 @@ namespace Delaunay
         private CudaKernel mergeElementaryIntervalsKernelUp;
         private CudaKernel mergeElementaryIntervalsKernelDown;
 
+        private uint[] h_SrcVal;
 
-        /// <summary>
-        /// The max representation of class T
-        /// </summary>
-        private T MaxMinT;
-
+        private FxCuda cuda;
         #endregion
 
 
@@ -59,6 +57,8 @@ namespace Delaunay
 
         public MergeSort(FxCuda cuda)
         {
+            // link the internal cuda with the external
+            this.cuda = cuda;
 
             // init the support variables
             uint[] dummy_rank = new uint[MAX_SAMPLE_COUNT];
@@ -135,7 +135,12 @@ namespace Delaunay
         private uint iDivUp(uint a, uint b)
         {
             return ((a % b) == 0) ? (a / b) : (a / b + 1);
-        } 
+        }
+
+        private uint getSampleCount(uint dividend)
+        {
+            return iDivUp(dividend, SAMPLE_STRIDE);
+        }
 
         #endregion
 
@@ -202,6 +207,10 @@ namespace Delaunay
                 threadCount
             );
 
+            cuda.ctx.Synchronize();
+
+            mergeRanksAndIndicesKernel.GridDimensions = iDivUp(threadCount, 256);
+            mergeRanksAndIndicesKernel.BlockDimensions = 256;
             mergeRanksAndIndicesKernel.Run(
                 d_LimitsB.DevicePointer,
                 d_RanksB.DevicePointer,
@@ -230,8 +239,10 @@ namespace Delaunay
         {
             uint lastSegmentElements = (uint)(numElements % (2 * stride));
             uint mergePairs = (uint)((lastSegmentElements > stride) ?
-                iDivUp((uint)numElements, SAMPLE_STRIDE) :
+                getSampleCount((uint)numElements) :
                 (numElements - lastSegmentElements) / SAMPLE_STRIDE);
+
+            cuda.ctx.Synchronize();
 
             if (Ascending)
             {
@@ -274,31 +285,17 @@ namespace Delaunay
 
         public void Sort(Boolean Ascending, uint element)
         {
-            uint stageCount = 0;
             CudaDeviceVariable<T> ikey, okey;
             CudaDeviceVariable<uint> ival, oval;
             CudaDeviceVariable<T> t;
             CudaDeviceVariable<uint> v;
 
-            // find  if is odd or even
-            for (uint stride = SHARED_SIZE_LIMIT; stride < numElements; stride <<= 1, stageCount++) ;
-            if (stageCount % 2 == 1)
-            {
-                ikey = d_BufKey;
-                ival = d_BufVal;
-                okey = d_DstKey;
-                oval = d_DstVal;
-            }
-            else
-            {
-                ikey = d_DstKey;
-                ival = d_DstVal;
-                okey = d_BufKey;
-                oval = d_BufVal;
-            }
+            ikey = d_BufKey;
+            ival = d_BufVal;
+            okey = d_DstKey;
+            oval = d_DstVal;
 
-            mergeSortShared(ikey, ival, d_list, d_SrcVal, Ascending, element);
-
+            mergeSortShared(ikey, ival, d_SrcKey, d_SrcVal, Ascending, element);
 
             for (uint stride = SHARED_SIZE_LIMIT; stride < numElements; stride <<= 1)
             {
@@ -316,18 +313,23 @@ namespace Delaunay
                 if (lastSegmentElements <= stride)
                 {
                     //Last merge segment consists of a single array which just needs to be passed through
-                    okey.CopyToDevice(ikey.DevicePointer, (numElements - lastSegmentElements), (numElements - lastSegmentElements), lastSegmentElements * 4 * 2);
-                    oval.CopyToDevice(ival.DevicePointer, (numElements - lastSegmentElements), (numElements - lastSegmentElements), lastSegmentElements * 4);
+                    okey.CopyToDevice(ikey.DevicePointer, (numElements - lastSegmentElements), (numElements - lastSegmentElements), lastSegmentElements * ikey.TypeSize);
+                    oval.CopyToDevice(ival.DevicePointer, (numElements - lastSegmentElements), (numElements - lastSegmentElements), lastSegmentElements * ival.TypeSize);
                 }
 
-
+#if false
+                // swap
+                okey = Interlocked.Exchange<CudaDeviceVariable<T>>(ref ikey, okey);
+                oval = Interlocked.Exchange<CudaDeviceVariable<uint>>(ref ival, oval);
+#else
                 t = ikey;
                 ikey = okey;
                 okey = t;
-
                 v = ival;
                 ival = oval;
                 oval = v;
+#endif
+
             }
         }
 
@@ -365,24 +367,21 @@ namespace Delaunay
         {
 
             // calculate the next correct size
-            this.numElements = (int)(Math.Pow(2, Math.Log(dataLen, 2)));
+            this.numElements = (int)(Math.Pow(2, Math.Ceiling(Math.Log(dataLen, 2))));
 
             // check if we can use the internal memory for the sorting
             // if not reset the internal memory to be able
             if (this.numElements > this.MaxNumElements)
-                Prepare(dataLen, MaxMinT);
+                Prepare(dataLen);
 
             // fill the data with max value
-            this.d_list.Memset(byte.MaxValue);
+            this.d_SrcKey.Memset(uint.MaxValue);
 
             // copy the external data to the internal one
-            this.d_list.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * primSize);
+            this.d_SrcKey.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * primSize);
 
-            // init the big buffers
-            uint[] h_SrcVal = new uint[numElements];
-            for (uint i = 0; i < numElements; i++)
-                h_SrcVal[i] = i;
-            d_SrcVal = h_SrcVal;
+            // reset the d_srcVal
+            d_SrcVal.CopyToDevice(h_SrcVal, 0, 0, numElements * d_SrcVal.TypeSize);
         } 
 
         #endregion
@@ -398,25 +397,26 @@ namespace Delaunay
         /// </summary>
         /// <param name="dataLen"></param>
         /// <param name="MaxMinT"></param>
-        public void Prepare(int dataLen, T MaxMinT)
+        public void Prepare(int dataLen)
         {
             // remoeve any previus memory that we have allocate
             DisposeMemory();
 
-            // store the max/min representation of type T
-            // this will be help us with the
-            this.MaxMinT = MaxMinT;
-
             // store the number of elements
-            this.numElements = (int)(Math.Pow(2, Math.Log(dataLen, 2)));
+            this.numElements = (int)(Math.Pow(2, Math.Ceiling(Math.Log(dataLen, 2))));
             this.MaxNumElements = this.numElements;
 
             // allocate the hw variables
-            d_list = new CudaDeviceVariable<T>(numElements);
+            d_SrcKey = new CudaDeviceVariable<T>(numElements);
             d_DstKey = new CudaDeviceVariable<T>(numElements);
             d_DstVal = new CudaDeviceVariable<uint>(numElements);
             d_BufKey = new CudaDeviceVariable<T>(numElements);
             d_BufVal = new CudaDeviceVariable<uint>(numElements);
+            d_SrcVal = new CudaDeviceVariable<uint>(numElements);
+
+            h_SrcVal = new uint[numElements];
+            for (uint i = 0; i < numElements; i++)
+                h_SrcVal[i] = i;
         }
 
         #endregion
@@ -431,8 +431,8 @@ namespace Delaunay
         /// </summary>
         public void DisposeMemory()
         {
-            if (d_list != null)
-                d_list.Dispose();
+            if (d_SrcKey != null)
+                d_SrcKey.Dispose();
             if (d_DstKey != null)
                 d_DstKey.Dispose();
             if (d_DstVal != null)
@@ -441,13 +441,16 @@ namespace Delaunay
                 d_BufKey.Dispose();
             if (d_BufVal != null)
                 d_BufVal.Dispose();
+            if (d_SrcVal != null)
+                d_SrcVal.Dispose();
 
-            d_list = null;
+            d_SrcKey = null;
             d_DstKey = null;
             d_DstVal = null;
             d_BufKey = null;
             d_BufVal = null;
-
+            h_SrcVal = null;
+            d_SrcVal = null;
         }
 
         /// <summary>

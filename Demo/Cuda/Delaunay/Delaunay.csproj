@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -144,9 +145,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>call "%25VS100COMNTOOLS%25vsvars32.bat" 
-for /f %25%25a IN ('dir /b "$(ProjectDir)Cuda\*.cu"') do nvcc -ptx -arch sm_21 -m 64 -o "$(ProjectDir)PTX\%25%25~na_64.ptx" "$(ProjectDir)Cuda\%25%25~na.cu" 
-for /f %25%25a IN ('dir /b "$(ProjectDir)Cuda\*.cu"') do nvcc -ptx -arch sm_21 -m 32 -o "$(ProjectDir)PTX\%25%25~na.ptx" "$(ProjectDir)Cuda\%25%25~na.cu"</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

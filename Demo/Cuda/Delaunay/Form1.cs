@@ -47,8 +47,6 @@ namespace Delaunay
 
 
         const int stackMaxSize = 64;
-        
-        int MaxPointsPerRegion = 200;
 
         const float MergeVXThread = 4.0f;
         const float MergeVYThread = 8.0f;
@@ -61,11 +59,6 @@ namespace Delaunay
         /// The num of subregions
         /// </summary>
         int NumRegions = 0;
-
-        /// <summary>
-        /// The Max Num Points Per Region
-        /// </summary>
-        int PointsPerRegion = 0;
 
         /// <summary>
         /// The number of horizontal regions
@@ -88,7 +81,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion=100;
+        int maxVertexPerRegion=200;
 
 
         public Form1()
@@ -137,11 +130,11 @@ namespace Delaunay
 
             // select the spliting numbers
             // find the split points 
-            PointsPerRegion     = MaxPointsPerRegion;
-            NumRegions          = (int)Math.Ceiling((float)NumVertex / (float)PointsPerRegion);
+            NumRegions          = (int)Math.Ceiling((float)NumVertex / (float)maxVertexPerRegion);
 
             HorizontalRegions   = (int)Math.Floor(Math.Sqrt(NumRegions));
             VerticalRegions     = (int)Math.Floor((float)NumRegions / (float)HorizontalRegions);
+            NumRegions          = HorizontalRegions * VerticalRegions;
 
             // init the array sizes
 
@@ -216,28 +209,55 @@ namespace Delaunay
             d_vertex = listAllVertex.ToArray();
 
             // prepare the sorting
-            mergeSort.Prepare(NumVertex, new FxVector2f(float.MaxValue));
+            mergeSort.Prepare(NumVertex);
 
             // set the internal data
-            mergeSort.SetData(d_vertex, 0, NumVertex, 4 * 2);
+            mergeSort.SetData(d_vertex, 0, NumVertex, d_vertex.TypeSize);
 
             // sort the x axis
             mergeSort.Sort(true, 0);
 
             // copy the results back
-            mergeSort.GetResults(d_vertex, 0, NumVertex, 4 * 2);
+            mergeSort.GetResults(d_vertex, 0, NumVertex, d_vertex.TypeSize);
+
+            // find the split points 
+            int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
+            int VerticalRegionsOffset = (int)Math.Floor((float)HorizontalRegionsOffset / (float)VerticalRegions);
+
+            Console.WriteLine("Offset:" + HorizontalRegionsOffset.ToString());
+            // sort each subregion based on y-axes
+            for (int i = 0; i < HorizontalRegions; i++)
+            {
+                
+                // set the internal data
+                mergeSort.SetData(d_vertex, i * HorizontalRegionsOffset, HorizontalRegionsOffset, d_vertex.TypeSize);
+
+                // sort the y axis
+                mergeSort.Sort(true, 1);
+
+                // copy the results back
+                mergeSort.GetResults(d_vertex, i * HorizontalRegionsOffset, HorizontalRegionsOffset, d_vertex.TypeSize);
+            }
+        }
+
+        private void FillRegioInfo()
+        {
+            throw new NotImplementedException();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
             TimeStatistics.StartClock();
             SortPartitions();
+            FillRegioInfo();
             TimeStatistics.StopClock();
 
+            // debug info
             FxVector2f[] results = d_vertex;
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 10; i++)
                 Console.WriteLine(results[i].ToString() + " - " + listAllVertex[i].ToString());
-                // Invoke kernel
+           
+            // Invoke kernel
             triangulation.BlockDimensions = TriangulationThread;
             triangulation.GridDimensions = (NumRegions + TriangulationThread - 1) / TriangulationThread;
             triangulation.Run(d_threadInfo.DevicePointer, d_regionInfo.DevicePointer, d_threadParam.DevicePointer, NumRegions);
@@ -252,5 +272,7 @@ namespace Delaunay
             mergeSort.Dispose();
             cuda.Dispose();
         }
+
+
     }
 }
