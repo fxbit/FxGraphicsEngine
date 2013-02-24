@@ -11,7 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Delaunay\MergeSort.cu" />
+    <CudaCompile Include="Delaunay\RegionSplit.cu" />
+    <CudaCompile Include="MergeSort\MergeSort.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Delaunay\includes.h" />
+    <ClInclude Include="Delaunay\structs.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DC9212B8-C32A-4509-A5F3-4FE2771BFE00}</ProjectGuid>

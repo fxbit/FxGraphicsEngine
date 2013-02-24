@@ -33,6 +33,7 @@ namespace Delaunay
 
         MergeSort<FxVector2f> mergeSort;
         CudaKernel triangulation;
+        CudaKernel regionSplitH;
 
         /// <summary>
         /// List with all vertex
@@ -83,11 +84,15 @@ namespace Delaunay
         // the max number of vertex per region
         int maxVertexPerRegion=200;
 
+        // number of multiprocessors that the device have
+        int MultiProcessorCount = 0;
 
         public Form1()
         {
             InitializeComponent();
             cuda = new FxCuda();
+            MultiProcessorCount = cuda.ctx.GetDeviceInfo().MultiProcessorCount;
+
             listAllVertex = new List<FxVector2f>();
         }
 
@@ -119,6 +124,7 @@ namespace Delaunay
         private void button1_Click(object sender, EventArgs e)
         {
             triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
+            regionSplitH = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionH");
 
             // add a random points  TODO: add external source (ex. file)
             CreateRandomPoints(1024*64, new FxVector2f(0, 0), new FxVector2f(100000, 100000));
@@ -202,6 +208,7 @@ namespace Delaunay
 
         }
 
+        RegionInfo[] regionInfoH;
 
         private void SortPartitions()
         {
@@ -224,32 +231,60 @@ namespace Delaunay
             int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
             int VerticalRegionsOffset = (int)Math.Floor((float)HorizontalRegionsOffset / (float)VerticalRegions);
 
-            Console.WriteLine("Offset:" + HorizontalRegionsOffset.ToString());
+
+            // calculate the region informations for Horizontal regions
+            {
+                regionInfoH = new RegionInfo[HorizontalRegions];
+                CudaDeviceVariable<RegionInfo> d_regionInfoH = regionInfoH;
+
+                int blockDim = (int)Math.Ceiling((double)HorizontalRegions / MultiProcessorCount);
+                regionSplitH.BlockDimensions = blockDim;
+                regionSplitH.GridDimensions = (int)Math.Ceiling((double)HorizontalRegions / blockDim);
+                regionSplitH.Run(d_vertex.DevicePointer,
+                                 d_regionInfoH.DevicePointer,
+                                 HorizontalRegions,
+                                 HorizontalRegionsOffset,
+                                 NumVertex);
+
+                regionInfoH = d_regionInfoH;
+                d_regionInfoH.Dispose();
+            }
+
             // sort each subregion based on y-axes
             for (int i = 0; i < HorizontalRegions; i++)
             {
-                
+                // update vertex number
+                if (i < HorizontalRegions - 1)
+                {
+                    regionInfoH[i].VertexNum = regionInfoH[i + 1].VertexOffset - regionInfoH[i].VertexOffset;
+                }
+                else
+                {
+                    regionInfoH[i].VertexNum = (uint)(NumVertex - regionInfoH[i].VertexOffset);
+                }
+
                 // set the internal data
-                mergeSort.SetData(d_vertex, i * HorizontalRegionsOffset, HorizontalRegionsOffset, d_vertex.TypeSize);
+                mergeSort.SetData(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
 
                 // sort the y axis
                 mergeSort.Sort(true, 1);
 
                 // copy the results back
-                mergeSort.GetResults(d_vertex, i * HorizontalRegionsOffset, HorizontalRegionsOffset, d_vertex.TypeSize);
+                mergeSort.GetResults(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
             }
-        }
 
-        private void FillRegioInfo()
-        {
-            throw new NotImplementedException();
+            // create the region info list
+            {
+
+
+
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
             TimeStatistics.StartClock();
             SortPartitions();
-            FillRegioInfo();
             TimeStatistics.StopClock();
 
             // debug info

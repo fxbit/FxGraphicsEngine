@@ -4,10 +4,24 @@
     <Filter Include="MergeSort">
       <UniqueIdentifier>{7ecadd78-5576-45c9-ac2f-f804cedc300b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Delaunay">
+      <UniqueIdentifier>{7d0fe90d-8905-4366-b75b-ccf1647f0d13}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Delaunay\MergeSort.cu">
+    <CudaCompile Include="Delaunay\RegionSplit.cu">
+      <Filter>Delaunay</Filter>
+    </CudaCompile>
+    <CudaCompile Include="MergeSort\MergeSort.cu">
       <Filter>MergeSort</Filter>
     </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Delaunay\includes.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
+    <ClInclude Include="Delaunay\structs.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,8 +4,6 @@
 #ifndef H_STRUCTS
 #define H_STRUCTS
 
-#define uint unsigned int
-
 typedef struct{
 
 // max faces per thread
