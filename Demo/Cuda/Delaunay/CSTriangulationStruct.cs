@@ -214,6 +214,17 @@ namespace Delaunay
 		}
 	};
 
+    // ------------ Region Info Debug  ------------ //
+
+    public struct RegionInfoDebug
+    {
+        // the up left point of the region
+        public FxVector2f start;
+
+        // the down right point of the rgion
+        public FxVector2f end;
+
+    };
 	// ------------ Region Info  ------------ //
 
 	public struct csThreadInfo

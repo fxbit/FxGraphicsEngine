@@ -13,6 +13,8 @@ using ManagedCuda.VectorTypes;
 
 using FxMaths;
 using FxMaths.Vector;
+using FxMaths.Geometry;
+using FxMaths.GUI;
 using FxMaths.GMaps;
 
 namespace Delaunay
@@ -26,20 +28,22 @@ namespace Delaunay
         RegionInfo[] regionInfo;
         cbThreadParam threadParam;
 
-        CudaDeviceVariable<csThreadInfo>  d_threadInfo;
-        CudaDeviceVariable<RegionInfo>    d_regionInfo;
+        CudaDeviceVariable<csThreadInfo> d_threadInfo;
+        CudaDeviceVariable<RegionInfo> d_regionInfo;
         CudaDeviceVariable<cbThreadParam> d_threadParam;
-        CudaDeviceVariable<FxVector2f>    d_vertex;
+        CudaDeviceVariable<FxVector2f> d_vertex;
 
         MergeSort<FxVector2f> mergeSort;
         CudaKernel triangulation;
         CudaKernel regionSplitH;
+        CudaKernel regionSplitV_Phase1;
+        CudaKernel regionSplitV_Phase2;
 
         /// <summary>
         /// List with all vertex
         /// </summary>
         List<FxVector2f> listAllVertex;
-        FxVector2f[] Vertex;
+        FxVector2f[] sorted_Vertex;
 
         /// <summary>
         /// The number of vertex that we try to triangulate.
@@ -82,7 +86,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion=200;
+        int maxVertexPerRegion = 200;
 
         // number of multiprocessors that the device have
         int MultiProcessorCount = 0;
@@ -125,9 +129,11 @@ namespace Delaunay
         {
             triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
             regionSplitH = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionH");
+            regionSplitV_Phase1 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase1");
+            regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024*64, new FxVector2f(0, 0), new FxVector2f(100000, 100000));
+            CreateRandomPoints(1024 * 256, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
 
 
             #region Set the max face/he/ve/boundary
@@ -136,11 +142,11 @@ namespace Delaunay
 
             // select the spliting numbers
             // find the split points 
-            NumRegions          = (int)Math.Ceiling((float)NumVertex / (float)maxVertexPerRegion);
+            NumRegions = (int)Math.Ceiling((float)NumVertex / (float)maxVertexPerRegion);
 
-            HorizontalRegions   = (int)Math.Floor(Math.Sqrt(NumRegions));
-            VerticalRegions     = (int)Math.Floor((float)NumRegions / (float)HorizontalRegions);
-            NumRegions          = HorizontalRegions * VerticalRegions;
+            HorizontalRegions = (int)Math.Floor(Math.Sqrt(NumRegions));
+            VerticalRegions = (int)Math.Floor((float)NumRegions / (float)HorizontalRegions);
+            NumRegions = HorizontalRegions * VerticalRegions;
 
             // init the array sizes
 
@@ -175,17 +181,17 @@ namespace Delaunay
             threadParam.maxHalfEdgePerThread = (uint)maxHalfEdgePerThread;
             threadParam.maxBoundaryNodesPerThread = (uint)maxBoundaryNodesPerThread;
             threadParam.RegionsNum = (uint)NumRegions;
-            
+
             #endregion
 
             // copy the data to the hardware
-            d_threadInfo    = threadInfo;
-            d_regionInfo    = regionInfo;
-            d_threadParam   = threadParam;
+            d_threadInfo = threadInfo;
+            d_regionInfo = regionInfo;
+            d_threadParam = threadParam;
 
             // Update the region info by sort the vertex
 
-            
+
             // try to sort the list 
             mergeSort = new MergeSort<FxVector2f>(cuda);
 
@@ -209,6 +215,7 @@ namespace Delaunay
         }
 
         RegionInfo[] regionInfoH;
+        RegionInfoDebug[] regionDebugH;
 
         private void SortPartitions()
         {
@@ -231,28 +238,43 @@ namespace Delaunay
             int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
             int VerticalRegionsOffset = (int)Math.Floor((float)HorizontalRegionsOffset / (float)VerticalRegions);
 
+            Console.WriteLine("-------------");
+            Console.WriteLine("HorizontalRegions:" + HorizontalRegions.ToString());
+            Console.WriteLine("VerticalRegions:" + VerticalRegions.ToString());
+            Console.WriteLine("HorizontalRegionsOffset:" + HorizontalRegionsOffset.ToString());
+            Console.WriteLine("VerticalRegionsOffset:" + VerticalRegionsOffset.ToString());
 
             // calculate the region informations for Horizontal regions
-            {
-                regionInfoH = new RegionInfo[HorizontalRegions];
-                CudaDeviceVariable<RegionInfo> d_regionInfoH = regionInfoH;
 
-                int blockDim = (int)Math.Ceiling((double)HorizontalRegions / MultiProcessorCount);
-                regionSplitH.BlockDimensions = blockDim;
-                regionSplitH.GridDimensions = (int)Math.Ceiling((double)HorizontalRegions / blockDim);
-                regionSplitH.Run(d_vertex.DevicePointer,
-                                 d_regionInfoH.DevicePointer,
-                                 HorizontalRegions,
-                                 HorizontalRegionsOffset,
-                                 NumVertex);
+            regionInfoH = new RegionInfo[HorizontalRegions];
+            regionDebugH = new RegionInfoDebug[HorizontalRegions];
+            CudaDeviceVariable<RegionInfo> d_regionInfoH = regionInfoH;
 
-                regionInfoH = d_regionInfoH;
-                d_regionInfoH.Dispose();
-            }
+
+            int blockDim = (int)Math.Ceiling((double)HorizontalRegions / MultiProcessorCount);
+            regionSplitH.BlockDimensions = blockDim;
+            regionSplitH.GridDimensions = (int)Math.Ceiling((double)HorizontalRegions / blockDim);
+            regionSplitH.Run(d_vertex.DevicePointer,
+                             d_regionInfoH.DevicePointer,
+                             HorizontalRegions,
+                             HorizontalRegionsOffset,
+                             NumVertex);
+
+            regionInfoH = d_regionInfoH;
+
+
+            sorted_Vertex = d_vertex;
 
             // sort each subregion based on y-axes
             for (int i = 0; i < HorizontalRegions; i++)
             {
+#if true
+                regionDebugH[i].start.X = sorted_Vertex[regionInfoH[i].VertexOffset].X;
+                if (i + 1 < HorizontalRegions)
+                    regionDebugH[i].end.X = sorted_Vertex[regionInfoH[i + 1].VertexOffset].X;
+                else
+                    regionDebugH[i].end.X = sorted_Vertex[sorted_Vertex.Length - 1].X;
+#endif
                 // update vertex number
                 if (i < HorizontalRegions - 1)
                 {
@@ -275,10 +297,30 @@ namespace Delaunay
 
             // create the region info list
             {
+                regionSplitV_Phase1.BlockDimensions = new dim3(8, 8);
+                regionSplitV_Phase1.GridDimensions = new dim3((int)Math.Ceiling((float)VerticalRegions / 8),
+                                                              (int)Math.Ceiling((float)HorizontalRegions / 8));
+                regionSplitV_Phase1.Run(d_vertex.DevicePointer,
+                                        d_regionInfoH.DevicePointer,
+                                        d_regionInfo.DevicePointer,
+                                        HorizontalRegions,
+                                        VerticalRegions,
+                                        VerticalRegionsOffset);
 
+                regionSplitV_Phase2.BlockDimensions = 32;
+                regionSplitV_Phase2.GridDimensions = (int)Math.Ceiling((float)NumRegions / 32);
+                regionSplitV_Phase2.Run(d_regionInfoH.DevicePointer,
+                                        d_regionInfo.DevicePointer,
+                                        VerticalRegions,
+                                        NumRegions);
 
-
+                // copy back the results of d_regions
+                regionInfo = d_regionInfo;
             }
+
+            // clean local temp gpu memorys
+            d_regionInfoH.Dispose();
+            mergeSort.Dispose();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -288,10 +330,21 @@ namespace Delaunay
             TimeStatistics.StopClock();
 
             // debug info
-            FxVector2f[] results = d_vertex;
+            sorted_Vertex = d_vertex;
             for (int i = 0; i < 10; i++)
-                Console.WriteLine(results[i].ToString() + " - " + listAllVertex[i].ToString());
-           
+                Console.WriteLine(sorted_Vertex[i].ToString() + " - " + listAllVertex[i].ToString());
+
+            for (int i = 0; i < sorted_Vertex.Length; i++)
+            {
+                if (sorted_Vertex[i].x.Equals(float.NaN) || sorted_Vertex[i].y.Equals(float.NaN))
+                {
+                    Console.WriteLine("NaN on " + i.ToString());
+                    break;
+                }
+            }
+
+            //DrawResults();
+
             // Invoke kernel
             triangulation.BlockDimensions = TriangulationThread;
             triangulation.GridDimensions = (NumRegions + TriangulationThread - 1) / TriangulationThread;
@@ -306,6 +359,55 @@ namespace Delaunay
 
             mergeSort.Dispose();
             cuda.Dispose();
+        }
+
+        private void DrawResults()
+        {
+            // draw points
+            GeometryPlotElement plotElement = new GeometryPlotElement();
+            foreach (FxVector2f v in sorted_Vertex)
+            {
+                Circle c = new Circle(v, 2);
+                plotElement.AddGeometry(c, false);
+            }
+
+            // draw regions
+            for (int i = 0; i < regionDebugH.Length; i++)
+            {
+                RegionInfoDebug r = regionDebugH[i];
+
+                Line l = new Line(new FxVector2f(r.start.x, 0), new FxVector2f(r.start.x, 2000));
+                l.LineColor = SharpDX.Color.AntiqueWhite;
+                l.UseDefaultColor = false;
+                plotElement.AddGeometry(l, false);
+                l = new Line(new FxVector2f(r.end.x, 2000), new FxVector2f(r.end.x, 0));
+                l.LineColor = SharpDX.Color.AntiqueWhite;
+                l.UseDefaultColor = false;
+                plotElement.AddGeometry(l, false);
+
+            }
+
+            for(int i=0;i<regionInfo.Length-1;i++)
+            {
+                RegionInfoDebug r = regionDebugH[(int)Math.Floor((float)i / VerticalRegions)];
+                RegionInfo ri = regionInfo[i];
+
+                FxVector2f v_start = sorted_Vertex[ri.VertexOffset];
+                FxVector2f v_end = sorted_Vertex[ri.VertexOffset + ri.VertexNum];
+
+                Line l = new Line(new FxVector2f(r.start.x, v_start.Y), new FxVector2f(r.end.x, v_start.Y));
+                l.LineColor = SharpDX.Color.DarkGreen;
+                l.UseDefaultColor = false;
+                plotElement.AddGeometry(l, false);
+                l = new Line(new FxVector2f(r.start.x, v_end.Y), new FxVector2f(r.end.x, v_end.Y));
+                l.LineColor = SharpDX.Color.DarkMagenta;
+                l.UseDefaultColor = false;
+                plotElement.AddGeometry(l, false);
+
+            }
+
+            canvas1.AddElements(plotElement, false);
+            canvas1.ReDraw();
         }
 
 
