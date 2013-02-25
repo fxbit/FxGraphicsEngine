@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="BitonicSort\BitonicSort.cu" />
     <CudaCompile Include="Delaunay\RegionSplit.cu" />
     <CudaCompile Include="MergeSort\MergeSort.cu" />
   </ItemGroup>
@@ -77,7 +78,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <CodeGeneration>compute_20,sm_20</CodeGeneration>
       <GenerateLineInfo>true</GenerateLineInfo>
       <PtxAsOptionV>true</PtxAsOptionV>
-      <Optimization>O3</Optimization>
+      <Optimization>Od</Optimization>
       <Runtime>MT</Runtime>
     </CudaCompile>
   </ItemDefinitionGroup>

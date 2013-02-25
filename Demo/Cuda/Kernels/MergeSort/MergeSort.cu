@@ -16,11 +16,6 @@
 
 typedef unsigned int uint;
 
-typedef struct{
-    float x;
-    float y;
-} FxVector2f;
-
 #define SHARED_SIZE_LIMIT 1024U
 #define     SAMPLE_STRIDE 128
 

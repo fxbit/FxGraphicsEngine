@@ -33,7 +33,7 @@ namespace Delaunay
         CudaDeviceVariable<cbThreadParam> d_threadParam;
         CudaDeviceVariable<FxVector2f> d_vertex;
 
-        MergeSort<FxVector2f> mergeSort;
+        BitonicSort<FxVector2f> GPUSort;
         CudaKernel triangulation;
         CudaKernel regionSplitH;
         CudaKernel regionSplitV_Phase1;
@@ -52,13 +52,6 @@ namespace Delaunay
 
 
         const int stackMaxSize = 64;
-
-        const float MergeVXThread = 4.0f;
-        const float MergeVYThread = 8.0f;
-        const float MergeThread = 1.0f;
-        const int TriangulationThread = 128;
-
-
 
         /// <summary>
         /// The num of subregions
@@ -119,7 +112,7 @@ namespace Delaunay
                 y = min.Y + (float)(rand.NextDouble() * (max.Y - min.Y));
 
                 //canvas1 add a new vertex
-                listAllVertex.Add(new FxVector2f(x, y));
+                listAllVertex.Add(new FxVector2f(x,y));
             }
 
             WriteLine("Add " + num.ToString() + "to vertex list");
@@ -127,13 +120,13 @@ namespace Delaunay
 
         private void button1_Click(object sender, EventArgs e)
         {
-            triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
+            //triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
             regionSplitH = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionH");
             regionSplitV_Phase1 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase1");
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024 * 256, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
+            CreateRandomPoints(1024 * 1024, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
 
 
             #region Set the max face/he/ve/boundary
@@ -193,7 +186,7 @@ namespace Delaunay
 
 
             // try to sort the list 
-            mergeSort = new MergeSort<FxVector2f>(cuda);
+            GPUSort = new BitonicSort<FxVector2f>(cuda);
 
         }
 
@@ -223,16 +216,16 @@ namespace Delaunay
             d_vertex = listAllVertex.ToArray();
 
             // prepare the sorting
-            mergeSort.Prepare(NumVertex);
+            GPUSort.Prepare(NumVertex);
 
             // set the internal data
-            mergeSort.SetData(d_vertex, 0, NumVertex, d_vertex.TypeSize);
+            GPUSort.SetData(d_vertex, 0, NumVertex, d_vertex.TypeSize);
 
             // sort the x axis
-            mergeSort.Sort(true, 0);
+            GPUSort.Sort(true, 0);
 
             // copy the results back
-            mergeSort.GetResults(d_vertex, 0, NumVertex, d_vertex.TypeSize);
+            GPUSort.GetResults(d_vertex, 0, NumVertex, d_vertex.TypeSize);
 
             // find the split points 
             int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
@@ -268,6 +261,8 @@ namespace Delaunay
             // sort each subregion based on y-axes
             for (int i = 0; i < HorizontalRegions; i++)
             {
+
+                break;
 #if true
                 regionDebugH[i].start.X = sorted_Vertex[regionInfoH[i].VertexOffset].X;
                 if (i + 1 < HorizontalRegions)
@@ -286,13 +281,14 @@ namespace Delaunay
                 }
 
                 // set the internal data
-                mergeSort.SetData(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
+                GPUSort.SetData(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
 
                 // sort the y axis
-                mergeSort.Sort(true, 1);
+                GPUSort.Sort(true, 1);
 
                 // copy the results back
-                mergeSort.GetResults(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
+                GPUSort.GetResults(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
+
             }
 
             // create the region info list
@@ -320,7 +316,7 @@ namespace Delaunay
 
             // clean local temp gpu memorys
             d_regionInfoH.Dispose();
-            mergeSort.Dispose();
+            GPUSort.Dispose();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -345,10 +341,12 @@ namespace Delaunay
 
             //DrawResults();
 
+#if false
             // Invoke kernel
             triangulation.BlockDimensions = TriangulationThread;
             triangulation.GridDimensions = (NumRegions + TriangulationThread - 1) / TriangulationThread;
             triangulation.Run(d_threadInfo.DevicePointer, d_regionInfo.DevicePointer, d_threadParam.DevicePointer, NumRegions);
+#endif
 
             // copy the data from the hardware
             threadInfo = d_threadInfo;
@@ -357,7 +355,7 @@ namespace Delaunay
             d_regionInfo.Dispose();
             d_threadParam.Dispose();
 
-            mergeSort.Dispose();
+            GPUSort.Dispose();
             cuda.Dispose();
         }
 

@@ -72,13 +72,15 @@ __global__ void splitRegionV_phase1(const DATA_TYPE *vertex,
     const uint v = blockDim.x * blockIdx.x + threadIdx.x;
     const uint h = blockDim.y * blockIdx.y + threadIdx.y;
     
-    RegionInfo regionH = regionInfoH[h];
-    RegionInfo r;
+    RegionInfo regionH, r;
     
     // limit check
     if( h >= HorizontalRegionNum || v >= VerticalRegionNum)
         return;
     
+    // read horizontal region
+    regionH = regionInfoH[h];
+
     // set the first region to start from the start of the 
     // horizontal zone
     if(v==0){
@@ -122,9 +124,9 @@ __global__ void splitRegionV_phase2( const RegionInfo *regionInfoH,
     regionI = regionInfoV[i];
     if(i+1<NumRegions){
         regionI_1 = regionInfoV[i+1];
-	}else{
-		int index = (int)floor((float)i/VerticalRegionNum)+1;
-        regionI_1 = regionInfoH[index];
+    }else{
+        int index = (int)ceil((float)i/VerticalRegionNum);
+        regionI_1 = regionInfoH[index-1];
     }   
     __syncthreads();
 

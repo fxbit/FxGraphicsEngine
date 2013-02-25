@@ -7,6 +7,9 @@
     <Filter Include="Delaunay">
       <UniqueIdentifier>{7d0fe90d-8905-4366-b75b-ccf1647f0d13}</UniqueIdentifier>
     </Filter>
+    <Filter Include="BitonicSort">
+      <UniqueIdentifier>{8f945990-0098-4146-9d9e-8b7af4660a58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Delaunay\RegionSplit.cu">
@@ -14,6 +17,9 @@
     </CudaCompile>
     <CudaCompile Include="MergeSort\MergeSort.cu">
       <Filter>MergeSort</Filter>
+    </CudaCompile>
+    <CudaCompile Include="BitonicSort\BitonicSort.cu">
+      <Filter>BitonicSort</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
