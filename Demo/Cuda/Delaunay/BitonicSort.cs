@@ -33,6 +33,8 @@ namespace Delaunay
 
         private CudaDeviceVariable<T> d_Input;
         private CudaDeviceVariable<T> d_Output;
+        private CudaDeviceVariable<T> d_MaxMinValue;
+        private T MaxMinValue;
 
         private CudaKernel BitonicSortKernel;
         private CudaKernel MatrixTransposeKernel;
@@ -166,6 +168,8 @@ namespace Delaunay
             }
         }
 
+        
+
         public void SetData(CudaDeviceVariable<T> in_data, SizeT offset, int dataLen, uint primSize)
         {
 
@@ -175,14 +179,15 @@ namespace Delaunay
             // check if we can use the internal memory for the sorting
             // if not reset the internal memory to be able
             if (this.numElements > this.MaxNumElements)
-                Prepare(dataLen);
+                Prepare(dataLen, d_MaxMinValue);
 
-            // fill the data with max value
-            this.d_Input.Memset(uint.MaxValue);
+            cuda.Utils.MemFill<T>(d_Input,
+                dataLen * primSize / 4,
+                d_MaxMinValue,
+                (this.numElements - dataLen) * primSize / 4);
 
             // copy the external data to the internal one
             this.d_Input.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * primSize);
-
         } 
 
         #endregion
@@ -198,7 +203,7 @@ namespace Delaunay
         /// </summary>
         /// <param name="dataLen"></param>
         /// <param name="MaxMinT"></param>
-        public void Prepare(int dataLen)
+        public void Prepare(int dataLen, T MaxMinValue)
         {
             // remoeve any previus memory that we have allocate
             DisposeMemory();
@@ -211,6 +216,8 @@ namespace Delaunay
             d_Input = new CudaDeviceVariable<T>(numElements);
             d_Output = new CudaDeviceVariable<T>(numElements);
 
+            this.MaxMinValue = MaxMinValue;
+            d_MaxMinValue = this.MaxMinValue;
         }
 
         #endregion

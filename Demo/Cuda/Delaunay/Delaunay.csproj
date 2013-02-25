@@ -87,6 +87,7 @@
   <ItemGroup>
     <Compile Include="BitonicSort.cs" />
     <Compile Include="CSTriangulationStruct.cs" />
+    <Compile Include="CudaUtils.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

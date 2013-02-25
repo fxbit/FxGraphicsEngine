@@ -12,11 +12,15 @@ namespace Delaunay
     public class FxCuda
     {
         public CudaContext ctx;
+        public CudaUtils Utils;
 
         public FxCuda()
         {
             //Init Cuda context
             ctx = new CudaContext(CudaContext.GetMaxGflopsDeviceId());
+
+            // init utils
+            Utils = new CudaUtils(this);
         }
 
         /// <summary>

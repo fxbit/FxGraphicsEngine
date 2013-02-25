@@ -14,6 +14,7 @@
     <CudaCompile Include="BitonicSort\BitonicSort.cu" />
     <CudaCompile Include="Delaunay\RegionSplit.cu" />
     <CudaCompile Include="MergeSort\MergeSort.cu" />
+    <CudaCompile Include="Utils\memory.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Delaunay\includes.h" />

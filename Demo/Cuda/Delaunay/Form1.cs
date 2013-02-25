@@ -126,7 +126,7 @@ namespace Delaunay
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024 * 1024, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
+            CreateRandomPoints(1024 * 64, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
 
 
             #region Set the max face/he/ve/boundary
@@ -262,7 +262,6 @@ namespace Delaunay
             for (int i = 0; i < HorizontalRegions; i++)
             {
 
-                break;
 #if true
                 regionDebugH[i].start.X = sorted_Vertex[regionInfoH[i].VertexOffset].X;
                 if (i + 1 < HorizontalRegions)
@@ -289,10 +288,12 @@ namespace Delaunay
                 // copy the results back
                 GPUSort.GetResults(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
 
+                break;
             }
 
             // create the region info list
             {
+                return;
                 regionSplitV_Phase1.BlockDimensions = new dim3(8, 8);
                 regionSplitV_Phase1.GridDimensions = new dim3((int)Math.Ceiling((float)VerticalRegions / 8),
                                                               (int)Math.Ceiling((float)HorizontalRegions / 8));

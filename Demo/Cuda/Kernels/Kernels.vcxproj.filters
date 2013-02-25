@@ -10,6 +10,9 @@
     <Filter Include="BitonicSort">
       <UniqueIdentifier>{8f945990-0098-4146-9d9e-8b7af4660a58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{672981ed-2a6b-449c-ab80-6adf91f3c26d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Delaunay\RegionSplit.cu">
@@ -20,6 +23,9 @@
     </CudaCompile>
     <CudaCompile Include="BitonicSort\BitonicSort.cu">
       <Filter>BitonicSort</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Utils\memory.cu">
+      <Filter>Utils</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>

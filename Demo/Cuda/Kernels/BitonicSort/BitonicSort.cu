@@ -64,7 +64,7 @@ void BitonicSort( const settings_t settings,
     // Sort the shared data
     for (unsigned int j = settings.g_iLevel >> 1 ; j > 0 ; j >>= 1)
     {
-		bool b1 = compare_le(shared_data[GI & (~j)], shared_data[GI | j], settings.g_iField);
+        bool b1 = compare_le(shared_data[GI & (~j)], shared_data[GI | j], settings.g_iField);
         bool b2 = ((settings.g_iLevelMask & X) != 0);
         DATA_TYPE result = ( b1 == b2 )? shared_data[GI ^ j] : shared_data[GI];
         __syncthreads();
