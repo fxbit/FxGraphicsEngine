@@ -9,6 +9,7 @@ using ManagedCuda.BasicTypes;
 using System.Threading;
 using System.Runtime.InteropServices;
 using FxMaths;
+using ManagedCuda.VectorTypes;
 
 namespace Delaunay
 {
@@ -150,27 +151,27 @@ namespace Delaunay
             return d_Output;
         }
 
-        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offset, int dataLen, uint primSize)
+        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offset, int dataLen)
         {
             // check if the memory that we want to copy exist to the internal data
             if (numElements >= dataLen)
             {
-                out_data.CopyToDevice(d_Output.DevicePointer, 0, offset, dataLen * primSize);
+                out_data.CopyToDevice(d_Input.DevicePointer, 0, offset, dataLen * out_data.TypeSize);
             }
         }
 
-        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offsetSrc, SizeT offsetDst, int dataLen, uint primSize)
+        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offsetSrc, SizeT offsetDst, int dataLen)
         {
             // check if the memory that we want to copy exist to the internal data
             if (numElements >= dataLen + offsetSrc)
             {
-                out_data.CopyToDevice(d_Output.DevicePointer, offsetSrc, offsetDst, dataLen * primSize);
+                out_data.CopyToDevice(d_Input.DevicePointer, offsetSrc, offsetDst, dataLen * out_data.TypeSize);
             }
         }
 
-        
 
-        public void SetData(CudaDeviceVariable<T> in_data, SizeT offset, int dataLen, uint primSize)
+
+        public void SetData(CudaDeviceVariable<T> in_data, SizeT offset, int dataLen)
         {
 
             // calculate the next correct size
@@ -181,14 +182,15 @@ namespace Delaunay
             if (this.numElements > this.MaxNumElements)
                 Prepare(dataLen, d_MaxMinValue);
 
-            cuda.Utils.MemFill<T>(d_Input,
-                dataLen * primSize / 4,
-                d_MaxMinValue,
-                (this.numElements - dataLen) * primSize / 4);
-
             // copy the external data to the internal one
-            this.d_Input.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * primSize);
-        } 
+            this.d_Input.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * in_data.TypeSize);
+
+            if (this.numElements - dataLen > 0)
+                cuda.Utils.MemFill<T>(d_Input,
+                    dataLen,
+                    d_MaxMinValue,
+                    this.numElements - dataLen);
+        }
 
         #endregion
 

@@ -79,7 +79,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion = 200;
+        int maxVertexPerRegion = 400;
 
         // number of multiprocessors that the device have
         int MultiProcessorCount = 0;
@@ -113,6 +113,7 @@ namespace Delaunay
 
                 //canvas1 add a new vertex
                 listAllVertex.Add(new FxVector2f(x,y));
+                //listAllVertex.Add(new FxVector2f(num-i));
             }
 
             WriteLine("Add " + num.ToString() + "to vertex list");
@@ -126,7 +127,7 @@ namespace Delaunay
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024 * 64, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
+            CreateRandomPoints(1024 * 16, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
 
 
             #region Set the max face/he/ve/boundary
@@ -216,16 +217,16 @@ namespace Delaunay
             d_vertex = listAllVertex.ToArray();
 
             // prepare the sorting
-            GPUSort.Prepare(NumVertex);
+            GPUSort.Prepare(NumVertex, new FxVector2f(float.MaxValue));
 
             // set the internal data
-            GPUSort.SetData(d_vertex, 0, NumVertex, d_vertex.TypeSize);
+            GPUSort.SetData(d_vertex, 0, NumVertex);
 
             // sort the x axis
             GPUSort.Sort(true, 0);
 
             // copy the results back
-            GPUSort.GetResults(d_vertex, 0, NumVertex, d_vertex.TypeSize);
+            GPUSort.GetResults(d_vertex, 0, NumVertex);
 
             // find the split points 
             int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
@@ -240,7 +241,6 @@ namespace Delaunay
             // calculate the region informations for Horizontal regions
 
             regionInfoH = new RegionInfo[HorizontalRegions];
-            regionDebugH = new RegionInfoDebug[HorizontalRegions];
             CudaDeviceVariable<RegionInfo> d_regionInfoH = regionInfoH;
 
 
@@ -256,19 +256,22 @@ namespace Delaunay
             regionInfoH = d_regionInfoH;
 
 
+#if true
+            regionDebugH = new RegionInfoDebug[HorizontalRegions];
             sorted_Vertex = d_vertex;
-
-            // sort each subregion based on y-axes
             for (int i = 0; i < HorizontalRegions; i++)
             {
-
-#if true
                 regionDebugH[i].start.X = sorted_Vertex[regionInfoH[i].VertexOffset].X;
                 if (i + 1 < HorizontalRegions)
                     regionDebugH[i].end.X = sorted_Vertex[regionInfoH[i + 1].VertexOffset].X;
                 else
                     regionDebugH[i].end.X = sorted_Vertex[sorted_Vertex.Length - 1].X;
+            }
 #endif
+
+            // sort each subregion based on y-axes
+            for (int i = 0; i < HorizontalRegions; i++)
+            {
                 // update vertex number
                 if (i < HorizontalRegions - 1)
                 {
@@ -280,20 +283,18 @@ namespace Delaunay
                 }
 
                 // set the internal data
-                GPUSort.SetData(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
+                GPUSort.SetData(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum);
 
                 // sort the y axis
                 GPUSort.Sort(true, 1);
 
                 // copy the results back
-                GPUSort.GetResults(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum, d_vertex.TypeSize);
+                GPUSort.GetResults(d_vertex, regionInfoH[i].VertexOffset, (int)regionInfoH[i].VertexNum);
 
-                break;
             }
 
             // create the region info list
             {
-                return;
                 regionSplitV_Phase1.BlockDimensions = new dim3(8, 8);
                 regionSplitV_Phase1.GridDimensions = new dim3((int)Math.Ceiling((float)VerticalRegions / 8),
                                                               (int)Math.Ceiling((float)HorizontalRegions / 8));
@@ -340,7 +341,7 @@ namespace Delaunay
                 }
             }
 
-            //DrawResults();
+            DrawResults();
 
 #if false
             // Invoke kernel

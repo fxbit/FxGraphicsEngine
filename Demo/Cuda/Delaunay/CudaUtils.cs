@@ -6,6 +6,7 @@ using System.Text;
 using ManagedCuda;
 using ManagedCuda.BasicTypes;
 using System.Runtime.InteropServices;
+using ManagedCuda.VectorTypes;
 
 namespace Delaunay
 {
@@ -23,17 +24,21 @@ namespace Delaunay
         }
 
         public void MemFill<T>(CudaDeviceVariable<T> Dest,
-                            uint offset,
+                            int offset,
                             CudaDeviceVariable<T> Fill_pattern,
-                            uint Fill_len)
+                            int Fill_len) where T : struct
         {
-            memfillkernel.BlockDimensions = 256;
-            memfillkernel.GridDimensions = Fill_len / 256;
+            // translate the offset to uint steps
+            offset = offset * Dest.TypeSize / uint1.SizeOf;
+            Fill_len = Fill_len * Fill_pattern.TypeSize / uint1.SizeOf;
+
+            memfillkernel.BlockDimensions = 32;
+            memfillkernel.GridDimensions = Fill_len / 32;
             memfillkernel.Run(Dest.DevicePointer,
-                Dest.SizeInBytes / 4,
+                Dest.SizeInBytes / uint1.SizeOf,
                 offset,
-                Fill_pattern,
-                Fill_pattern.SizeInBytes / 4,
+                Fill_pattern.DevicePointer,
+                Fill_pattern.SizeInBytes / uint1.SizeOf,
                 Fill_len);
         }
     }
