@@ -33,7 +33,7 @@ namespace Delaunay
         CudaDeviceVariable<cbThreadParam> d_threadParam;
         CudaDeviceVariable<FxVector2f> d_vertex;
 
-        BitonicSort<FxVector2f> GPUSort;
+        MergeSort<FxVector2f> GPUSort;
         CudaKernel triangulation;
         CudaKernel regionSplitH;
         CudaKernel regionSplitV_Phase1;
@@ -79,7 +79,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion = 400;
+        int maxVertexPerRegion = 100;
 
         // number of multiprocessors that the device have
         int MultiProcessorCount = 0;
@@ -127,7 +127,7 @@ namespace Delaunay
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024 * 16, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
+            CreateRandomPoints(1024 * 32, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
 
 
             #region Set the max face/he/ve/boundary
@@ -187,7 +187,7 @@ namespace Delaunay
 
 
             // try to sort the list 
-            GPUSort = new BitonicSort<FxVector2f>(cuda);
+            GPUSort = new MergeSort<FxVector2f>(cuda);
 
         }
 
@@ -232,14 +232,15 @@ namespace Delaunay
             int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
             int VerticalRegionsOffset = (int)Math.Floor((float)HorizontalRegionsOffset / (float)VerticalRegions);
 
+#if false
             Console.WriteLine("-------------");
             Console.WriteLine("HorizontalRegions:" + HorizontalRegions.ToString());
             Console.WriteLine("VerticalRegions:" + VerticalRegions.ToString());
             Console.WriteLine("HorizontalRegionsOffset:" + HorizontalRegionsOffset.ToString());
             Console.WriteLine("VerticalRegionsOffset:" + VerticalRegionsOffset.ToString());
+#endif
 
             // calculate the region informations for Horizontal regions
-
             regionInfoH = new RegionInfo[HorizontalRegions];
             CudaDeviceVariable<RegionInfo> d_regionInfoH = regionInfoH;
 

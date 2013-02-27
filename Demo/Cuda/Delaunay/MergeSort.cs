@@ -46,6 +46,9 @@ namespace Delaunay
         private CudaKernel mergeElementaryIntervalsKernelUp;
         private CudaKernel mergeElementaryIntervalsKernelDown;
 
+        private CudaDeviceVariable<T> d_MaxMinValue;
+        private T MaxMinValue;
+
         private uint[] h_SrcVal;
 
         private FxCuda cuda;
@@ -345,25 +348,25 @@ namespace Delaunay
             return d_DstKey;
         }
 
-        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offset, int dataLen, uint primSize)
+        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offset, int dataLen)
         {
             // check if the memory that we want to copy exist to the internal data
             if (numElements >= dataLen)
             {
-                out_data.CopyToDevice(d_DstKey.DevicePointer, 0, offset, dataLen * primSize);
+                out_data.CopyToDevice(d_DstKey.DevicePointer, 0, offset, dataLen * out_data.TypeSize);
             }
         }
 
-        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offsetSrc, SizeT offsetDst, int dataLen, uint primSize)
+        public void GetResults(CudaDeviceVariable<T> out_data, SizeT offsetSrc, SizeT offsetDst, int dataLen)
         {
             // check if the memory that we want to copy exist to the internal data
             if (numElements >= dataLen + offsetSrc)
             {
-                out_data.CopyToDevice(d_DstKey.DevicePointer, offsetSrc, offsetDst, dataLen * primSize);
+                out_data.CopyToDevice(d_DstKey.DevicePointer, offsetSrc, offsetDst, dataLen * out_data.TypeSize);
             }
         }
 
-        public void SetData(CudaDeviceVariable<T> in_data, SizeT offset, int dataLen, uint primSize)
+        public void SetData(CudaDeviceVariable<T> in_data, SizeT offset, int dataLen)
         {
 
             // calculate the next correct size
@@ -372,13 +375,16 @@ namespace Delaunay
             // check if we can use the internal memory for the sorting
             // if not reset the internal memory to be able
             if (this.numElements > this.MaxNumElements)
-                Prepare(dataLen);
-
-            // fill the data with max value
-            this.d_SrcKey.Memset(uint.MaxValue);
+                Prepare(dataLen, d_MaxMinValue);
 
             // copy the external data to the internal one
-            this.d_SrcKey.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * primSize);
+            this.d_SrcKey.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * in_data.TypeSize);
+
+            if (this.numElements - dataLen > 0)
+                cuda.Utils.MemFill<T>(d_SrcKey,
+                    dataLen,
+                    d_MaxMinValue,
+                    this.numElements - dataLen);
 
             // reset the d_srcVal
             d_SrcVal.CopyToDevice(h_SrcVal, 0, 0, numElements * d_SrcVal.TypeSize);
@@ -397,7 +403,7 @@ namespace Delaunay
         /// </summary>
         /// <param name="dataLen"></param>
         /// <param name="MaxMinT"></param>
-        public void Prepare(int dataLen)
+        public void Prepare(int dataLen, T MaxMinValue)
         {
             // remoeve any previus memory that we have allocate
             DisposeMemory();
@@ -417,6 +423,9 @@ namespace Delaunay
             h_SrcVal = new uint[numElements];
             for (uint i = 0; i < numElements; i++)
                 h_SrcVal[i] = i;
+
+            this.MaxMinValue = MaxMinValue;
+            d_MaxMinValue = this.MaxMinValue;
         }
 
         #endregion
