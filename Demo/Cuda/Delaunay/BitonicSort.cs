@@ -4,12 +4,17 @@ using System.Linq;
 using System.Text;
 
 using ManagedCuda;
-using FxMaths.Vector;
 using ManagedCuda.BasicTypes;
+using ManagedCuda.VectorTypes;
+
 using System.Threading;
 using System.Runtime.InteropServices;
+
 using FxMaths;
-using ManagedCuda.VectorTypes;
+using FxMaths.Vector;
+using FxMaths.Cuda;
+
+
 
 namespace Delaunay
 {

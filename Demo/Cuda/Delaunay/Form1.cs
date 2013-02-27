@@ -16,6 +16,7 @@ using FxMaths.Vector;
 using FxMaths.Geometry;
 using FxMaths.GUI;
 using FxMaths.GMaps;
+using FxMaths.Cuda;
 
 namespace Delaunay
 {
@@ -87,7 +88,7 @@ namespace Delaunay
         public Form1()
         {
             InitializeComponent();
-            cuda = new FxCuda();
+            cuda = new FxCuda(true);
             MultiProcessorCount = cuda.ctx.GetDeviceInfo().MultiProcessorCount;
 
             listAllVertex = new List<FxVector2f>();
