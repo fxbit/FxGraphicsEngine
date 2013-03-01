@@ -13,6 +13,7 @@
   <ItemGroup>
     <CudaCompile Include="BitonicSort\BitonicSort.cu" />
     <CudaCompile Include="Delaunay\RegionSplit.cu" />
+    <CudaCompile Include="Delaunay\Triangulation.cu" />
     <CudaCompile Include="MergeSort\MergeSort.cu" />
     <CudaCompile Include="Utils\memory.cu" />
   </ItemGroup>

@@ -122,7 +122,7 @@ namespace Delaunay
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
+            triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
             regionSplitH = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionH");
             regionSplitV_Phase1 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase1");
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
@@ -209,6 +209,13 @@ namespace Delaunay
 
         }
 
+
+
+
+
+
+        #region Sorting of the regions
+
         RegionInfo[] regionInfoH;
         RegionInfoDebug[] regionDebugH;
 
@@ -232,14 +239,6 @@ namespace Delaunay
             // find the split points 
             int HorizontalRegionsOffset = (int)Math.Floor((float)NumVertex / (float)HorizontalRegions);
             int VerticalRegionsOffset = (int)Math.Floor((float)HorizontalRegionsOffset / (float)VerticalRegions);
-
-#if false
-            Console.WriteLine("-------------");
-            Console.WriteLine("HorizontalRegions:" + HorizontalRegions.ToString());
-            Console.WriteLine("VerticalRegions:" + VerticalRegions.ToString());
-            Console.WriteLine("HorizontalRegionsOffset:" + HorizontalRegionsOffset.ToString());
-            Console.WriteLine("VerticalRegionsOffset:" + VerticalRegionsOffset.ToString());
-#endif
 
             // calculate the region informations for Horizontal regions
             regionInfoH = new RegionInfo[HorizontalRegions];
@@ -295,7 +294,6 @@ namespace Delaunay
 
             }
 
-            cuda.ctx.Synchronize();
             // create the region info list
             {
                 regionSplitV_Phase1.BlockDimensions = new dim3(8, 8);
@@ -308,30 +306,55 @@ namespace Delaunay
                                         VerticalRegions,
                                         VerticalRegionsOffset);
 
-                
+
                 regionSplitV_Phase2.BlockDimensions = 32;
                 regionSplitV_Phase2.GridDimensions = (int)Math.Ceiling((float)NumRegions / 32);
                 regionSplitV_Phase2.Run(d_regionInfoH.DevicePointer,
                                         d_regionInfo.DevicePointer,
                                         HorizontalRegions,
                                         VerticalRegions,
-                                        NumRegions, 
+                                        NumRegions,
                                         NumVertex);
-                
-                // copy back the results of d_regions
-                regionInfo = d_regionInfo;
+
             }
 
             // clean local temp gpu memorys
             d_regionInfoH.Dispose();
             GPUSort.Dispose();
         }
+        
+        #endregion
+
+
+
+
+
+
+
+
+        private void RegionTriangulation()
+        {
+            // Start triangulation step 1
+            triangulation.BlockDimensions = 128;
+            triangulation.GridDimensions = (int)Math.Ceiling((float)NumRegions / 128);
+            triangulation.Run(d_threadInfo.DevicePointer, 
+                              d_regionInfo.DevicePointer, 
+                              d_threadParam.DevicePointer, 
+                              NumRegions);
+
+        }
+
 
         private void button2_Click(object sender, EventArgs e)
         {
             TimeStatistics.StartClock();
             SortPartitions();
             TimeStatistics.StopClock();
+
+            TimeStatistics.StartClock();
+            RegionTriangulation();
+            TimeStatistics.StopClock();
+
 
             // debug info
             sorted_Vertex = d_vertex;
@@ -346,24 +369,10 @@ namespace Delaunay
                     Console.WriteLine("NaN on " + i.ToString());
                     break;
                 }
-
-#if false
-                if (sorted_Vertex[i].y > sorted_Vertex[i + 1].y)
-                {
-                    Console.WriteLine(i.ToString() + " - Sorted error -" + sorted_Vertex[i].y.ToString() + " , " + sorted_Vertex[i + 1].y.ToString());
-                    break;
-                } 
-#endif
             }
 
             DrawResults();
 
-#if false
-            // Invoke kernel
-            triangulation.BlockDimensions = TriangulationThread;
-            triangulation.GridDimensions = (NumRegions + TriangulationThread - 1) / TriangulationThread;
-            triangulation.Run(d_threadInfo.DevicePointer, d_regionInfo.DevicePointer, d_threadParam.DevicePointer, NumRegions);
-#endif
 
             // copy the data from the hardware
             threadInfo = d_threadInfo;
@@ -386,6 +395,7 @@ namespace Delaunay
                 plotElement.AddGeometry(c, false);
             }
 
+
             // draw regions
             for (int i = 0; i < regionDebugH.Length; i++)
             {
@@ -401,6 +411,10 @@ namespace Delaunay
                 plotElement.AddGeometry(l, false);
 
             }
+
+            // copy back the results of d_regions
+            regionInfo = d_regionInfo;
+
 
             for(int i=0;i<regionInfo.Length;i++)
             {

@@ -7,16 +7,16 @@
 typedef struct{
 
 // max faces per thread
-	uint maxFacesPerThread;
+    uint maxFacesPerThread;
 
 // max Half edge per thread
-	uint maxHalfEdgePerThread;
+    uint maxHalfEdgePerThread;
 
 // max boundary nodes per thread
-	uint maxBoundaryNodesPerThread;
+    uint maxBoundaryNodesPerThread;
 
 // num of the regions
-	uint RegionsNum;
+    uint RegionsNum;
 
 } ThreadParam;
 
@@ -24,47 +24,47 @@ typedef struct{
 
 typedef struct{
 
-	// The id of the thread
-	uint threadID;
+    // The id of the thread
+    uint threadID;
 
-	// offset for the face list
-	uint offsetFaceList;
+    // offset for the face list
+    uint offsetFaceList;
 
-	// offset for the Half edge list
-	uint offsetHalfEdgeList;
+    // offset for the Half edge list
+    uint offsetHalfEdgeList;
 
-	// offset for the Vertex list
-	uint offsetVertexList;
+    // offset for the Vertex list
+    uint offsetVertexList;
 
-	// offset for the Boundary list
-	uint offsetBoundaryList;
+    // offset for the Boundary list
+    uint offsetBoundaryList;
 
-	// offset for the delaunay node 
-	uint offsetDNStack;
-	
-	// The Next Face ID (max face id)
-	uint lastFaceID;
+    // offset for the delaunay node 
+    uint offsetDNStack;
+    
+    // The Next Face ID (max face id)
+    uint lastFaceID;
 
-	// The Next HalfEdge ID (max HalfEdge id)
-	uint lastHalfEdgeID;
+    // The Next HalfEdge ID (max HalfEdge id)
+    uint lastHalfEdgeID;
 
-	// The Next Boundary Node ID (max Boundary Node id)
-	uint lastBoundaryNodeID;
+    // The Next Boundary Node ID (max Boundary Node id)
+    uint lastBoundaryNodeID;
 
-	// The rood index of the boundary
-	uint boundaryNodeRootID;
-	
-	// the start of the DelaunayNode in the stack
-	uint startDNOfStack;
-	
-	// the end of the DelaunayNode in the stack
-	uint endDNOfStack;
+    // The rood index of the boundary
+    uint boundaryNodeRootID;
+    
+    // the start of the DelaunayNode in the stack
+    uint startDNOfStack;
+    
+    // the end of the DelaunayNode in the stack
+    uint endDNOfStack;
 
-	// the num of node in the stack
-	uint numDNinStack;
-	
-	// Boundary Min/Max {
-	
+    // the num of node in the stack
+    uint numDNinStack;
+    
+    // Boundary Min/Max {
+    
     /// The Max boundary node in the X axis
     uint Boundary_X_MaxID;
     
@@ -77,8 +77,8 @@ typedef struct{
     /// The Min boundary node in the Y axis
     uint Boundary_Y_MinID;
     
-	//}
-	
+    //}
+    
     // emergency HE id
     uint LeftLastMergingHEID;
     uint RightLastMergingHEID;
@@ -89,41 +89,41 @@ typedef struct{
 // ------------ HalfEdge  ------------ //
 
 typedef struct {
-	//	Start Vertex index
-	uint startVertexID;
+    //	Start Vertex index
+    uint startVertexID;
 
-	//	twin edge of the face
-	uint twinEdgeID;
+    //	twin edge of the face
+    uint twinEdgeID;
 
-	//  next edge in the face
-	uint nextEdgeID;
-	
-	//  face this edge belong
-	uint2 faceID;
+    //  next edge in the face
+    uint nextEdgeID;
+    
+    //  face this edge belong
+    uint2 faceID;
 } HalfEdge;
 
 // ------------ BoundaryNodes  ------------ //
 
 typedef struct {
-	//	The next node on the boundary
-	uint PrevNodeID;
+    //	The next node on the boundary
+    uint PrevNodeID;
 
-	//	The prev node on the boundary
-	uint NextNodeID;
+    //	The prev node on the boundary
+    uint NextNodeID;
 
-	//  The edge in the boundary
-	uint halfEdgeID;
+    //  The edge in the boundary
+    uint halfEdgeID;
 } BoundaryNode;
 
 // ------------ Circle  ------------ //
 
 typedef struct {
-	
-	// Center
-	float2 center;
+    
+    // Center
+    float2 center;
 
-	// radius 
-	float radius;
+    // radius 
+    float radius;
 
 } Circle;
 
@@ -132,22 +132,22 @@ typedef struct {
 
 typedef  struct {
 
-	//  Start of the Face 
-	uint  halfEdgeID; 
-	
+    //  Start of the Face 
+    uint  halfEdgeID; 
+    
 #ifdef USE_BOUNDARY
 #ifdef USE_CIRCLE_TEST
 
-	//  Boundary circle
-	Circle boundary;
+    //  Boundary circle
+    Circle boundary;
 
 #else
 
-	// The Min point of the boundary
-	float2 Min;
+    // The Min point of the boundary
+    float2 Min;
 
-	// The Max point of the boundary
-	float2 Max;
+    // The Max point of the boundary
+    float2 Max;
 
 #endif
 #endif 
@@ -157,11 +157,11 @@ typedef  struct {
 
 typedef struct {
 
-	// the offset of the vertex
-	uint VertexOffset;
-	
-	// the number of the vertex
-	uint VertexNum;
+    // the offset of the vertex
+    uint VertexOffset;
+    
+    // the number of the vertex
+    uint VertexNum;
     
 }RegionInfo;
 
@@ -169,61 +169,61 @@ typedef struct {
 
 typedef struct  {
 
-	// the start half edge
-	uint RootHalfEdgeID;
-	
-	// the half edge of the next face
-	uint NextFaceHalfEdgeID;
-	
+    // the start half edge
+    uint RootHalfEdgeID;
+    
+    // the half edge of the next face
+    uint NextFaceHalfEdgeID;
+    
 }DelaunayNode;
 
 typedef struct{
-	
-	// the id of the 2 sides of the 
-	// x: left
-	// y: right
-	uint2 RegionSidesID; 
-	
+    
+    // the id of the 2 sides of the 
+    // x: left
+    // y: right
+    uint2 RegionSidesID; 
+    
 }MergeVParams;
 
 // ------------ Stack struct  ------------ //
 
 typedef struct{
-	uint start;
-	uint end;
-	uint offset;
-} stack;
+    uint start;
+    uint end;
+    uint offset;
+} Stack;
 
 // ------------ VMerge thread Info  ------------ //
 
 typedef struct{
-	
-	// current thread id
-	uint threadID;
+    
+    // current thread id
+    uint threadID;
 
-	// stack for the he merging
-	stack LeftHEStack;
-	stack RightHEStack;
-	
+    // stack for the he merging
+    Stack LeftHEStack;
+    Stack RightHEStack;
+    
 } MergeVInfo;
 
 
 // ------------ HMerge thread Info  ------------ //
 
 typedef struct{
-	
-	// current thread id
-	uint threadID;
+    
+    // current thread id
+    uint threadID;
 
-	// stack for the he merging
-	stack UpHEStack;
-	stack DownHEStack;
-	
-	// the first left Thread Info
-	uint UpFirstThreadID;
-	uint DownFirstThreadID;
-	uint UpLastThreadID;
-	uint DownLastThreadID;
+    // stack for the he merging
+    Stack UpHEStack;
+    Stack DownHEStack;
+    
+    // the first left Thread Info
+    uint UpFirstThreadID;
+    uint DownFirstThreadID;
+    uint UpLastThreadID;
+    uint DownLastThreadID;
 } MergeHInfo;
 
 
