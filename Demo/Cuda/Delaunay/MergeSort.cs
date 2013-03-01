@@ -355,7 +355,7 @@ namespace Delaunay
             // check if the memory that we want to copy exist to the internal data
             if (numElements >= dataLen)
             {
-                out_data.CopyToDevice(d_DstKey.DevicePointer, 0, offset, dataLen * out_data.TypeSize);
+                out_data.CopyToDevice(d_DstKey.DevicePointer, 0, offset * out_data.TypeSize, dataLen * out_data.TypeSize);
             }
         }
 
@@ -364,7 +364,7 @@ namespace Delaunay
             // check if the memory that we want to copy exist to the internal data
             if (numElements >= dataLen + offsetSrc)
             {
-                out_data.CopyToDevice(d_DstKey.DevicePointer, offsetSrc, offsetDst, dataLen * out_data.TypeSize);
+                out_data.CopyToDevice(d_DstKey.DevicePointer, offsetSrc * out_data.TypeSize, offsetDst * out_data.TypeSize, dataLen * out_data.TypeSize);
             }
         }
 
@@ -380,7 +380,7 @@ namespace Delaunay
                 Prepare(dataLen, d_MaxMinValue);
 
             // copy the external data to the internal one
-            this.d_SrcKey.CopyToDevice(in_data.DevicePointer, offset, 0, dataLen * in_data.TypeSize);
+            this.d_SrcKey.CopyToDevice(in_data.DevicePointer, offset * in_data.TypeSize, 0, dataLen * in_data.TypeSize);
 
             if (this.numElements - dataLen > 0)
                 cuda.Utils.MemFill<T>(d_SrcKey,

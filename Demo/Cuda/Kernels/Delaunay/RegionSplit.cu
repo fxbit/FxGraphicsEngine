@@ -80,7 +80,7 @@ __global__ void splitRegionV_phase1(const DATA_TYPE *vertex,
     
     // read horizontal region
     regionH = regionInfoH[h];
-
+    
     // set the first region to start from the start of the 
     // horizontal zone
     if(v==0){
@@ -89,7 +89,7 @@ __global__ void splitRegionV_phase1(const DATA_TYPE *vertex,
         return;
     }
     
-    // find the start point of the split
+    // find the end point of the split
     uint index = v*SplitOffset + regionH.VertexOffset;
     uint maxNum = regionH.VertexOffset + regionH.VertexNum;
     
@@ -110,8 +110,10 @@ __global__ void splitRegionV_phase1(const DATA_TYPE *vertex,
 extern "C"
 __global__ void splitRegionV_phase2( const RegionInfo *regionInfoH,                         
                                      RegionInfo *regionInfoV,
-                                     uint VerticalRegionNum,
-                                     uint NumRegions)
+                                     const uint HorizontalRegionNum,
+                                     const uint VerticalRegionNum,
+                                     const uint NumRegions,
+                                     const uint NumVertex)
 {
     const uint i = blockDim.x * blockIdx.x + threadIdx.x;
     
@@ -122,12 +124,17 @@ __global__ void splitRegionV_phase2( const RegionInfo *regionInfoH,
     RegionInfo regionI, regionI_1;
     
     regionI = regionInfoV[i];
-    if(i+1<NumRegions){
+    if(i%VerticalRegionNum != VerticalRegionNum-1){
         regionI_1 = regionInfoV[i+1];
     }else{
         int index = (int)ceil((float)i/VerticalRegionNum);
-        regionI_1 = regionInfoH[index-1];
-    }   
+        if(index<HorizontalRegionNum){
+            regionI_1 = regionInfoH[index];
+        }else{
+            regionI_1.VertexOffset = NumVertex;
+        }
+        regionI_1.VertexOffset--;
+    }
     __syncthreads();
 
     regionI.VertexNum = regionI_1.VertexOffset - regionI.VertexOffset;

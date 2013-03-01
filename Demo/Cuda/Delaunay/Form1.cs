@@ -34,7 +34,7 @@ namespace Delaunay
         CudaDeviceVariable<cbThreadParam> d_threadParam;
         CudaDeviceVariable<FxVector2f> d_vertex;
 
-        MergeSort<FxVector2f> GPUSort;
+        BitonicSort<FxVector2f> GPUSort;
         CudaKernel triangulation;
         CudaKernel regionSplitH;
         CudaKernel regionSplitV_Phase1;
@@ -188,7 +188,7 @@ namespace Delaunay
 
 
             // try to sort the list 
-            GPUSort = new MergeSort<FxVector2f>(cuda);
+            GPUSort = new BitonicSort<FxVector2f>(cuda);
 
         }
 
@@ -295,6 +295,7 @@ namespace Delaunay
 
             }
 
+            cuda.ctx.Synchronize();
             // create the region info list
             {
                 regionSplitV_Phase1.BlockDimensions = new dim3(8, 8);
@@ -307,13 +308,16 @@ namespace Delaunay
                                         VerticalRegions,
                                         VerticalRegionsOffset);
 
+                
                 regionSplitV_Phase2.BlockDimensions = 32;
                 regionSplitV_Phase2.GridDimensions = (int)Math.Ceiling((float)NumRegions / 32);
                 regionSplitV_Phase2.Run(d_regionInfoH.DevicePointer,
                                         d_regionInfo.DevicePointer,
+                                        HorizontalRegions,
                                         VerticalRegions,
-                                        NumRegions);
-
+                                        NumRegions, 
+                                        NumVertex);
+                
                 // copy back the results of d_regions
                 regionInfo = d_regionInfo;
             }
@@ -332,7 +336,8 @@ namespace Delaunay
             // debug info
             sorted_Vertex = d_vertex;
             for (int i = 0; i < 10; i++)
-                Console.WriteLine(sorted_Vertex[i].ToString() + " - " + listAllVertex[i].ToString());
+                Console.WriteLine(i.ToString() + " - " + sorted_Vertex[i].ToString() + " - " + listAllVertex[i].ToString());
+
 
             for (int i = 0; i < sorted_Vertex.Length; i++)
             {
@@ -341,6 +346,14 @@ namespace Delaunay
                     Console.WriteLine("NaN on " + i.ToString());
                     break;
                 }
+
+#if false
+                if (sorted_Vertex[i].y > sorted_Vertex[i + 1].y)
+                {
+                    Console.WriteLine(i.ToString() + " - Sorted error -" + sorted_Vertex[i].y.ToString() + " , " + sorted_Vertex[i + 1].y.ToString());
+                    break;
+                } 
+#endif
             }
 
             DrawResults();
@@ -389,7 +402,7 @@ namespace Delaunay
 
             }
 
-            for(int i=0;i<regionInfo.Length-1;i++)
+            for(int i=0;i<regionInfo.Length;i++)
             {
                 RegionInfoDebug r = regionDebugH[(int)Math.Floor((float)i / VerticalRegions)];
                 RegionInfo ri = regionInfo[i];
@@ -398,11 +411,13 @@ namespace Delaunay
                 FxVector2f v_end = sorted_Vertex[ri.VertexOffset + ri.VertexNum];
 
                 Line l = new Line(new FxVector2f(r.start.x, v_start.Y), new FxVector2f(r.end.x, v_start.Y));
-                l.LineColor = SharpDX.Color.DarkGreen;
+                l.LineColor = SharpDX.Color.GreenYellow;
                 l.UseDefaultColor = false;
                 plotElement.AddGeometry(l, false);
+
+
                 l = new Line(new FxVector2f(r.start.x, v_end.Y), new FxVector2f(r.end.x, v_end.Y));
-                l.LineColor = SharpDX.Color.DarkMagenta;
+                l.LineColor = SharpDX.Color.HotPink;
                 l.UseDefaultColor = false;
                 plotElement.AddGeometry(l, false);
 

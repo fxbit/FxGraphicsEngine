@@ -162,7 +162,7 @@ typedef struct {
 	
 	// the number of the vertex
 	uint VertexNum;
-
+    
 }RegionInfo;
 
 // ------------ Region Info  ------------ //
