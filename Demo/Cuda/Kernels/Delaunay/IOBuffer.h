@@ -1,5 +1,5 @@
 
-#include "includes.hlslh"
+#include "includes.h"
 
 #ifndef H_IOBuffer_UTILS
 #define H_IOBuffer_UTILS
@@ -8,15 +8,15 @@
 // ------------ Face  ------------ //
 
 static __device__
-inline Face GetFace(Face *FaceList, uint index, ThreadInfo threadInfo)
+inline Face GetFace(Face *FaceList, uint index, ThreadInfo *threadInfo)
 {
-	return FaceList[index + threadInfo.offsetFaceList];
+	return FaceList[index + threadInfo->offsetFaceList];
 }
 
 static __device__
-inline Face GetFace(Face *FaceList, uint2 index, ThreadInfo threadInfo)
+inline Face GetFace(Face *FaceList, uint2 index, ThreadInfo *threadInfo)
 {
-	return FaceList[index.x + threadInfo.offsetFaceList];
+	return FaceList[index.x + threadInfo->offsetFaceList];
 }
 
 static __device__
@@ -26,9 +26,9 @@ inline Face GetFace(Face *FaceList, uint2 index)
 }
 
 static __device__
-inline void SetFace(Face *FaceList, Face value , uint2 index, ThreadInfo threadInfo)
+inline void SetFace(Face *FaceList, Face value , uint2 index, ThreadInfo *threadInfo)
 {
-	FaceList[index.x + threadInfo.offsetFaceList] = value;
+	FaceList[index.x + threadInfo->offsetFaceList] = value;
 }
 
 static __device__
@@ -40,21 +40,21 @@ inline void SetFace(Face *FaceList, Face value , uint2 index)
 // ------------ Boundary  ------------ //
 
 static __device__
-inline BoundaryNode GetBoundaryNode(BoundaryNode *BoundaryList, uint index, ThreadInfo threadInfo)
+inline BoundaryNode GetBoundaryNode(BoundaryNode *BoundaryList, uint index, ThreadInfo *threadInfo)
 {
-	return BoundaryList[index + threadInfo.offsetBoundaryList];
+	return BoundaryList[index + threadInfo->offsetBoundaryList];
 }
 
 static __device__
-inline void SetBoundaryNode(BoundaryNode *BoundaryList, BoundaryNode value , uint index, ThreadInfo threadInfo)
+inline void SetBoundaryNode(BoundaryNode *BoundaryList, BoundaryNode *value , uint index, ThreadInfo *threadInfo)
 {
-	BoundaryList[index + threadInfo.offsetBoundaryList] = value;
+	BoundaryList[index + threadInfo->offsetBoundaryList] = *value;
 }
 
 // ------------ Delaunay Stack  ------------ //
 
 static __device__
-inline void PushDelaunayNode(DelaunayNode *DeleanayNodeStack, DelaunayNode newNode , ThreadInfo *threadInfo)
+inline void PushDelaunayNode(DelaunayNode *stack, DelaunayNode newNode , ThreadInfo *threadInfo)
 {
 	// get the id of the new node
 	uint newNodeId = threadInfo->endDNOfStack;
@@ -67,16 +67,16 @@ inline void PushDelaunayNode(DelaunayNode *DeleanayNodeStack, DelaunayNode newNo
 	}
 	
 	// store the node
-	DeleanayNodeStack[threadInfo->offsetDNStack + newNodeId] = newNode;
+	stack[threadInfo->offsetDNStack + newNodeId] = newNode;
 }
 
 static __device__
-inline bool PullDelaunayNode(DelaunayNode *node , ThreadInfo *threadInfo)
+inline bool PullDelaunayNode(DelaunayNode *stack, DelaunayNode *node , ThreadInfo *threadInfo)
 {
 	bool result = false;
 	
 	// set to zero
-    memset(node,0, sizeof(DelaunayNode);
+    memset(node,0, sizeof(DelaunayNode));
 	
 	if(threadInfo->endDNOfStack > 0){
 		
@@ -87,7 +87,7 @@ inline bool PullDelaunayNode(DelaunayNode *node , ThreadInfo *threadInfo)
 		//threadInfo.numDNinStack--;
 		
 		// get the node
-		*node = DeleanayNodeStack[threadInfo->offsetDNStack + threadInfo->endDNOfStack];
+		*node = stack[threadInfo->offsetDNStack + threadInfo->endDNOfStack];
 		
 		// set to true
 		result = true;
@@ -108,7 +108,7 @@ inline void ResetDelaunayStack(ThreadInfo *threadInfo)
 // ------------ generic Stack  ------------ // 
 
 static __device__
-inline void StackReset(stack *stack)
+inline void StackReset(Stack *stack)
 {
 	stack->end = 0; // no nodes in stack yet
 	stack->start = 0; // no nodes in stack yet

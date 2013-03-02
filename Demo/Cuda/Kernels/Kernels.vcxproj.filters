@@ -38,5 +38,20 @@
     <ClInclude Include="Delaunay\structs.h">
       <Filter>Delaunay</Filter>
     </ClInclude>
+    <ClInclude Include="Delaunay\BoundaryUtils.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
+    <ClInclude Include="Delaunay\FaceUtils.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
+    <ClInclude Include="Delaunay\HalfEdgeUtils.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
+    <ClInclude Include="Delaunay\IOBuffer.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
+    <ClInclude Include="Delaunay\TriangleUtils.h">
+      <Filter>Delaunay</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

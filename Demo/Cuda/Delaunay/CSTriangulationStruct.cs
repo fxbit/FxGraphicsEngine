@@ -88,6 +88,8 @@ namespace Delaunay
         //  next edge in the triangle
         public uint nextEdgeID;
 
+        public uint dummyAllignment;
+
         //  face that belong this edge
         public FxVector2i faceID;
 
@@ -154,42 +156,13 @@ namespace Delaunay
         //  Start of the Face
         public uint halfEdgeID;
 
-#if false
-
-#if USE_CIRCLE_TEST
-
-    //  Boundary circle
-    Circle boundary;
-
-#else
-
-        // The Min point of the boundary
-        public FxVector2f Min;
-
-        // The Max point of the boundary
-        public FxVector2f Max;
-
-#endif
-
-#endif
-
         /// <summary>
         /// Get the size of the struct 
         /// </summary>
         /// <returns></returns>
         public static int GetStructSize()
         {
-#if false
-
-#if USE_CIRCLE_TEST
-            return ComputeShader.SizeOfInt1 + csCircle.GetStructSize();
-#else
-            return ComputeShader.SizeOfInt1 + 2 * ComputeShader.SizeOfFloat2;
-#endif
-
-#else
             return ComputeShader.SizeOfInt1;
-#endif
         }
     }
 
@@ -249,7 +222,7 @@ namespace Delaunay
         public uint offsetDNStack;
 
         // The Next Face ID (max face id)
-        public uint lastFaceID;
+        public FxVector2i lastFaceID;
 
         // The Next HalfEdge ID (max HalfEdge id)
         public uint lastHalfEdgeID;

@@ -29,10 +29,13 @@ namespace Delaunay
         RegionInfo[] regionInfo;
         cbThreadParam threadParam;
 
-        CudaDeviceVariable<csThreadInfo> d_threadInfo;
-        CudaDeviceVariable<RegionInfo> d_regionInfo;
-        CudaDeviceVariable<cbThreadParam> d_threadParam;
-        CudaDeviceVariable<FxVector2f> d_vertex;
+        CudaDeviceVariable<csThreadInfo>    d_threadInfo;
+        CudaDeviceVariable<RegionInfo>      d_regionInfo;
+        CudaDeviceVariable<cbThreadParam>   d_threadParam;
+        CudaDeviceVariable<FxVector2f>      d_vertex;
+        CudaDeviceVariable<csHalfEdge>      d_HalfEdgeList;
+        CudaDeviceVariable<csBoundaryNode>  d_BoundaryList;
+        CudaDeviceVariable<csFace>          d_FaceList;
 
         BitonicSort<FxVector2f> GPUSort;
         CudaKernel triangulation;
@@ -184,6 +187,11 @@ namespace Delaunay
             d_regionInfo = regionInfo;
             d_threadParam = threadParam;
 
+
+            d_FaceList = new CudaDeviceVariable<csFace>(maxFacesPerThread * NumRegions);
+            d_BoundaryList = new CudaDeviceVariable<csBoundaryNode>(maxBoundaryNodesPerThread * NumRegions);
+            d_HalfEdgeList = new CudaDeviceVariable<csHalfEdge>(maxHalfEdgePerThread * NumRegions);
+
             // Update the region info by sort the vertex
 
 
@@ -191,6 +199,7 @@ namespace Delaunay
             GPUSort = new BitonicSort<FxVector2f>(cuda);
 
         }
+
 
 
         void WriteLine(String str)
@@ -203,13 +212,6 @@ namespace Delaunay
 
             //Tester.TesterForm.UIConsole.WriteLine(str);
         }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-
 
 
 
@@ -334,12 +336,27 @@ namespace Delaunay
 
         private void RegionTriangulation()
         {
+            /*
+             *  const DATA_TYPE   *VertexList,
+                HalfEdge          *HEList,
+                BoundaryNode      *BoundaryList,
+                Face              *FaceList,
+                ThreadInfo        *threadInfoArray,
+                const RegionInfo  *regionInfoArray,
+                const ThreadParam  param,
+                const int          RegionsNum)
+             */ 
+
             // Start triangulation step 1
             triangulation.BlockDimensions = 128;
             triangulation.GridDimensions = (int)Math.Ceiling((float)NumRegions / 128);
-            triangulation.Run(d_threadInfo.DevicePointer, 
-                              d_regionInfo.DevicePointer, 
-                              d_threadParam.DevicePointer, 
+            triangulation.Run(d_vertex.DevicePointer,
+                              d_HalfEdgeList.DevicePointer,
+                              d_BoundaryList.DevicePointer,
+                              d_FaceList.DevicePointer,
+                              d_threadInfo.DevicePointer, 
+                              d_regionInfo.DevicePointer,
+                              threadParam, 
                               NumRegions);
 
         }
@@ -354,6 +371,7 @@ namespace Delaunay
             TimeStatistics.StartClock();
             RegionTriangulation();
             TimeStatistics.StopClock();
+
 
 
             // debug info
@@ -371,6 +389,7 @@ namespace Delaunay
                 }
             }
 
+            
             DrawResults();
 
 
@@ -384,6 +403,13 @@ namespace Delaunay
             GPUSort.Dispose();
             cuda.Dispose();
         }
+
+
+
+
+
+
+        #region Debug Drawing
 
         private void DrawResults()
         {
@@ -416,7 +442,7 @@ namespace Delaunay
             regionInfo = d_regionInfo;
 
 
-            for(int i=0;i<regionInfo.Length;i++)
+            for (int i = 0; i < regionInfo.Length; i++)
             {
                 RegionInfoDebug r = regionDebugH[(int)Math.Floor((float)i / VerticalRegions)];
                 RegionInfo ri = regionInfo[i];
@@ -437,10 +463,52 @@ namespace Delaunay
 
             }
 
+            /////// Draw triangles
+            threadInfo = d_threadInfo;
+            csFace[] faceList = d_FaceList;
+            csHalfEdge[] heList = d_HalfEdgeList;
+
+            for (int t = 0; t < threadInfo.Length; t++)
+            {
+                csThreadInfo tInfo = threadInfo[t];
+
+                for (int f = 0; f < tInfo.lastFaceID.x; f++)
+                {
+                    csFace face = faceList[f + tInfo.lastFaceID.y];
+
+                    csHalfEdge he1 = heList[face.halfEdgeID];
+                    csHalfEdge he2 = heList[he1.nextEdgeID];
+                    csHalfEdge he3 = heList[he2.nextEdgeID];
+
+                    FxVector2f v1 = sorted_Vertex[he1.startVertexID];
+                    FxVector2f v2 = sorted_Vertex[he2.startVertexID];
+                    FxVector2f v3 = sorted_Vertex[he3.startVertexID];
+
+                    Line l = new Line(v1,v2);
+                    l.LineColor = SharpDX.Color.BlanchedAlmond;
+                    l.UseDefaultColor = false;
+                    l.LineWidth = 0.5f;
+                    plotElement.AddGeometry(l, false);
+
+                    l = new Line(v2, v3);
+                    l.LineColor = SharpDX.Color.BlanchedAlmond;
+                    l.UseDefaultColor = false;
+                    l.LineWidth = 0.5f;
+                    plotElement.AddGeometry(l, false);
+
+                    l = new Line(v3, v1);
+                    l.LineColor = SharpDX.Color.BlanchedAlmond;
+                    l.UseDefaultColor = false;
+                    l.LineWidth = 0.5f;
+                    plotElement.AddGeometry(l, false);
+                }
+            }
+
             canvas1.AddElements(plotElement, false);
             canvas1.ReDraw();
         }
-
+        
+        #endregion
 
     }
 }

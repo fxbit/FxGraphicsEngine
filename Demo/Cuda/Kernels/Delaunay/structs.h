@@ -43,7 +43,7 @@ typedef struct{
     uint offsetDNStack;
     
     // The Next Face ID (max face id)
-    uint lastFaceID;
+    uint2 lastFaceID;
 
     // The Next HalfEdge ID (max HalfEdge id)
     uint lastHalfEdgeID;
@@ -98,6 +98,8 @@ typedef struct {
     //  next edge in the face
     uint nextEdgeID;
     
+    uint dummy; /* alignment */
+
     //  face this edge belong
     uint2 faceID;
 } HalfEdge;
