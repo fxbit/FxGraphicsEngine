@@ -53,5 +53,8 @@
     <ClInclude Include="Delaunay\TriangleUtils.h">
       <Filter>Delaunay</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\cutil_math.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

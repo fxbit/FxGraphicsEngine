@@ -18,9 +18,8 @@
 
 /* include Code */
 #include "structs.h"
-//#include "IOBuffers.hlslh"
-//#include "HalfEdgeUtils.hlslh"
-//#include "TriangleUtils.hlslh"
-//#include "BoundaryUtils.hlslh"
+
+/* TriangleUtils.h */
+__device__ bool SideTest(float2 orig , float2 A, float2 B);
 
 #endif

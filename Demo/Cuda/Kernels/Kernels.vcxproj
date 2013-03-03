@@ -13,7 +13,9 @@
   <ItemGroup>
     <CudaCompile Include="BitonicSort\BitonicSort.cu" />
     <CudaCompile Include="Delaunay\RegionSplit.cu" />
-    <CudaCompile Include="Delaunay\Triangulation.cu" />
+    <CudaCompile Include="Delaunay\Triangulation.cu">
+      <CInterleavedPTX Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CInterleavedPTX>
+    </CudaCompile>
     <CudaCompile Include="MergeSort\MergeSort.cu" />
     <CudaCompile Include="Utils\memory.cu" />
   </ItemGroup>
@@ -25,6 +27,7 @@
     <ClInclude Include="Delaunay\IOBuffer.h" />
     <ClInclude Include="Delaunay\structs.h" />
     <ClInclude Include="Delaunay\TriangleUtils.h" />
+    <ClInclude Include="Utils\cutil_math.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DC9212B8-C32A-4509-A5F3-4FE2771BFE00}</ProjectGuid>
@@ -56,6 +59,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\Debug\PTX\</OutDir>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(CUDA_INC_PATH);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -81,7 +85,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
     <CudaCompile>
       <NvccCompilation>ptx</NvccCompilation>
-      <CInterleavedPTX>true</CInterleavedPTX>
+      <CInterleavedPTX>false</CInterleavedPTX>
       <CodeGeneration>compute_20,sm_20</CodeGeneration>
       <GenerateLineInfo>true</GenerateLineInfo>
       <PtxAsOptionV>true</PtxAsOptionV>

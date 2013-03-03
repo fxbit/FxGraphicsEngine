@@ -36,6 +36,7 @@ namespace Delaunay
         CudaDeviceVariable<csHalfEdge>      d_HalfEdgeList;
         CudaDeviceVariable<csBoundaryNode>  d_BoundaryList;
         CudaDeviceVariable<csFace>          d_FaceList;
+        CudaDeviceVariable<csStack>         d_Stack;
 
         BitonicSort<FxVector2f> GPUSort;
         CudaKernel triangulation;
@@ -131,7 +132,7 @@ namespace Delaunay
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024 * 32, new FxVector2f(0, 0), new FxVector2f(2000, 2000));
+            CreateRandomPoints(1024 * 16, new FxVector2f(0, 0), new FxVector2f(5000, 5000));
 
 
             #region Set the max face/he/ve/boundary
@@ -149,15 +150,15 @@ namespace Delaunay
             // init the array sizes
 
             // max faces per thread
-            maxFacesPerThread = maxVertexPerRegion * 3;
+            maxFacesPerThread = maxVertexPerRegion * 5;
             maxFacesPerThread += maxFacesPerThread % 32;
 
             // max Half edge per thread
-            maxHalfEdgePerThread = maxFacesPerThread * 4;
+            maxHalfEdgePerThread = maxFacesPerThread * 5;
             maxHalfEdgePerThread += maxHalfEdgePerThread % 32;
 
             // max vertex per thread
-            maxBoundaryNodesPerThread = maxVertexPerRegion * 3;
+            maxBoundaryNodesPerThread = maxVertexPerRegion * 5;
             maxBoundaryNodesPerThread += maxBoundaryNodesPerThread % 32;
 
             WriteLine("maxFacesPerThread:" + maxFacesPerThread.ToString());
@@ -191,6 +192,7 @@ namespace Delaunay
             d_FaceList = new CudaDeviceVariable<csFace>(maxFacesPerThread * NumRegions);
             d_BoundaryList = new CudaDeviceVariable<csBoundaryNode>(maxBoundaryNodesPerThread * NumRegions);
             d_HalfEdgeList = new CudaDeviceVariable<csHalfEdge>(maxHalfEdgePerThread * NumRegions);
+            d_Stack = new CudaDeviceVariable<csStack>(stackMaxSize * NumRegions);
 
             // Update the region info by sort the vertex
 
@@ -354,6 +356,7 @@ namespace Delaunay
                               d_HalfEdgeList.DevicePointer,
                               d_BoundaryList.DevicePointer,
                               d_FaceList.DevicePointer,
+                              d_Stack.DevicePointer,
                               d_threadInfo.DevicePointer, 
                               d_regionInfo.DevicePointer,
                               threadParam, 

@@ -13,7 +13,7 @@
 #include "float.h"
 #include <builtin_types.h>
 #include <vector_functions.h>
-
+#include "..\Utils\cutil_math.h"
 
 #define uint unsigned int
 #define DATA_TYPE float2
@@ -35,7 +35,7 @@ void Init(const DATA_TYPE   *VertexList,
     uint bn1_ID, bn2_ID, bn3_ID;
     BoundaryNode bn1,bn2,bn3;
     HalfEdge he1,he2,he3;
-    uint3 heID;
+    uint 	 he1ID, he2ID, he3ID;
     uint offset =  threadInfo->offsetVertexList;
     bool ccw;
     
@@ -44,13 +44,13 @@ void Init(const DATA_TYPE   *VertexList,
     CreateTriangle<true>(VertexList, HEList, threadInfo, 
                          offset, offset+1 , offset+2 ,// the 3 first vertex
                          &he1, &he2, &he3,
-                         &heID,
+                         &he1ID, &he2ID, &he3ID,
                          &ccw);
     
     // create a new face that start from HalfEdge1ID
     CreateFace(HEList,
                FaceList,
-               heID.x,
+               he1ID,
                threadInfo);
     
     // create and link the boundary list   
@@ -58,7 +58,7 @@ void Init(const DATA_TYPE   *VertexList,
         
         // read again the face that created from the 0,1,2 vertex ... CCW problems
         bn1_ID = InitNewBoundaryNode(VertexList, HEList, threadInfo,
-                                     heID.x, &bn1);			            //  init the root bn
+                                     he1ID, &bn1);			            //  init the root bn
         bn2_ID = InitNewBoundaryNode(VertexList, HEList, threadInfo,
                                      he1.nextEdgeID, &bn2);	            //  init the second bn
         he2    = HEList[he1.nextEdgeID];                 				//  move to the next he
@@ -83,9 +83,9 @@ void Init(const DATA_TYPE   *VertexList,
 
 
         // store the new bn
-        SetBoundaryNode(BoundaryList, &bn1, bn1_ID,  threadInfo);
-        SetBoundaryNode(BoundaryList, &bn2, bn2_ID,  threadInfo);
-        SetBoundaryNode(BoundaryList, &bn3, bn3_ID,  threadInfo);
+        BoundaryList[bn1_ID] = bn1;
+        BoundaryList[bn2_ID] = bn2;
+        BoundaryList[bn3_ID] = bn3;
 
     }
 
@@ -99,6 +99,7 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
                               HalfEdge          *HEList,
                               BoundaryNode      *BoundaryList,
                               Face              *FaceList,
+                              DelaunayNode      *stack,
                               ThreadInfo        *threadInfoArray,
                               const RegionInfo  *regionInfoArray,
                               const ThreadParam  param,
@@ -120,7 +121,7 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
 
     threadInfo.lastFaceID			=  make_uint2(0,threadInfo.offsetFaceList); 	// no face yet
     threadInfo.lastHalfEdgeID		=  threadInfo.offsetHalfEdgeList; 	// no he yet
-    threadInfo.lastBoundaryNodeID	=  0; 	// no bn yet
+    threadInfo.lastBoundaryNodeID	=  threadInfo.offsetBoundaryList; 	// no bn yet
     threadInfo.boundaryNodeRootID	=  0; 	// set the node root to unset;
     threadInfo.endDNOfStack 		=  0; 	// no DN in stack yet
     threadInfo.startDNOfStack 		=  0; 	// no DN in stack yet
@@ -133,7 +134,43 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
          FaceList,
          &threadInfo);
     
+    
+    // calc the upper limi of vertex index that we can use
+    int EndVertexIndex = regionInfo.VertexNum + threadInfo.offsetVertexList - 1;
+    
+    // start from the 4th vertex and after
+    i= 3 + threadInfo.offsetVertexList;
+    
+    // DEBUG: add only one point 
+    //EndVertexIndex = i+5;
+    
+    // create a stack for correction
+    //DelaunayNode stack[20];
+    
+    // ==============================================================   Add the Vertex
+    // loop all the vertex
+    while(i<EndVertexIndex)
+    {
+        // reset the stack of the delaunay 
+        ResetDelaunayStack(&threadInfo);
+        
+        // Add outside vertex (using boundary nodes)
+        AddOutsideVertex( VertexList, 
+                          HEList,
+                          BoundaryList,
+                          FaceList,
+                          stack,
+                          i, &threadInfo);
+
+        // fix all the new faces
+        //FixStackFaces(threadInfo);
+        
+        // inc i
+        i++;
+    }
+    
+    
     // save the results back to array
-    threadInfoArray[i] = threadInfo;
+    threadInfoArray[threadInfo.threadID] = threadInfo;
 
 }
