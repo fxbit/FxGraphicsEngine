@@ -38,18 +38,18 @@ PS_INPUT VS_Main( VS_INPUT input )
     PS_INPUT output = (PS_INPUT)0;
     float4 position = float4(input.PosObject,1);
 	
-	position.y = g_TextureHighmap.SampleLevel( samAniClamp, input.UV ,0 ).x;
+	position.y += g_TextureHighmap.SampleLevel( samAniClamp, input.UV ,0 ).x;
 	
     // Transform the position into world space for lighting, and projected space
     // for display
-    output.vPosProj =  mul(position , g_mWorldViewProjection );
+    output.vPosProj =  mul( float4(input.PosObject,1), g_mWorldViewProjection );
 
-    // compute the position in the world
-    output.vPosWorld =  mul(position,g_mWorld);
-    
-    // compute the position in the world
-    output.vPosWorldView =  mul(position,g_mWorldView);
-    
+	// compute the position in the world
+    output.vPosWorld =  mul( float4(input.PosObject,1),g_mWorld).rgb;
+	
+	// compute the position in the world
+    output.vPosWorldView =  mul( float4(input.PosObject,1),g_mWorldView);
+	
     // Pass the texture coordinate // and inverse
     output.UV =input.UV;
 
