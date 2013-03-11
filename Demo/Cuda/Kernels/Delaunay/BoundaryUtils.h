@@ -191,8 +191,15 @@ void AddOutsideVertex( const DATA_TYPE  *VertexList,
                              &ccw);
         
         // link the twin edge
-        he.twinEdgeID 	= he3ID;
-        he3.twinEdgeID 	= heID;
+        // ccw test
+        if ( ccw ) {
+            he.twinEdgeID 	= he3ID;
+            he3.twinEdgeID 	= heID;
+        } else {
+            he.twinEdgeID 	= he2ID;
+            he2.twinEdgeID 	= heID;
+        }
+
         
         // if we are in the mid of the search 
         // link the prev edge to the triangle
@@ -296,9 +303,7 @@ void AddOutsideVertex( const DATA_TYPE  *VertexList,
             // create face for fixes
             DelaunayNode newNode;
             newNode.RootHalfEdgeID 	= he1.nextEdgeID;
-            HalfEdge h = HEList[he1.nextEdgeID];
-            h = HEList[h.nextEdgeID];
-            newNode.NextFaceHalfEdgeID = h.twinEdgeID;
+            newNode.NextFaceHalfEdgeID = heID;
             
             // push the face that we want to fix
             PushDelaunayNode( stack, 

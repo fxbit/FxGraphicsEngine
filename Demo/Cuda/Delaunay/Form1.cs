@@ -84,7 +84,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion = 100;
+        int maxVertexPerRegion = 8;
 
         // number of multiprocessors that the device have
         int MultiProcessorCount = 0;
@@ -132,7 +132,7 @@ namespace Delaunay
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
 
             // add a random points  TODO: add external source (ex. file)
-            CreateRandomPoints(1024 * 16, new FxVector2f(0, 0), new FxVector2f(5000, 5000));
+            CreateRandomPoints(1024 * 8, new FxVector2f(0, 0), new FxVector2f(5000, 5000));
 
 
             #region Set the max face/he/ve/boundary

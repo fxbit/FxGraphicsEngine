@@ -117,7 +117,7 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
     threadInfo.offsetHalfEdgeList	=  i * param.maxHalfEdgePerThread;
     threadInfo.offsetVertexList		=  regionInfo.VertexOffset;
     threadInfo.offsetBoundaryList	=  i * param.maxBoundaryNodesPerThread;
-    threadInfo.offsetDNStack		=  i * MAX_FACE_CORRECTIONS;
+    threadInfo.offsetDNStack		=  i * STACK_MAX_NUM;
 
     threadInfo.lastFaceID			=  make_uint2(0,threadInfo.offsetFaceList); 	// no face yet
     threadInfo.lastHalfEdgeID		=  threadInfo.offsetHalfEdgeList; 	// no he yet
@@ -136,7 +136,7 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
     
     
     // calc the upper limi of vertex index that we can use
-    int EndVertexIndex = regionInfo.VertexNum + threadInfo.offsetVertexList - 1;
+    int EndVertexIndex = regionInfo.VertexNum + threadInfo.offsetVertexList;
     
     // start from the 4th vertex and after
     i= 3 + threadInfo.offsetVertexList;
@@ -163,7 +163,11 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
                           i, &threadInfo);
 
         // fix all the new faces
-        //FixStackFaces(threadInfo);
+        FixStackFaces(VertexList, 
+                      HEList,
+                      FaceList,
+                      stack,
+                      &threadInfo);
         
         // inc i
         i++;
