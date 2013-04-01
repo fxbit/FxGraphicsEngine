@@ -187,41 +187,41 @@ void FixStackFaces(const DATA_TYPE  *VertexList,
             // test if the face need correction
             if(test){
                 
-                HalfEdge he_a2_new = he_a2;
-                HalfEdge he_b1_new = he_b1;
-                
                 // copy the start vertex
-                he_a2_new.startVertexID = he_b3.startVertexID;
-                he_b1_new.startVertexID = he_a1.startVertexID;
-                
-                // copy the twin edge
-                he_a2_new.twinEdgeID  = he_b1ID;
-                he_b1_new.twinEdgeID  = he_a2ID;
+                he_a2.startVertexID = he_b3.startVertexID;
+                he_b1.startVertexID = he_a1.startVertexID;
                 
                 // change the next edge
                 he_a1.nextEdgeID 		= he_b2ID;
-                he_b3.nextEdgeID 		= he_a3ID;
-                he_b1_new.nextEdgeID 	= he_b3ID;
-                he_a3.nextEdgeID 		= he_b1ID;
-                he_a2_new.nextEdgeID 	= he_a1ID;
                 he_b2.nextEdgeID 		= he_a2ID;
+                he_a2.nextEdgeID 	    = he_a1ID;
+
+                he_b3.nextEdgeID 		= he_a3ID;
+                he_a3.nextEdgeID 		= he_b1ID;
+                he_b1.nextEdgeID 	    = he_b3ID;
                 
+                // update face that each edge exist
+                he_b2.faceID = he_a1.faceID;
+                he_a2.faceID = he_a1.faceID;
+
+                he_a3.faceID = he_b3.faceID;
+                he_b1.faceID = he_b3.faceID;
+
+                // store the new half edge
+                HEList[he_a1ID]=he_a1;
+                HEList[he_a2ID]=he_a2;
+                HEList[he_a3ID]=he_a3;
+                HEList[he_b1ID]=he_b1;
+                HEList[he_b2ID]=he_b2;
+                HEList[he_b3ID]=he_b3;
                 
+
                 // update the faces
                 UpdateFace(FaceList,
                            he_a1, he_a1ID);
                 
                 UpdateFace(FaceList,
-                           he_b1_new, 	he_b1ID);
-                
-                // store the new half edge
-                HEList[he_a1ID]=he_a1;
-                HEList[he_a2ID]=he_a2_new;
-                HEList[he_a3ID]=he_a3;
-                HEList[he_b1ID]=he_b1_new;
-                HEList[he_b2ID]=he_b2;
-                HEList[he_b3ID]=he_b3;
-                
+                           he_b1, 	he_b1ID);
                 
                 // add to the stack and the 2 new twin faces
                 // push the oposide of he_b1

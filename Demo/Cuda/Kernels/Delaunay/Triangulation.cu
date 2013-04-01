@@ -142,7 +142,7 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
     i= 3 + threadInfo.offsetVertexList;
     
     // DEBUG: add only one point 
-    //EndVertexIndex = i+5;
+    //EndVertexIndex = i+2;
     
     // create a stack for correction
     //DelaunayNode stack[20];
@@ -162,13 +162,14 @@ __global__ void Triangulation(const DATA_TYPE   *VertexList,
                           stack,
                           i, &threadInfo);
 
+#if 1
         // fix all the new faces
         FixStackFaces(VertexList, 
                       HEList,
                       FaceList,
                       stack,
                       &threadInfo);
-        
+#endif   
         // inc i
         i++;
     }
