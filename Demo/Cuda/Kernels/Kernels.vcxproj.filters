@@ -30,6 +30,9 @@
     <CudaCompile Include="Delaunay\Triangulation.cu">
       <Filter>Delaunay</Filter>
     </CudaCompile>
+    <CudaCompile Include="Delaunay\MergeVertical.cu">
+      <Filter>Delaunay</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Delaunay\includes.h">

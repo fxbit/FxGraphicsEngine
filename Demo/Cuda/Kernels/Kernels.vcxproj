@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="BitonicSort\BitonicSort.cu" />
+    <CudaCompile Include="Delaunay\MergeVertical.cu" />
     <CudaCompile Include="Delaunay\RegionSplit.cu" />
     <CudaCompile Include="Delaunay\Triangulation.cu">
       <CInterleavedPTX Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CInterleavedPTX>

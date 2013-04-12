@@ -129,7 +129,7 @@ void UpdateFace(Face    *FaceList,
     oldFaceID 	        = he1.faceID;
     
     // write the face back to the memory
-    SetFace(FaceList,oldFace,oldFaceID);
+    SetFace(FaceList, oldFace, oldFaceID);
 }
 
 

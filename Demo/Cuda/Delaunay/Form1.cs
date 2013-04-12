@@ -28,6 +28,7 @@ namespace Delaunay
         csThreadInfo[] threadInfo;
         RegionInfo[] regionInfo;
         cbThreadParam threadParam;
+        csMergeVThreadParam MV_threadParam;
 
         CudaDeviceVariable<csThreadInfo>    d_threadInfo;
         CudaDeviceVariable<RegionInfo>      d_regionInfo;
@@ -37,9 +38,11 @@ namespace Delaunay
         CudaDeviceVariable<csBoundaryNode>  d_BoundaryList;
         CudaDeviceVariable<csFace>          d_FaceList;
         CudaDeviceVariable<csStack>         d_Stack;
+        CudaDeviceVariable<uint>            d_UintStack;
 
         BitonicSort<FxVector2f> GPUSort;
         CudaKernel triangulation;
+        CudaKernel merge_vertical;
         CudaKernel regionSplitH;
         CudaKernel regionSplitV_Phase1;
         CudaKernel regionSplitV_Phase2;
@@ -84,7 +87,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion = 8;
+        int maxVertexPerRegion = 1024;
 
         // number of multiprocessors that the device have
         int MultiProcessorCount = 0;
@@ -110,7 +113,7 @@ namespace Delaunay
         {
             // generate and add the points 
             float x, y;
-            Random rand = new Random();
+            Random rand = new Random(100);
             for (int i = 0; i < num; i++)
             {
                 x = min.X + (float)(rand.NextDouble() * (max.X - min.X));
@@ -127,6 +130,7 @@ namespace Delaunay
         private void button1_Click(object sender, EventArgs e)
         {
             triangulation = cuda.LoadPTX("Triangulation", "PTX", "Triangulation");
+            merge_vertical = cuda.LoadPTX("MergeVertical", "PTX", "merge");
             regionSplitH = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionH");
             regionSplitV_Phase1 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase1");
             regionSplitV_Phase2 = cuda.LoadPTX("RegionSplit", "PTX", "splitRegionV_phase2");
@@ -181,6 +185,11 @@ namespace Delaunay
             threadParam.maxBoundaryNodesPerThread = (uint)maxBoundaryNodesPerThread;
             threadParam.RegionsNum = (uint)NumRegions;
 
+            MV_threadParam.ThreadNumPerRow = (uint)(VerticalRegions-1);
+            MV_threadParam.HorizontalThreadNum = (uint)(HorizontalRegions);
+            MV_threadParam.ThreadNum = MV_threadParam.HorizontalThreadNum * MV_threadParam.ThreadNumPerRow;
+            MV_threadParam.stackMaxSize = stackMaxSize;
+            MV_threadParam.depth = 0;
             #endregion
 
             // copy the data to the hardware
@@ -193,10 +202,9 @@ namespace Delaunay
             d_BoundaryList = new CudaDeviceVariable<csBoundaryNode>(maxBoundaryNodesPerThread * NumRegions);
             d_HalfEdgeList = new CudaDeviceVariable<csHalfEdge>(maxHalfEdgePerThread * NumRegions);
             d_Stack = new CudaDeviceVariable<csStack>(stackMaxSize * NumRegions);
+            d_UintStack = new CudaDeviceVariable<uint>(2 * stackMaxSize * NumRegions);
 
             // Update the region info by sort the vertex
-
-
             // try to sort the list 
             GPUSort = new BitonicSort<FxVector2f>(cuda);
 
@@ -365,6 +373,44 @@ namespace Delaunay
         }
 
 
+        private void MergeVertical()
+        {
+            int maxDepth = (int)Math.Ceiling(Math.Log(MV_threadParam.ThreadNumPerRow + 1, 2));
+
+            WriteLine("maxDepth:" + maxDepth.ToString());
+
+            for (uint i = 0; i < maxDepth; i++)
+            {
+                // calc the number the number of the thread that we need for the merging
+                int threadNumX = (int)Math.Ceiling((float)MV_threadParam.ThreadNumPerRow / Math.Pow(2, i + 1));
+                int kernelNumX = (int)Math.Ceiling((float)threadNumX / 2);
+
+                // calc the number the number of the thread that we need for the merging
+                int kernelNumY = (int)Math.Ceiling((float)MV_threadParam.HorizontalThreadNum / 4);
+
+                WriteLine("threadNumX:" + threadNumX.ToString() + "    kernelNumX:" + kernelNumX.ToString());
+                //WriteLine("mergeVYkernelNum:" + mergeVYkernelNum.ToString() + "    mergeVXkernelNum:" + mergeVXkernelNum.ToString());
+
+                MV_threadParam.depth = i;
+
+                // Start triangulation step 1
+                merge_vertical.BlockDimensions = new dim3(2, 4);
+                merge_vertical.GridDimensions = new dim3(kernelNumX, kernelNumY);
+                merge_vertical.Run(d_vertex.DevicePointer,
+                                  d_HalfEdgeList.DevicePointer,
+                                  d_BoundaryList.DevicePointer,
+                                  d_FaceList.DevicePointer,
+                                  d_Stack.DevicePointer,
+                                  d_UintStack.DevicePointer,
+                                  d_threadInfo.DevicePointer,
+                                  MV_threadParam);
+
+                break;
+            }
+
+        }
+
+
         private void button2_Click(object sender, EventArgs e)
         {
             TimeStatistics.StartClock();
@@ -375,6 +421,9 @@ namespace Delaunay
             RegionTriangulation();
             TimeStatistics.StopClock();
 
+            TimeStatistics.StartClock();
+            MergeVertical();
+            TimeStatistics.StopClock();
 
 
             // debug info
@@ -382,6 +431,7 @@ namespace Delaunay
             for (int i = 0; i < 10; i++)
                 Console.WriteLine(i.ToString() + " - " + sorted_Vertex[i].ToString() + " - " + listAllVertex[i].ToString());
 
+#if true
 
             for (int i = 0; i < sorted_Vertex.Length; i++)
             {
@@ -391,10 +441,11 @@ namespace Delaunay
                     break;
                 }
             }
-
+            
             
             DrawResults();
 
+#endif
 
             // copy the data from the hardware
             threadInfo = d_threadInfo;
@@ -422,6 +473,13 @@ namespace Delaunay
             {
                 Circle c = new Circle(v, 2);
                 plotElement.AddGeometry(c, false);
+
+                if (false)
+                {
+                    TextElement text = new TextElement(v.ToString("0.00"));
+                    text.Position = v;
+                    canvas1.AddElements(text, false);
+                }
             }
 
 
@@ -479,31 +537,34 @@ namespace Delaunay
                 {
                     csFace face = faceList[f + tInfo.lastFaceID.y];
 
-                    csHalfEdge he1 = heList[face.halfEdgeID];
-                    csHalfEdge he2 = heList[he1.nextEdgeID];
-                    csHalfEdge he3 = heList[he2.nextEdgeID];
+                    if (face.halfEdgeID < heList.Length)
+                    {
+                        csHalfEdge he1 = heList[face.halfEdgeID];
+                        csHalfEdge he2 = heList[he1.nextEdgeID];
+                        csHalfEdge he3 = heList[he2.nextEdgeID];
 
-                    FxVector2f v1 = sorted_Vertex[he1.startVertexID];
-                    FxVector2f v2 = sorted_Vertex[he2.startVertexID];
-                    FxVector2f v3 = sorted_Vertex[he3.startVertexID];
+                        FxVector2f v1 = sorted_Vertex[he1.startVertexID];
+                        FxVector2f v2 = sorted_Vertex[he2.startVertexID];
+                        FxVector2f v3 = sorted_Vertex[he3.startVertexID];
 
-                    Line l = new Line(v1,v2);
-                    l.LineColor = SharpDX.Color.BlanchedAlmond;
-                    l.UseDefaultColor = false;
-                    l.LineWidth = 0.5f;
-                    plotElement.AddGeometry(l, false);
+                        Line l = new Line(v1, v2);
+                        l.LineColor = SharpDX.Color.BlanchedAlmond;
+                        l.UseDefaultColor = false;
+                        l.LineWidth = 0.5f;
+                        plotElement.AddGeometry(l, false);
 
-                    l = new Line(v2, v3);
-                    l.LineColor = SharpDX.Color.BlanchedAlmond;
-                    l.UseDefaultColor = false;
-                    l.LineWidth = 0.5f;
-                    plotElement.AddGeometry(l, false);
+                        l = new Line(v2, v3);
+                        l.LineColor = SharpDX.Color.BlanchedAlmond;
+                        l.UseDefaultColor = false;
+                        l.LineWidth = 0.5f;
+                        plotElement.AddGeometry(l, false);
 
-                    l = new Line(v3, v1);
-                    l.LineColor = SharpDX.Color.BlanchedAlmond;
-                    l.UseDefaultColor = false;
-                    l.LineWidth = 0.5f;
-                    plotElement.AddGeometry(l, false);
+                        l = new Line(v3, v1);
+                        l.LineColor = SharpDX.Color.BlanchedAlmond;
+                        l.UseDefaultColor = false;
+                        l.LineWidth = 0.5f;
+                        plotElement.AddGeometry(l, false);
+                    }
                 }
             }
 

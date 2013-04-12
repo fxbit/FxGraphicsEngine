@@ -51,6 +51,39 @@ uint2 CreateFace(HalfEdge   *HEList,
     return newFaceID;
 }
 
+// create a face base on the exist halfEdge
+__device__
+uint2 CreateFace(HalfEdge   *HEList,
+                 Face       *FaceList,
+                 HalfEdge   *he1, uint he1ID,
+                 HalfEdge   *he2,
+                 HalfEdge   *he3,
+                 ThreadInfo *threadInfo)
+{
+    uint2 newFaceID;
+    uint heID;
+    Face newFace;
+    
+    //set the face ID
+    newFaceID = threadInfo->lastFaceID;
+
+    // inc the last id for faces
+    threadInfo->lastFaceID.x++;
+    
+    // get the half edges and link them with the face
+    he1->faceID 	= newFaceID;								//  link the he1 with the face
+    he2->faceID 	= newFaceID;								//  link the he2 with the face
+    he3->faceID 	= newFaceID;								//  link the he3 with the face
+
+    // link the new face to the he
+    newFace.halfEdgeID = he1ID;
+    
+    // write the face back to the memory
+    SetFace(FaceList, newFace , newFaceID);
+    
+    // return the face ID
+    return newFaceID;
+}
 #endif /* H_FACE_UTILS */
 
 
