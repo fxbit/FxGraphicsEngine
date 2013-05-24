@@ -37,19 +37,19 @@ PS_INPUT VS_Main( VS_INPUT input )
 {
     PS_INPUT output = (PS_INPUT)0;
     float4 position = float4(input.PosObject,1);
-	
-	position.y += g_TextureHighmap.SampleLevel( samAniClamp, input.UV ,0 ).x;
-	
+    
+    position.y += g_TextureHighmap.SampleLevel( samAniClamp, input.UV ,0 ).x;
+    
     // Transform the position into world space for lighting, and projected space
     // for display
     output.vPosProj =  mul( float4(input.PosObject,1), g_mWorldViewProjection );
 
-	// compute the position in the world
+    // compute the position in the world
     output.vPosWorld =  mul( float4(input.PosObject,1),g_mWorld).rgb;
-	
-	// compute the position in the world
+    
+    // compute the position in the world
     output.vPosWorldView =  mul( float4(input.PosObject,1),g_mWorldView);
-	
+    
     // Pass the texture coordinate // and inverse
     output.UV =input.UV;
 
@@ -117,23 +117,23 @@ float4 PS_Main( PS_INPUT input) : SV_Target
     
     float3 texCol = g_TextureDiffuse.Sample( samAniClamp, input.UV );
     
-	float3 light = g_TextureLightmap.Sample( samAniClamp, input.UV );
-	
+    float3 light = g_TextureLightmap.Sample( samAniClamp, input.UV );
+    
     // Compute the ambient and diffuse components of illumination
-    output.rgb = texCol*light;
-	
+    output.rgb = texCol*light * g_vMaterialAmbient;
+    
     /*
     float att = saturate(dot(Ln,input.normal));
     float diff = saturate(dot(Ln,tNorm));
-    output.rgb += texCol*g_vLightColor * g_vMaterialDiffuse * att*diff;
+    output.rgb += texCol*g_vLightColor * g_vMaterialDiffuse * att * diff;
     
     // specular terms
     float spec = saturate(dot(normalize(Ln-Vn),tNorm));
     spec = pow(spec,g_nMaterialShininess);
     output.rgb +=g_vMaterialSpecular*spec*att;
-    */
+    
     output.a= g_fMaterialAlpha;
-        
+        */
     return output;
 }
 

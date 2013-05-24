@@ -126,7 +126,6 @@ namespace GraphicsEngine.Core {
             Device dev = Engine.g_device;
 
             IncludeFX includeFX = new IncludeFX();
-            String errors;
 
             if ( PreCompiled ) {
                 // check that the shader is exist

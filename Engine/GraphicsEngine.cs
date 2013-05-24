@@ -19,6 +19,7 @@ using GraphicsEngine.Managers;
 
 using FxMaths;
 using SharpDX.Direct3D;
+using SharpDX.WIC;
 
 namespace GraphicsEngine {
     public class Engine {
@@ -47,6 +48,7 @@ namespace GraphicsEngine {
         #region Variables
 
         public static Device g_device;
+        public static ImagingFactory2 g_image_factory;
 
         #region private variables for render
         public static Factory g_factory;
@@ -185,7 +187,7 @@ namespace GraphicsEngine {
 
                 Console.WriteLine(i.ToString() + adapt.Description.Description);
             }
-
+            
             if (g_device == null)
             {
 
@@ -333,6 +335,10 @@ namespace GraphicsEngine {
             //DeferredDev1 = new DeviceContext( Engine.g_device );
             //DeferredDev2 = new DeviceContext( Engine.g_device );
 
+
+            // init the image factory...
+            g_image_factory = new ImagingFactory2();
+
             /// Set flag to indicate that engine is running
             g_Running = true;
 
@@ -340,6 +346,7 @@ namespace GraphicsEngine {
 
             // set the event handler
             RenderLoopHandler = new EventHandler( RenderLoop );
+
         }
 
         #endregion

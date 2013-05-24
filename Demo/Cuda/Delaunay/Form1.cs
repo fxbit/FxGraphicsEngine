@@ -87,7 +87,7 @@ namespace Delaunay
         int maxBoundaryNodesPerThread;
 
         // the max number of vertex per region
-        int maxVertexPerRegion = 1024;
+        int maxVertexPerRegion = 32;
 
         // number of multiprocessors that the device have
         int MultiProcessorCount = 0;

@@ -21,7 +21,7 @@ namespace GraphicsEngine.Core {
         public IntPtr wParam;
         public IntPtr lParam;
         public uint time;
-        public Point p;
+        public Vector2 p;
     }
 
 

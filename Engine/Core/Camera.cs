@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SharpDX;
-using SharpDX.DirectInput;
+//using SharpDX.DirectInput;
 using System.Drawing;
 using SharpDX.Direct3D11;
+using SharpDX.DirectInput;
 
 namespace GraphicsEngine.Core {
 

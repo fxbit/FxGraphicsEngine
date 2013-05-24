@@ -108,7 +108,6 @@ namespace GraphicsEngine.Core {
         {
 
             Device dev = Engine.g_device;
-            String errors;
 
             // init the include class and subpath
             IncludeFX includeFX = new IncludeFX();
