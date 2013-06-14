@@ -92,11 +92,11 @@ namespace GraphicsEngine.Core.Shaders {
         /// </summary>
         /// <param name="texturePath">Where on disk the texture is saved</param>
         /// <param name="textType"></param>
-        public void SetTexture(string texturePath, TextureType textType)
+        public Texture SetTexture(string texturePath, TextureType textType)
         {
             /// add the texture to tha manager and if is not new just get the resource
             Texture tex = TextureManager.AddTexture(texturePath);
-
+            
             switch (textType) {
                 case TextureType.Diffuse:
                     m_TextureDiffuse.SetResource(tex.shaderResource); break;
@@ -110,6 +110,56 @@ namespace GraphicsEngine.Core.Shaders {
                     m_TextureHighmap.SetResource(tex.shaderResource); break;
                     
             }
+
+            return tex;
+        }
+
+        /// <summary>
+        /// Set the texture that the mesh use
+        /// </summary>
+        /// <param name="texturePath">Where on disk the texture is saved</param>
+        /// <param name="textType"></param>
+        public void SetTexture(Texture tex, TextureType textType)
+        {
+            switch (textType)
+            {
+                case TextureType.Diffuse:
+                    m_TextureDiffuse.SetResource(tex.shaderResource); break;
+                case TextureType.Bump:
+                    m_TextureBump.SetResource(tex.shaderResource); break;
+                case TextureType.Normal:
+                    m_TextureNormal.SetResource(tex.shaderResource); break;
+                case TextureType.Lightmap:
+                    m_TextureLightmap.SetResource(tex.shaderResource); break;
+                case TextureType.Heightmap:
+                    m_TextureHighmap.SetResource(tex.shaderResource); break;
+
+            }
+        }
+
+        /// <summary>
+        /// Set the texture that the mesh use
+        /// </summary>
+        /// <param name="texturePath">Where on disk the texture is saved</param>
+        /// <param name="textType"></param>
+        public FXResourceVariable GetTexture(TextureType textType)
+        {
+            switch (textType)
+            {
+                case TextureType.Diffuse:
+                   return m_TextureDiffuse;
+                case TextureType.Bump:
+                   return m_TextureBump;
+                case TextureType.Normal:
+                   return m_TextureNormal;
+                case TextureType.Lightmap:
+                   return m_TextureLightmap;
+                case TextureType.Heightmap:
+                   return m_TextureHighmap;
+
+            }
+
+            return null;
         }
     }
 }

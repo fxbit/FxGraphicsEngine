@@ -28,6 +28,9 @@ using GraphicsEngine.Core.PrimaryObjects3D;
 using GraphicsEngine.Core.Shaders;
 
 using Delaunay;
+using SharpDX.MediaFoundation;
+using System.IO;
+using FXFramework;
 
 
 namespace Tester
@@ -165,6 +168,7 @@ namespace Tester
             {
                 toolStripStatusLabel_fps.Text = "FPS:" + engine.FPS.ToString();
                 toolStripStatusLabel_triangles.Text = "Triangles:" + engine.NumTriangles;
+
             }
             else
             {
@@ -197,6 +201,7 @@ namespace Tester
             sh.SetTexture("Resources/diffuse.jpg", TextureType.Diffuse);
             sh.SetTexture("Resources/lightmap.jpg", TextureType.Lightmap);
             sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
+            sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
 
             /////////////////////////////////////////////////////////////  Init the polygons of mesh
 
@@ -252,6 +257,296 @@ namespace Tester
 
             Engine.g_MoveCamera.SetViewParams(new Vector3(2000, 2000, 200),
                                               new Vector3(0, 0, 0));
+        }
+
+        MediaPlayer mp = new MediaPlayer();
+        Texture difTex;
+
+
+        private void VideoTimer_Tick(object sender, EventArgs e)
+        {
+            if (difTex != null)
+                mp.OnRender(difTex.texture2D);
+        }
+
+        private void addVideoPlaneToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            /////////////////////////////////////////////////////////////  Start Video
+            mp.Initialize(Engine.g_device);
+
+            mp.SetFile("sample.avi");
+            difTex = mp.CreateTexture();
+            /////////////////////////////////////////////////////////////  Init the Shader
+
+            // create the shader
+            ShaderSimple sh = new ShaderSimple();
+
+            /// add the shader to the list
+            ShaderManager.AddShader("Shader10", sh);
+
+            // add the textures for the shader
+            sh.SetTexture(difTex, TextureType.Diffuse);
+            sh.SetTexture(difTex, TextureType.Lightmap);
+            sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
+            sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+
+            /////////////////////////////////////////////////////////////  Init the polygons of mesh
+
+            List<Polygon> polygonList = new List<Polygon>();
+
+            FxVector2f p1 = new FxVector2f(0, 0);
+            FxVector2f p2 = new FxVector2f(0, 100);
+            FxVector2f p3 = new FxVector2f(100, 100);
+            FxVector2f p4 = new FxVector2f(100, 0);
+
+            float u = 0;
+            float v = 0;
+            Vertex ver1 = new Vertex(p1.X, 1, p1.Y, 0, 0, 0, u, v);
+            u = 0; v = 1;
+            Vertex ver2 = new Vertex(p2.X, 1, p2.Y, 0, 0, 0, u, v);
+            u = 1; v = 1;
+            Vertex ver3 = new Vertex(p3.X, 1, p3.Y, 0, 0, 0, u, v);
+            u = 1; v = 0;
+            Vertex ver4 = new Vertex(p4.X, 1, p4.Y, 0, 0, 0, u, v);
+
+            polygonList.Add(new Polygon(ver1, ver2, ver3));
+            polygonList.Add(new Polygon(ver1, ver3, ver4));
+
+            /////////////////////////////////////////////////////////////  Init the Mesh
+
+            /// make a new mesh
+            Mesh mesh = new Mesh();
+
+            /// set to the new mesh the shader 
+            mesh.m_shader = ShaderManager.GetExistShader("Shader10");
+
+            // set the position
+            mesh.SetPosition(new Vector3());
+
+            // scale it
+            mesh.SetScale(new Vector3(10, 10, 5));
+
+            // add the polygons on mesh
+            foreach (Polygon poly in polygonList)
+            {
+                // add the polygons to the mesh
+                mesh.AddPolygon(poly, false);
+            }
+
+            /// create the mesh and download it to the card
+            mesh.CreateMesh();
+
+            /// add the mesh to the engine mesh list
+            Engine.g_MeshManager.AddMesh(mesh);
+
+
+            /////////////////////////////////////////////////////////////  Change Camera position
+
+            Engine.g_MoveCamera.SetViewParams(new Vector3(2000, 2000, 200),
+                                              new Vector3(0, 0, 0));
+
+
+
+        }
+
+
+
+        #region Sphere
+
+        public class sphere_info
+        {
+            public ShaderSimple sh;
+            public Vector3 center;
+            public float r;
+        }
+
+        // create the shader
+        List<sphere_info> listSphere = new List<sphere_info>();
+
+
+        private void AddSphete(float r, Vector3 center, Vector3 scale)
+        {
+
+            ShaderSimple sh = new ShaderSimple();
+
+
+            // add to list the sphere
+            sphere_info spi = new sphere_info();
+            spi.sh = sh;
+            spi.r = r * scale.X * 1.5f;
+            spi.center = center;
+            listSphere.Add(spi);
+
+
+            // add the textures for the shader
+            sh.SetTexture(difTex, TextureType.Diffuse);
+            sh.SetTexture(difTex, TextureType.Lightmap);
+            sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
+
+
+            ShaderManager.AddShader("Shader" + r.ToString(), sh);
+
+            List<Polygon> polygonList = new List<Polygon>();
+
+            float numSteps = 100;
+            float thita_step = (float)(Math.PI / numSteps);
+            float phi_step = (float)(2 * Math.PI / numSteps);
+            for (float thita = 0; thita < Math.PI; thita += thita_step)
+            {
+                for (float phi = 0; phi < 2 * Math.PI; phi += phi_step)
+                {
+                    float x = (float)(r * Math.Sin(thita) * Math.Cos(phi));
+                    float y = (float)(r * Math.Sin(thita) * Math.Sin(phi));
+                    float z = (float)(r * Math.Cos(thita));
+                    float u = (float)(thita / (Math.PI));
+                    float v = (float)(phi / (2 * Math.PI));
+                    Vertex ver1A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+                    x = (float)(r * Math.Sin(thita) * Math.Cos(phi + phi_step));
+                    y = (float)(r * Math.Sin(thita) * Math.Sin(phi + phi_step));
+                    z = (float)(r * Math.Cos(thita));
+                    u = (float)(thita / (Math.PI));
+                    v = (float)((phi + phi_step) / (2 * Math.PI));
+                    Vertex ver2A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+                    x = (float)(r * Math.Sin(thita + thita_step) * Math.Cos(phi + phi_step));
+                    y = (float)(r * Math.Sin(thita + thita_step) * Math.Sin(phi + phi_step));
+                    z = (float)(r * Math.Cos(thita + thita_step));
+                    u = (float)((thita + thita_step) / (Math.PI));
+                    v = (float)((phi + phi_step) / (2 * Math.PI));
+                    Vertex ver3A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+                    x = (float)(r * Math.Sin(thita + thita_step) * Math.Cos(phi));
+                    y = (float)(r * Math.Sin(thita + thita_step) * Math.Sin(phi));
+                    z = (float)(r * Math.Cos(thita + thita_step));
+                    u = (float)((thita + thita_step) / (Math.PI));
+                    v = (float)((phi) / (2 * Math.PI));
+                    Vertex ver4A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+
+                    polygonList.Add(new Polygon(ver1A, ver2A, ver3A));
+                    polygonList.Add(new Polygon(ver1A, ver3A, ver4A));
+                }
+            }
+
+
+
+            Mesh mesh = new Mesh();
+            /// set to the new mesh the shader 
+            mesh.m_shader = sh;
+            // set the position
+            mesh.SetPosition(center);
+            // scale it
+            mesh.SetScale(scale);
+
+
+            // add the polygons on mesh
+            foreach (Polygon poly in polygonList)
+            {
+                // add the polygons to the mesh
+                mesh.AddPolygon(poly, false);
+            }
+
+            /// create the mesh and download it to the card
+            mesh.CreateMesh();
+
+            /// add the mesh to the engine mesh list
+            Engine.g_MeshManager.AddMesh(mesh);
+
+
+            sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+        }
+        
+        #endregion
+
+
+        private void addVideoSphereToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            /////////////////////////////////////////////////////////////  Start Video
+
+            mp.Initialize(Engine.g_device);
+
+            mp.SetFile("sample.avi");
+            difTex = mp.CreateTexture();
+
+            /////////////////////////////////////////////////////////////  Add the Spheres
+
+            AddSphete(1000, new Vector3(0, 0, 0), new Vector3(2, 2, 2));
+            //AddSphete(100, new Vector3(1100, 80, 2000), new Vector3(3, 3, 3));
+
+            /////////////////////////////////////////////////////////////  Init the Shader
+#if false
+
+            // create the shader
+            ShaderSimple sh = new ShaderSimple();
+
+            /// add the shader to the list
+            ShaderManager.AddShader("Shader12", sh);
+
+            // add the textures for the shader
+            sh.SetTexture("Resources/diffuse.jpg", TextureType.Diffuse);
+            sh.SetTexture("Resources/lightmap.jpg", TextureType.Lightmap);
+            sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
+            sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+
+            List<Polygon> polygonList = new List<Polygon>();
+
+            FxVector2f p1 = new FxVector2f(0, 0);
+            FxVector2f p2 = new FxVector2f(0, 100);
+            FxVector2f p3 = new FxVector2f(100, 100);
+            FxVector2f p4 = new FxVector2f(100, 0);
+
+            float u1 = 0;
+            float v1 = 0;
+            Vertex ver1 = new Vertex(p1.X, -1, p1.Y, 0, 0, 0, u1, v1);
+            u1 = 0; v1 = 1;
+            Vertex ver2 = new Vertex(p2.X, -1, p2.Y, 0, 0, 0, u1, v1);
+            u1 = 1; v1 = 1;
+            Vertex ver3 = new Vertex(p3.X, -1, p3.Y, 0, 0, 0, u1, v1);
+            u1 = 1; v1 = 0;
+            Vertex ver4 = new Vertex(p4.X, -1, p4.Y, 0, 0, 0, u1, v1);
+
+            polygonList.Add(new Polygon(ver1, ver2, ver3));
+            polygonList.Add(new Polygon(ver1, ver3, ver4));
+
+            /////////////////////////////////////////////////////////////  Init the Mesh
+
+            /// make a new mesh
+            Mesh mesh = new Mesh();
+            /// set to the new mesh the shader 
+            mesh.m_shader = ShaderManager.GetExistShader("Shader12");
+            // set the position
+            mesh.SetPosition(new Vector3(0, 0, 0));
+
+            // scale it
+            mesh.SetScale(new Vector3(40, 40, 40));
+
+            // add the polygons on mesh
+            foreach (Polygon poly in polygonList)
+            {
+                // add the polygons to the mesh
+                mesh.AddPolygon(poly, false);
+            }
+
+
+            /// create the mesh and download it to the card
+            mesh.CreateMesh();
+
+            /// add the mesh to the engine mesh list
+            Engine.g_MeshManager.AddMesh(mesh);
+
+            sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+
+            
+#endif
+
+            /////////////////////////////////////////////////////////////  Change Camera position
+            // Engine.g_MoveCamera.
+            Engine.g_MoveCamera.SetViewParams(new Vector3(4500, 3500, 2000),
+                                              new Vector3(200, 0, 200));
+
+
+            ////////////////////////////////////////////////////
         }
 
         #endregion
@@ -346,7 +641,6 @@ namespace Tester
         }
         
         #endregion
-
 
 
 

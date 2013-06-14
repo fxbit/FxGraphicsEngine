@@ -268,7 +268,7 @@ namespace SimpleExample
                 sh.SetTexture("Resources/tmima.jpg", TextureType.Diffuse);
                 sh.SetTexture("Resources/tmima.jpg", TextureType.Lightmap);
                 sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
-
+                sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
 
                 List<Polygon> polygonList = new List<Polygon>();
 
