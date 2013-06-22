@@ -47,6 +47,7 @@ namespace GraphicsEngine {
 
         #region Variables
 
+        public static Func<SharpDX.DirectInput.Key, Boolean> AppHandleKeys = null;
         public static Device g_device;
         public static ImagingFactory2 g_image_factory;
 
@@ -516,9 +517,21 @@ namespace GraphicsEngine {
                 /// a move vector and pass
                 foreach (Key key in key_state.PressedKeys)
                 {
-                    cam.handleKeys(key);
                     if (key == Key.Escape)
                         releaseInput();
+
+                    if (AppHandleKeys != null)
+                    {
+                        // if the key have not be handle from application send it to camera
+                        if (!AppHandleKeys(key))
+                        {
+                            cam.handleKeys(key);
+                        }
+                    }
+                    else
+                    {
+                        cam.handleKeys(key);
+                    }
                 }
             }
 

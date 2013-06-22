@@ -265,8 +265,8 @@ namespace Tester
 
         private void VideoTimer_Tick(object sender, EventArgs e)
         {
-            if (difTex != null)
-                mp.OnRender(difTex.texture2D);
+           // if (difTex != null)
+           //     mp.OnRender(difTex.texture2D);
         }
 
         private void addVideoPlaneToolStripMenuItem_Click(object sender, EventArgs e)
@@ -276,6 +276,23 @@ namespace Tester
 
             mp.SetFile("sample.avi");
             difTex = mp.CreateTexture();
+
+            Engine.AppHandleKeys = (SharpDX.DirectInput.Key key) =>
+            {
+                /// handle the keys that we want
+                switch (key)
+                {
+                    case SharpDX.DirectInput.Key.Up:
+                        mp.OnRender(difTex.texture2D, true);
+                        break;
+                    case SharpDX.DirectInput.Key.Down:
+                        mp.OnRender(difTex.texture2D, false);
+                        break;
+                }
+
+                return false;
+            };
+
             /////////////////////////////////////////////////////////////  Init the Shader
 
             // create the shader
@@ -380,7 +397,7 @@ namespace Tester
 
             // add the textures for the shader
             sh.SetTexture(difTex, TextureType.Diffuse);
-            sh.SetTexture(difTex, TextureType.Lightmap);
+            sh.SetTexture("Resources/lightmap.jpg", TextureType.Lightmap);
             sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
 
 
@@ -469,9 +486,27 @@ namespace Tester
             mp.SetFile("sample.avi");
             difTex = mp.CreateTexture();
 
+
+            Engine.AppHandleKeys = (SharpDX.DirectInput.Key key) =>
+            {
+                /// handle the keys that we want
+                switch (key)
+                {
+                    case SharpDX.DirectInput.Key.Up:
+                        mp.OnRender(difTex.texture2D, true);
+                        break;
+                    case SharpDX.DirectInput.Key.Down:
+                        mp.OnRender(difTex.texture2D, false);
+                        break;
+                }
+
+                return false;
+            };
+
+
             /////////////////////////////////////////////////////////////  Add the Spheres
 
-            AddSphete(1000, new Vector3(0, 0, 0), new Vector3(2, 2, 2));
+            AddSphete(1000, new Vector3(0, 0, 0), new Vector3(20, 20, 20));
             //AddSphete(100, new Vector3(1100, 80, 2000), new Vector3(3, 3, 3));
 
             /////////////////////////////////////////////////////////////  Init the Shader
@@ -542,8 +577,8 @@ namespace Tester
 
             /////////////////////////////////////////////////////////////  Change Camera position
             // Engine.g_MoveCamera.
-            Engine.g_MoveCamera.SetViewParams(new Vector3(4500, 3500, 2000),
-                                              new Vector3(200, 0, 200));
+            Engine.g_MoveCamera.SetViewParams(new Vector3(2000, 2000, 200),
+                                              new Vector3(0, 0, 0));
 
 
             ////////////////////////////////////////////////////

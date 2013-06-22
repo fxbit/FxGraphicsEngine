@@ -93,6 +93,10 @@
     <Reference Include="SharpDX.Direct3D11">
       <HintPath>..\..\SharpDX\SharpDX.Direct3D11.dll</HintPath>
     </Reference>
+    <Reference Include="SharpDX.DirectInput, Version=2.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\SharpDX\SharpDX.DirectInput.dll</HintPath>
+    </Reference>
     <Reference Include="SharpDX.DXGI">
       <HintPath>..\..\SharpDX\SharpDX.DXGI.dll</HintPath>
     </Reference>
@@ -279,10 +283,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\height.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\lightmap.jpg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

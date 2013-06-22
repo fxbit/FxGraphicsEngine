@@ -79,7 +79,7 @@ namespace Tester
             }
         }
 
-        public virtual void OnRender(Texture2D targetBase)
+        public virtual void OnRender(Texture2D targetBase, Bool forward)
         {
             lock (lockObject)
             {
@@ -91,25 +91,46 @@ namespace Tester
                 if(nextFrame!=null)
                     nextFrame.Dispose();
 
+                if (!forward)
+                {
+                    var pos = capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES);
+                    pos-=4;
+                    if(pos>=0)
+                        capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES, pos);
+                }
+
                 // get the next frame
                 nextFrame = capture.QueryFrame();
 
-                // lock the data for reading
-                System.Drawing.Bitmap bitmap = nextFrame.ToBitmap();
-                System.Drawing.Imaging.BitmapData bitdata = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, VideoSize.Width, VideoSize.Height),
-                                                                            System.Drawing.Imaging.ImageLockMode.ReadOnly,
-                                                                            System.Drawing.Imaging.PixelFormat.Format32bppRgb);
-                
-                // update the texture to the next data
-                dev.ImmediateContext.MapSubresource(targetBase, 0, MapMode.WriteDiscard, MapFlags.None, out datastream);
+                if (nextFrame == null)
+                {
+                    capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES, 0);
+                    nextFrame = capture.QueryFrame();
+                }
 
-                datastream.Write(bitdata.Scan0, 0, bitdata.Height*bitdata.Stride);
+                if (nextFrame != null)
+                {
+                    // lock the data for reading
+                    System.Drawing.Bitmap bitmap = nextFrame.ToBitmap();
+                    System.Drawing.Imaging.BitmapData bitdata = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, VideoSize.Width, VideoSize.Height),
+                                                                                System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                                                                                System.Drawing.Imaging.PixelFormat.Format32bppRgb);
 
-                dev.ImmediateContext.UnmapSubresource(targetBase, 0);
+                    // update the texture to the next data
+                    dev.ImmediateContext.MapSubresource(targetBase, 0, MapMode.WriteDiscard, MapFlags.None, out datastream);
 
-                // unlock the data
-                bitmap.UnlockBits(bitdata);
-                bitmap.Dispose();
+                    datastream.Write(bitdata.Scan0, 0, bitdata.Height * bitdata.Stride);
+
+                    dev.ImmediateContext.UnmapSubresource(targetBase, 0);
+
+                    // unlock the data
+                    bitmap.UnlockBits(bitdata);
+                    bitmap.Dispose();
+                }
+                else
+                {
+                    capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES, 0);
+                }
 
                 return;
 
