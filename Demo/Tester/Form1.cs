@@ -49,6 +49,12 @@ namespace Tester
         /// </summary>
         public static ConsoleOutput UIConsole = null;
 
+
+
+        MediaPlayer mp = new MediaPlayer();
+        Texture difTex;
+
+
         public TesterForm()
         {
             InitializeComponent();
@@ -259,15 +265,19 @@ namespace Tester
                                               new Vector3(0, 0, 0));
         }
 
-        MediaPlayer mp = new MediaPlayer();
-        Texture difTex;
+
+        
+        #endregion
 
 
-        private void VideoTimer_Tick(object sender, EventArgs e)
-        {
-           // if (difTex != null)
-           //     mp.OnRender(difTex.texture2D);
-        }
+
+
+
+
+
+        #region Video Plane
+        
+
 
         private void addVideoPlaneToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -367,6 +377,13 @@ namespace Tester
         }
 
 
+        #endregion
+
+
+
+
+
+
 
         #region Sphere
 
@@ -397,7 +414,7 @@ namespace Tester
 
             // add the textures for the shader
             sh.SetTexture(difTex, TextureType.Diffuse);
-            sh.SetTexture("Resources/lightmap.jpg", TextureType.Lightmap);
+            sh.SetTexture("Resources/white.jpg", TextureType.Lightmap);
             sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
 
 
@@ -473,8 +490,110 @@ namespace Tester
 
             sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
         }
-        
+
+
+        private void AddSphere(float r, Vector3 center, Vector3 scale, String imagePath)
+        {
+
+            ShaderSimple sh = new ShaderSimple();
+
+            // add to list the sphere
+            sphere_info spi = new sphere_info();
+            spi.sh = sh;
+            spi.r = r * scale.X * 1.5f;
+            spi.center = center;
+            listSphere.Add(spi);
+
+
+            // add the textures for the shader
+            sh.SetTexture(imagePath, TextureType.Diffuse);
+            sh.SetTexture("Resources/white.jpg", TextureType.Lightmap);
+            sh.SetTexture("Resources/height.jpg", TextureType.Heightmap);
+
+
+            ShaderManager.AddShader("Shader" + r.ToString(), sh);
+
+            List<Polygon> polygonList = new List<Polygon>();
+
+            float numSteps = 100;
+            float thita_step = (float)(Math.PI / numSteps);
+            float phi_step = (float)(2 * Math.PI / numSteps);
+            for (float thita = 0; thita < Math.PI; thita += thita_step)
+            {
+                for (float phi = 0; phi < 2 * Math.PI; phi += phi_step)
+                {
+                    float x = (float)(r * Math.Sin(thita) * Math.Cos(phi));
+                    float y = (float)(r * Math.Sin(thita) * Math.Sin(phi));
+                    float z = (float)(r * Math.Cos(thita));
+                    float u = (float)(thita / (Math.PI));
+                    float v = (float)(phi / (2 * Math.PI));
+                    Vertex ver1A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+                    x = (float)(r * Math.Sin(thita) * Math.Cos(phi + phi_step));
+                    y = (float)(r * Math.Sin(thita) * Math.Sin(phi + phi_step));
+                    z = (float)(r * Math.Cos(thita));
+                    u = (float)(thita / (Math.PI));
+                    v = (float)((phi + phi_step) / (2 * Math.PI));
+                    Vertex ver2A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+                    x = (float)(r * Math.Sin(thita + thita_step) * Math.Cos(phi + phi_step));
+                    y = (float)(r * Math.Sin(thita + thita_step) * Math.Sin(phi + phi_step));
+                    z = (float)(r * Math.Cos(thita + thita_step));
+                    u = (float)((thita + thita_step) / (Math.PI));
+                    v = (float)((phi + phi_step) / (2 * Math.PI));
+                    Vertex ver3A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+                    x = (float)(r * Math.Sin(thita + thita_step) * Math.Cos(phi));
+                    y = (float)(r * Math.Sin(thita + thita_step) * Math.Sin(phi));
+                    z = (float)(r * Math.Cos(thita + thita_step));
+                    u = (float)((thita + thita_step) / (Math.PI));
+                    v = (float)((phi) / (2 * Math.PI));
+                    Vertex ver4A = new Vertex(x, z, y, 0, 0, 0, v, u);
+
+
+                    polygonList.Add(new Polygon(ver1A, ver2A, ver3A));
+                    polygonList.Add(new Polygon(ver1A, ver3A, ver4A));
+                }
+            }
+
+
+
+            Mesh mesh = new Mesh();
+            /// set to the new mesh the shader 
+            mesh.m_shader = sh;
+            // set the position
+            mesh.SetPosition(center);
+            // scale it
+            mesh.SetScale(scale);
+
+
+            // add the polygons on mesh
+            foreach (Polygon poly in polygonList)
+            {
+                // add the polygons to the mesh
+                mesh.AddPolygon(poly, false);
+            }
+
+            /// create the mesh and download it to the card
+            mesh.CreateMesh();
+
+            /// add the mesh to the engine mesh list
+            Engine.g_MeshManager.AddMesh(mesh);
+
+
+            sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+        }
         #endregion
+
+
+
+
+
+
+
+
+        #region Video Sphere
+        
 
 
         private void addVideoSphereToolStripMenuItem_Click(object sender, EventArgs e)
@@ -585,6 +704,171 @@ namespace Tester
         }
 
         #endregion
+
+
+
+
+
+
+        #region Add CEID
+
+        sphere_info selected_sphere = null;
+        Boolean weAreIn = false;
+        private void HitTest_Tick(object sender, EventArgs e)
+        {
+            if (!weAreIn)
+            {
+                // clean the high light from all spheres
+                foreach (sphere_info spi in listSphere)
+                {
+                    spi.sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+                }
+
+
+                // try to find a hit
+                foreach (sphere_info spi in listSphere)
+                {
+                    Vector3 x0 = spi.center;
+                    Vector3 x1 = Engine.g_MoveCamera.LookAt;
+                    Vector3 x2 = Engine.g_MoveCamera.Eye;
+                    Vector3 sub1 = Vector3.Subtract(x0, x1);
+                    Vector3 sub2 = Vector3.Subtract(x0, x2);
+                    Vector3 sub3 = Vector3.Subtract(x2, x1);
+
+                    Vector3 d_arith = Vector3.Cross(sub1, sub2);
+                    float dis = (d_arith.Length() / sub3.Length());
+
+                    if (dis < spi.r)
+                    {
+                        spi.sh.SetVariables(new Vector3(1.0f, 0.5f, 0.5f), ShaderViariables.Ambient);
+                        selected_sphere = spi;
+                        return;
+                    }
+                }
+
+
+                selected_sphere = null;
+            }
+        }
+
+        private void addCEIDToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            /////////////////////////////////////////////////////////////  Start Video
+
+            mp.Initialize(Engine.g_device);
+
+            mp.SetFile("sample.avi");
+            difTex = mp.CreateTexture();
+
+
+            Engine.AppHandleKeys = (SharpDX.DirectInput.Key key) =>
+            {
+                /// handle the keys that we want
+                switch (key)
+                {
+                    case SharpDX.DirectInput.Key.Up:
+                        mp.OnRender(difTex.texture2D, true);
+                        break;
+                    case SharpDX.DirectInput.Key.Down:
+                        mp.OnRender(difTex.texture2D, false);
+                        break;
+                    case SharpDX.DirectInput.Key.Space:
+                        if (selected_sphere != null)
+                        {
+                            Engine.g_MoveCamera.SetViewParams(selected_sphere.center,
+                                          new Vector3(2000, 0, 2000));
+
+                            selected_sphere.sh.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+
+                            selected_sphere = null;
+                            weAreIn = true;
+                        }
+                        break;
+                    case SharpDX.DirectInput.Key.LeftShift:
+                        Engine.g_MoveCamera.SetViewParams(new Vector3(6500, 4500, 2000),
+                              new Vector3(200, 0, 200));
+                        weAreIn = false;
+                        break;
+                }
+
+                return false;
+            };
+
+            /////////////////////////////////////////////////////////////  Add the Spheres
+
+            //  AddSphete(1000, new Vector3(0, 0, 0), new Vector3(2, 2, 2),"sample.avi");
+            AddSphere(100, new Vector3(1500, 110, 900), new Vector3(2.5f, 2.5f, 2.5f), "Resources/lady2.jpg");
+            AddSphere(100, new Vector3(2300, 80, 3000), new Vector3(2.5f, 2.5f, 2.5f), "Resources/lady.jpg");
+            AddSphere(100, new Vector3(2300, 110, 2300), new Vector3(2.5f, 2.5f, 2.5f), "Resources/lady3.jpg");
+            AddSphete(100, new Vector3(2300, 110, 1700), new Vector3(2.5f, 2.5f, 2.5f));
+            // AddSphete(100, new Vector3(1100, 80, 2000), new Vector3(3, 3, 3));
+
+
+            // create the shader
+            ShaderSimple sh1 = new ShaderSimple();
+
+            /// add the shader to the list
+            ShaderManager.AddShader("Shader11", sh1);
+
+            // add the textures for the shader
+            sh1.SetTexture("Resources/tmima2.png", TextureType.Diffuse);
+            sh1.SetTexture("Resources/tmima2.png", TextureType.Lightmap);
+            sh1.SetTexture("Resources/height.jpg", TextureType.Heightmap);
+
+
+            List<Polygon> polygonList1 = new List<Polygon>();
+
+            FxVector2f p1 = new FxVector2f(0, 0);
+            FxVector2f p2 = new FxVector2f(0, 100);
+            FxVector2f p3 = new FxVector2f(100, 100);
+            FxVector2f p4 = new FxVector2f(100, 0);
+
+            float u1 = 0;
+            float v1 = 0;
+            Vertex ver1 = new Vertex(p1.X, -1, p1.Y, 0, 0, 0, u1, v1);
+            u1 = 0; v1 = 1;
+            Vertex ver2 = new Vertex(p2.X, -1, p2.Y, 0, 0, 0, u1, v1);
+            u1 = 1; v1 = 1;
+            Vertex ver3 = new Vertex(p3.X, -1, p3.Y, 0, 0, 0, u1, v1);
+            u1 = 1; v1 = 0;
+            Vertex ver4 = new Vertex(p4.X, -1, p4.Y, 0, 0, 0, u1, v1);
+
+            polygonList1.Add(new Polygon(ver1, ver2, ver3));
+            polygonList1.Add(new Polygon(ver1, ver3, ver4));
+
+
+            /// make a new mesh
+            Mesh mesh1 = new Mesh();
+            /// set to the new mesh the shader 
+            mesh1.m_shader = ShaderManager.GetExistShader("Shader11");
+            // set the position
+            mesh1.SetPosition(new Vector3(0, 0, 0));
+
+            // scale it
+            mesh1.SetScale(new Vector3(60, 60, 60));
+
+            // add the polygons on mesh
+            foreach (Polygon poly in polygonList1)
+            {
+                // add the polygons to the mesh
+                mesh1.AddPolygon(poly, false);
+            }
+
+
+            /// create the mesh and download it to the card
+            mesh1.CreateMesh();
+
+            /// add the mesh to the engine mesh list
+            Engine.g_MeshManager.AddMesh(mesh1);
+
+            sh1.SetVariables(new Vector3(1, 1, 1), ShaderViariables.Ambient);
+
+        }
+
+        
+        #endregion
+
+
 
 
         #endregion
