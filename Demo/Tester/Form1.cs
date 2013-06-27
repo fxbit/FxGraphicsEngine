@@ -961,9 +961,25 @@ namespace Tester
         
         #endregion
 
+        #endregion
 
 
 
+
+
+
+
+        #region Camera 
+
+        
+        private void addCameraViewportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // create a new viewport
+            CameraTesting cam = new CameraTesting();
+
+            // add the viewport to the dock
+            cam.Show(dockPanel1, DockState.Document);
+        }
 
         #endregion
     }
