@@ -4,6 +4,9 @@
 
 #include <stdio.h>
 
+
+/* TEST for commit */
+
 cudaError_t addWithCuda(int *c, const int *a, const int *b, size_t size);
 
 __global__ void addKernel(int *c, const int *a, const int *b)
