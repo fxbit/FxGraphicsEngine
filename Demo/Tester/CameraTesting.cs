@@ -37,6 +37,9 @@ namespace Tester
         ImageElement imAv;
         Boolean _running = false;
 
+        FxMatrixF average = null;
+        FxMatrixF nextMat = null;
+
         // fps measure
         int counts = 0;
         System.Windows.Forms.Timer fpsTimer;
@@ -46,7 +49,7 @@ namespace Tester
         {
             InitializeComponent();
 
-
+            // init the camera capturing
             capture = new Capture(0);
             capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_AUTO_EXPOSURE, 1);
             //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_MODE, 1);
@@ -60,8 +63,16 @@ namespace Tester
 #else
             nextFrame = capture.QueryGrayFrame();
 #endif
+            nextMat = FxMatrixF.Load(nextFrame.Bytes,
+                                     nextFrame.Width,
+                                     nextFrame.Height,
+                                     FxMaths.Matrix.ColorSpace.Grayscale);
+            average = nextMat.Copy() as FxMatrixF;
+
+            // create the capture thread
             captureThread = new Thread(CaptureCam);
 
+            // add the timer for the fps measure
             fpsTimer = new System.Windows.Forms.Timer();
             fpsTimer.Interval = 1000;
             watch.Start();
@@ -95,29 +106,28 @@ namespace Tester
             fpsTimer.Start();
         }
 
-        FxMatrixF average = null;
         private void CaptureCam()
         {
             while(_running) {
-                if(nextFrame != null)
-                    nextFrame.Dispose();
+             ///   if(nextFrame != null)
+            ///        nextFrame.Dispose();
 
 #if USE_BGR
                 nextFrame = capture.QueryFrame();
 #else
-                nextFrame = capture.QueryGrayFrame();
+            ///    nextFrame = capture.QueryGrayFrame();
 #endif
-                FxMatrixF mat = FxMatrixF.Load(nextFrame.Bytes, nextFrame.Width, nextFrame.Height, FxMaths.Matrix.ColorSpace.Grayscale);
+                nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
 
                 if(average == null) {
-                    average = mat;
+                    average = nextMat * 1f;
                 } else {
-                    average = average * 0.9f + mat * 0.1f;
+                    average = average * 0.9f + nextMat * 0.1f;
                     //  average.Multiply(0.9f);
                     //  average.Add(mat * 0.1f);
                 }
 
-                imEl.UpdateInternalImage(mat);
+                imEl.UpdateInternalImage(nextMat);
                 imAv.UpdateInternalImage(average);
 
                 counts++;
