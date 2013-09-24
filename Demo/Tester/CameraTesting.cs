@@ -13,6 +13,7 @@ using WeifenLuo.WinFormsUI.Docking;
 using FxMaths.GUI;
 using FxMaths.Images;
 using System.Threading;
+using FxMaths.Matrix;
 
 
 namespace Tester
@@ -24,6 +25,7 @@ namespace Tester
         Thread captureThread;
         FxImages im;
         ImageElement imEl;
+        ImageElement imAv;
 
         public CameraTesting()
         {
@@ -50,12 +52,25 @@ namespace Tester
         {
             im = FxTools.FxImages_safe_constructors(nextFrame.ToBitmap());
             imEl = new ImageElement(im);
+            imAv = new ImageElement(im);
 
             canvas1.AddElements(imEl);
+            canvas1.AddElements(imAv);
+            imAv.Position= new FxMaths.Vector.FxVector2f(1270, 0);
 
             captureThread.Start();
         }
 
+        private void processImage(FxImages im)
+        {
+            FxMatrixF mat = FxMatrixF.Load(im, FxMaths.Matrix.ColorSpace.Grayscale);
+
+            mat.Multiply(0.5f);
+            im.Load(mat);
+
+        }
+
+        FxMatrixF average = null;
         private void CaptureCam()
         {
             while (true)
@@ -64,9 +79,21 @@ namespace Tester
                     nextFrame.Dispose();
 
                 nextFrame = capture.QueryFrame();
-                im = FxTools.FxImages_safe_constructors(nextFrame.ToBitmap());
-                imEl.UpdateIternalImage(im);
+                FxMatrixF mat = FxMatrixF.Load(nextFrame.Bytes, nextFrame.Width, nextFrame.Height, FxMaths.Matrix.ColorSpace.Grayscale);
 
+                if (average == null)
+                {
+                    average = mat;
+                }
+                else
+                {
+                    average = 0.1f*mat + 0.9f*average;
+                }
+
+            //    processImage(im);
+                imEl.UpdateInternalImage(mat);
+                imAv.UpdateInternalImage(average);
+                
                 canvas1.ReDraw();
             }
 
