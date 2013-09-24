@@ -53,6 +53,7 @@
             this.addViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.add2DViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outputToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addCameraViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.meshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addSamplePlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addVideoPlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -66,7 +67,6 @@
             this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.HitTest = new System.Windows.Forms.Timer(this.components);
-            this.addCameraViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -147,6 +147,13 @@
             this.outputToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
             this.outputToolStripMenuItem.Text = "Output";
             this.outputToolStripMenuItem.Click += new System.EventHandler(this.outputToolStripMenuItem_Click);
+            // 
+            // addCameraViewportToolStripMenuItem
+            // 
+            this.addCameraViewportToolStripMenuItem.Name = "addCameraViewportToolStripMenuItem";
+            this.addCameraViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.addCameraViewportToolStripMenuItem.Text = "Add Camera Viewport";
+            this.addCameraViewportToolStripMenuItem.Click += new System.EventHandler(this.addCameraViewportToolStripMenuItem_Click);
             // 
             // meshToolStripMenuItem
             // 
@@ -287,13 +294,6 @@
             this.HitTest.Enabled = true;
             this.HitTest.Tick += new System.EventHandler(this.HitTest_Tick);
             // 
-            // addCameraViewportToolStripMenuItem
-            // 
-            this.addCameraViewportToolStripMenuItem.Name = "addCameraViewportToolStripMenuItem";
-            this.addCameraViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
-            this.addCameraViewportToolStripMenuItem.Text = "Add Camera Viewport";
-            this.addCameraViewportToolStripMenuItem.Click += new System.EventHandler(this.addCameraViewportToolStripMenuItem_Click);
-            // 
             // TesterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -306,6 +306,7 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "TesterForm";
             this.Text = "Form1";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.TesterForm_FormClosing);
             this.ResizeEnd += new System.EventHandler(this.Form1_ResizeEnd);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
