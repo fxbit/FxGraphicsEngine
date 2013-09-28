@@ -106,29 +106,60 @@ namespace Tester
             fpsTimer.Start();
         }
 
+        float a = 0.5f;
+        float b = 0.1f;
+        FxMatrixMask G;
+        FxMatrixF s,m;
+
         private void CaptureCam()
         {
+
+            G=new FxMatrixMask(nextMat.Width, nextMat.Height,false);
+            s = new FxMatrixF(nextMat.Width, nextMat.Height, 1f);
+            m = nextMat;
+
             while(_running) {
-             ///   if(nextFrame != null)
-            ///        nextFrame.Dispose();
+                if(nextFrame != null)
+                    nextFrame.Dispose();
 
 #if USE_BGR
                 nextFrame = capture.QueryFrame();
 #else
-            ///    nextFrame = capture.QueryGrayFrame();
+                nextFrame = capture.QueryGrayFrame();
 #endif
                 nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
 
-                if(average == null) {
-                    average = nextMat * 1f;
-                } else {
-                    average = average * 0.9f + nextMat * 0.1f;
-                    //  average.Multiply(0.9f);
-                    //  average.Add(mat * 0.1f);
-                }
+                var mask = nextMat > 0.5f;//((nextMat.Max() +nextMat.Min())/2);
 
-                imEl.UpdateInternalImage(nextMat);
-                imAv.UpdateInternalImage(average);
+                var diff = nextMat - m;
+                s = (a + G * (b - a)) * (diff * diff - s) + s;
+                m = (a + G * (b - a)) * diff + m;
+                G = s > 40;
+
+                //average[mask] = average * 0.9f + nextMat * 0.1f;
+
+                //average[mask] = nextMat;
+                //average = nextMat[mask];
+                
+                //  average.Multiply(0.9f);
+                //  average.Add(mat * 0.1f);
+
+                FxMatrixF r = s.Copy();
+                r.Subtract(r.Min());
+                r.Divide(r.Max());
+
+                nextMat.Subtract(nextMat.Min());
+                nextMat.Divide(nextMat.Max());
+
+                for (int i = 0; i < 256; i++) {
+                    for (int j = 0; j < 20;j++ )
+                        nextMat[i, j] = (i % 256) / 255.0f;
+                }
+                    
+
+                var cmap = new ColorMap(ColorMapDefaults.Jet);
+                imEl.UpdateInternalImage(nextMat, cmap);
+                imAv.UpdateInternalImage(r, cmap);
 
                 counts++;
                 canvas1.ReDraw();
