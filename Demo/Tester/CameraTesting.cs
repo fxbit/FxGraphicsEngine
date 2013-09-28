@@ -17,7 +17,7 @@ using FxMaths.Images;
 using System.Threading;
 using FxMaths.Matrix;
 using System.Diagnostics;
-
+using FxMaths;
 
 namespace Tester
 {
@@ -117,8 +117,11 @@ namespace Tester
             G=new FxMatrixMask(nextMat.Width, nextMat.Height,false);
             s = new FxMatrixF(nextMat.Width, nextMat.Height, 1f);
             m = nextMat;
+            var cmap = new ColorMap(ColorMapDefaults.Jet);
+            var cmap_cam = new ColorMap(ColorMapDefaults.DeepBlue);
 
             while(_running) {
+
                 if(nextFrame != null)
                     nextFrame.Dispose();
 
@@ -155,10 +158,9 @@ namespace Tester
                     for (int j = 0; j < 20;j++ )
                         nextMat[i, j] = (i % 256) / 255.0f;
                 }
-                    
 
-                var cmap = new ColorMap(ColorMapDefaults.Jet);
-                imEl.UpdateInternalImage(nextMat, cmap);
+
+                imEl.UpdateInternalImage(nextMat, cmap_cam);
                 imAv.UpdateInternalImage(r, cmap);
 
                 counts++;
