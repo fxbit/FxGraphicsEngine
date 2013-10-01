@@ -25,6 +25,8 @@ namespace Tester
     {
         Capture capture;
 
+        CameraConfigs cameraConfigs = new CameraConfigs();
+
 #if USE_BGR
         Image<Bgr, byte> nextFrame;
 #else
@@ -104,10 +106,10 @@ namespace Tester
             _running = true;
             captureThread.Start();
             fpsTimer.Start();
+
+            propertyGrid1.SelectedObject = cameraConfigs;
         }
 
-        float a = 0.5f;
-        float b = 0.1f;
         FxMatrixMask G;
         FxMatrixF s,m;
 
@@ -117,8 +119,6 @@ namespace Tester
             G=new FxMatrixMask(nextMat.Width, nextMat.Height,false);
             s = new FxMatrixF(nextMat.Width, nextMat.Height, 1f);
             m = nextMat;
-            var cmap = new ColorMap(ColorMapDefaults.Jet);
-            var cmap_cam = new ColorMap(ColorMapDefaults.DeepBlue);
 
             while(_running) {
 
@@ -132,20 +132,10 @@ namespace Tester
 #endif
                 nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
 
-                var mask = nextMat > 0.5f;//((nextMat.Max() +nextMat.Min())/2);
-
                 var diff = nextMat - m;
-                s = (a + G * (b - a)) * (diff * diff - s) + s;
-                m = (a + G * (b - a)) * diff + m;
+                s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
+                m = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * diff + m;
                 G = s > 40;
-
-                //average[mask] = average * 0.9f + nextMat * 0.1f;
-
-                //average[mask] = nextMat;
-                //average = nextMat[mask];
-                
-                //  average.Multiply(0.9f);
-                //  average.Add(mat * 0.1f);
 
                 FxMatrixF r = s.Copy();
                 r.Subtract(r.Min());
@@ -159,9 +149,8 @@ namespace Tester
                         nextMat[i, j] = (i % 256) / 255.0f;
                 }
 
-
-                imEl.UpdateInternalImage(nextMat, cmap_cam);
-                imAv.UpdateInternalImage(r, cmap);
+                imEl.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
+                imAv.UpdateInternalImage(r, cameraConfigs.camResultMap);
 
                 counts++;
                 canvas1.ReDraw();
@@ -174,6 +163,58 @@ namespace Tester
             _running = false;
             captureThread.Abort();
             captureThread.Join();
+        }
+    }
+
+
+    public class CameraConfigs
+    {
+
+        #region Cam Frame
+        private ColorMapDefaults _CamFrame = ColorMapDefaults.DeepBlue;
+        public ColorMap camFrameMap = new ColorMap(ColorMapDefaults.DeepBlue);
+
+        public ColorMapDefaults CamFrame
+        {
+            get
+            {
+                return _CamFrame;
+            }
+            set
+            {
+                _CamFrame = value;
+                camFrameMap = new ColorMap(value);
+            }
+        } 
+        #endregion
+
+
+        #region Cam Result
+        private ColorMapDefaults _CamResult = ColorMapDefaults.Jet;
+        public ColorMap camResultMap = new ColorMap(ColorMapDefaults.Jet);
+
+        public ColorMapDefaults CamResult
+        {
+            get
+            {
+                return _CamResult;
+            }
+            set
+            {
+                _CamResult = value;
+                camResultMap = new ColorMap(value);
+            }
+        } 
+        #endregion
+
+        public float a { get; set; }
+        public float b { get; set; }
+
+
+        public CameraConfigs()
+        {
+            a = 0.5f;
+            b = 0.1f;
         }
     }
 }

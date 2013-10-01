@@ -35,19 +35,25 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.m_fps = new System.Windows.Forms.ToolStripStatusLabel();
+            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+            this.splitContainer1.Panel1.SuspendLayout();
+            this.splitContainer1.Panel2.SuspendLayout();
+            this.splitContainer1.SuspendLayout();
             this.SuspendLayout();
             // 
             // canvas1
             // 
             this.canvas1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.canvas1.EditBorderColor = new SharpDX.Color(((byte)(165)), ((byte)(42)), ((byte)(42)), ((byte)(255)));
-            this.canvas1.Location = new System.Drawing.Point(0, 25);
+            this.canvas1.Location = new System.Drawing.Point(0, 0);
             this.canvas1.Name = "canvas1";
             this.canvas1.ScreenOffset = new SharpDX.Vector2(10F, 10F);
             this.canvas1.SelectedBorderColor = new SharpDX.Color(((byte)(245)), ((byte)(245)), ((byte)(220)), ((byte)(255)));
-            this.canvas1.Size = new System.Drawing.Size(731, 550);
+            this.canvas1.Size = new System.Drawing.Size(484, 528);
             this.canvas1.TabIndex = 0;
             this.canvas1.Zoom = new System.Drawing.SizeF(1F, 1F);
             // 
@@ -94,13 +100,38 @@
             this.m_fps.Size = new System.Drawing.Size(13, 17);
             this.m_fps.Text = "0";
             // 
+            // splitContainer1
+            // 
+            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer1.Location = new System.Drawing.Point(0, 25);
+            this.splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.propertyGrid1);
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.canvas1);
+            this.splitContainer1.Size = new System.Drawing.Size(731, 528);
+            this.splitContainer1.SplitterDistance = 243;
+            this.splitContainer1.TabIndex = 3;
+            // 
+            // propertyGrid1
+            // 
+            this.propertyGrid1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyGrid1.Location = new System.Drawing.Point(0, 0);
+            this.propertyGrid1.Name = "propertyGrid1";
+            this.propertyGrid1.Size = new System.Drawing.Size(243, 528);
+            this.propertyGrid1.TabIndex = 0;
+            // 
             // CameraTesting
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(731, 575);
+            this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.statusStrip1);
-            this.Controls.Add(this.canvas1);
             this.Controls.Add(this.toolStrip1);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(161)));
             this.Name = "CameraTesting";
@@ -111,6 +142,10 @@
             this.toolStrip1.PerformLayout();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.splitContainer1.Panel1.ResumeLayout(false);
+            this.splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
+            this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -124,5 +159,7 @@
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel m_fps;
+        private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.PropertyGrid propertyGrid1;
     }
 }
