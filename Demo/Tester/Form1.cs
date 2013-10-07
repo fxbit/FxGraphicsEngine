@@ -991,5 +991,22 @@ namespace Tester
             if(cam != null)
                 cam.Close();
         }
+
+
+
+        #region Kinect
+
+        private  KinectForm kinect;
+        private void addKinectViewportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // create a new viewport
+            kinect = new KinectForm();
+
+            // add the viewport to the dock
+            kinect.Show(dockPanel1, DockState.Document);
+        } 
+
+
+        #endregion
     }
 }

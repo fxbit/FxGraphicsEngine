@@ -67,6 +67,7 @@
             this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.HitTest = new System.Windows.Forms.Timer(this.components);
+            this.addKinectViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -122,7 +123,8 @@
             this.addViewportToolStripMenuItem,
             this.add2DViewportToolStripMenuItem,
             this.outputToolStripMenuItem,
-            this.addCameraViewportToolStripMenuItem});
+            this.addCameraViewportToolStripMenuItem,
+            this.addKinectViewportToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "View";
@@ -294,6 +296,13 @@
             this.HitTest.Enabled = true;
             this.HitTest.Tick += new System.EventHandler(this.HitTest_Tick);
             // 
+            // addKinectViewportToolStripMenuItem
+            // 
+            this.addKinectViewportToolStripMenuItem.Name = "addKinectViewportToolStripMenuItem";
+            this.addKinectViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.addKinectViewportToolStripMenuItem.Text = "Add Kinect Viewport";
+            this.addKinectViewportToolStripMenuItem.Click += new System.EventHandler(this.addKinectViewportToolStripMenuItem_Click);
+            // 
             // TesterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -342,6 +351,7 @@
         private System.Windows.Forms.ToolStripMenuItem addCEIDToolStripMenuItem;
         private System.Windows.Forms.Timer HitTest;
         private System.Windows.Forms.ToolStripMenuItem addCameraViewportToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem addKinectViewportToolStripMenuItem;
     }
 }
 
