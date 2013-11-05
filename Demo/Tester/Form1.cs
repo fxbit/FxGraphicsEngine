@@ -1008,5 +1008,33 @@ namespace Tester
 
 
         #endregion
+
+        private void testJpegToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fileOpen = new OpenFileDialog();
+
+            if(fileOpen.ShowDialog() == System.Windows.Forms.DialogResult.OK) {
+                Bitmap bitMap = new Bitmap(fileOpen.FileName);
+                FxImages fxIm = FxTools.FxImages_safe_constructors(bitMap);
+                StringBuilder sb = new StringBuilder();
+                sb.Append("byte image[] = {");
+                int Width = fxIm.Image.Width;
+                int Height = fxIm.Image.Height;
+                fxIm.LockImage();
+                for(int i=0; i < Width; i++) {
+                    for(int j=0; j < Height; j++) {
+                        if(j % 32 == 0)
+                            sb.Append("\r\n");
+                        sb.Append(fxIm[i, j, RGB.R]); sb.Append(',');
+                        sb.Append(fxIm[i, j, RGB.G]); sb.Append(',');
+                        sb.Append(fxIm[i, j, RGB.B]); sb.Append(',');
+                    }
+
+                }
+                fxIm.UnLockImage();
+                sb.Append("};");
+                System.IO.File.WriteAllText("image.c", sb.ToString());
+            }
+        }
     }
 }

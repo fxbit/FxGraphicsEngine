@@ -23,6 +23,17 @@ namespace Tester
 {
     public partial class CameraTesting : DockContent
     {
+        public CameraTesting()
+        {
+            InitializeComponent();
+
+        }
+
+
+
+        #region Live camera testing
+
+
         Capture capture;
 
         CameraConfigs cameraConfigs = new CameraConfigs();
@@ -33,7 +44,7 @@ namespace Tester
         Image<Gray, byte> nextFrame;
 #endif
 
-        Thread captureThread;
+        Thread captureThread = null;
         FxImages im;
         ImageElement imEl;
         ImageElement imAv;
@@ -47,9 +58,8 @@ namespace Tester
         System.Windows.Forms.Timer fpsTimer;
         Stopwatch watch = new Stopwatch();
 
-        public CameraTesting()
+        private void toolStripButton1_Click(object sender, EventArgs e)
         {
-            InitializeComponent();
 
             // init the camera capturing
             capture = new Capture(0);
@@ -78,7 +88,8 @@ namespace Tester
             fpsTimer = new System.Windows.Forms.Timer();
             fpsTimer.Interval = 1000;
             watch.Start();
-            fpsTimer.Tick += (sender, e) => {
+
+            fpsTimer.Tick += (s, te) => {
                 watch.Stop();
                 float fps = counts * 1000.0f / watch.ElapsedMilliseconds;
                 m_fps.Text = fps.ToString();
@@ -86,15 +97,7 @@ namespace Tester
                 watch.Reset();
                 watch.Start();
             };
-        }
 
-        private void CameraTesting_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void toolStripButton1_Click(object sender, EventArgs e)
-        {
             im = FxTools.FxImages_safe_constructors(nextFrame.ToBitmap());
             imEl = new ImageElement(im);
             imAv = new ImageElement(im);
@@ -116,7 +119,7 @@ namespace Tester
         private void CaptureCam()
         {
 
-            G=new FxMatrixMask(nextMat.Width, nextMat.Height,false);
+            G = new FxMatrixMask(nextMat.Width, nextMat.Height, false);
             s = new FxMatrixF(nextMat.Width, nextMat.Height, 1f);
             m = nextMat;
 
@@ -144,13 +147,18 @@ namespace Tester
                 nextMat.Subtract(nextMat.Min());
                 nextMat.Divide(nextMat.Max());
 
-                for (int i = 0; i < 256; i++) {
-                    for (int j = 0; j < 20;j++ )
+                for(int i = 0; i < 256; i++) {
+                    for(int j = 0; j < 20; j++)
                         nextMat[i, j] = (i % 256) / 255.0f;
                 }
+                
+                var grad = nextMat.Gradient(cameraConfigs.edgeDetect);
+                grad.Divide(grad.Max());
 
-                imEl.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
-                imAv.UpdateInternalImage(r, cameraConfigs.camResultMap);
+                imEl.UpdateInternalImage(grad, cameraConfigs.camFrameMap);
+
+                var mask = grad>0.1f;
+                imAv.UpdateInternalImage(mask.ToFxMatrixF(), cameraConfigs.camResultMap);
 
                 counts++;
                 canvas1.ReDraw();
@@ -160,10 +168,39 @@ namespace Tester
 
         private void CameraTesting_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _running = false;
-            captureThread.Abort();
-            captureThread.Join();
+            if(captureThread != null) {
+                _running = false;
+                captureThread.Abort();
+                captureThread.Join();
+            }
         }
+
+
+
+        #endregion
+
+
+        #region Static image testing 
+
+        private void toolStripButton2_Click(object sender, EventArgs e)
+        {
+            Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
+            //Bitmap circles = new Bitmap(@"C:\Dropbox\Camera Uploads\2008-08-14 21.12.42-2.jpg");
+            
+            var mat = FxMatrixF.Load(circles, FxMaths.Matrix.ColorSpace.Grayscale);
+            var grad = mat.Gradient(FxMatrixF.GradientMethod.Sobel);
+            var grad2 = mat.Gradient(FxMatrixF.GradientMethod.Scharr);
+
+            ImageElement imEl = new ImageElement(grad);
+            canvas1.AddElements(imEl);
+
+
+            imEl = new ImageElement(grad2);
+            canvas1.AddElements(imEl);
+        } 
+
+
+        #endregion
     }
 
 
@@ -185,7 +222,9 @@ namespace Tester
                 _CamFrame = value;
                 camFrameMap = new ColorMap(value);
             }
-        } 
+        }
+
+        
         #endregion
 
 
@@ -209,12 +248,15 @@ namespace Tester
 
         public float a { get; set; }
         public float b { get; set; }
+        
+        public FxMatrixF.GradientMethod edgeDetect { get; set; }
 
 
         public CameraConfigs()
         {
             a = 0.5f;
             b = 0.1f;
+            edgeDetect = FxMatrixF.GradientMethod.Sobel;
         }
     }
 }

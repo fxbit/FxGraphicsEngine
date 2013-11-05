@@ -54,6 +54,7 @@
             this.add2DViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.outputToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addCameraViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addKinectViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.meshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addSamplePlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addVideoPlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -67,7 +68,7 @@
             this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.HitTest = new System.Windows.Forms.Timer(this.components);
-            this.addKinectViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.testJpegToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -124,7 +125,8 @@
             this.add2DViewportToolStripMenuItem,
             this.outputToolStripMenuItem,
             this.addCameraViewportToolStripMenuItem,
-            this.addKinectViewportToolStripMenuItem});
+            this.addKinectViewportToolStripMenuItem,
+            this.testJpegToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "View";
@@ -156,6 +158,13 @@
             this.addCameraViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
             this.addCameraViewportToolStripMenuItem.Text = "Add Camera Viewport";
             this.addCameraViewportToolStripMenuItem.Click += new System.EventHandler(this.addCameraViewportToolStripMenuItem_Click);
+            // 
+            // addKinectViewportToolStripMenuItem
+            // 
+            this.addKinectViewportToolStripMenuItem.Name = "addKinectViewportToolStripMenuItem";
+            this.addKinectViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.addKinectViewportToolStripMenuItem.Text = "Add Kinect Viewport";
+            this.addKinectViewportToolStripMenuItem.Click += new System.EventHandler(this.addKinectViewportToolStripMenuItem_Click);
             // 
             // meshToolStripMenuItem
             // 
@@ -296,12 +305,12 @@
             this.HitTest.Enabled = true;
             this.HitTest.Tick += new System.EventHandler(this.HitTest_Tick);
             // 
-            // addKinectViewportToolStripMenuItem
+            // testJpegToolStripMenuItem
             // 
-            this.addKinectViewportToolStripMenuItem.Name = "addKinectViewportToolStripMenuItem";
-            this.addKinectViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
-            this.addKinectViewportToolStripMenuItem.Text = "Add Kinect Viewport";
-            this.addKinectViewportToolStripMenuItem.Click += new System.EventHandler(this.addKinectViewportToolStripMenuItem_Click);
+            this.testJpegToolStripMenuItem.Name = "testJpegToolStripMenuItem";
+            this.testJpegToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.testJpegToolStripMenuItem.Text = "TestJpeg";
+            this.testJpegToolStripMenuItem.Click += new System.EventHandler(this.testJpegToolStripMenuItem_Click);
             // 
             // TesterForm
             // 
@@ -352,6 +361,7 @@
         private System.Windows.Forms.Timer HitTest;
         private System.Windows.Forms.ToolStripMenuItem addCameraViewportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addKinectViewportToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem testJpegToolStripMenuItem;
     }
 }
 

@@ -101,6 +101,7 @@ namespace Tester
         /// Image in Matrix Form.
         /// </summary>
         private FxMatrixF depthImageMatrix;
+        private FxMatrixF depthImageMatrixAve;
 
         /// <summary>
         /// Depth viewer.
@@ -214,6 +215,7 @@ namespace Tester
             // allocate the Matrix
             colorImageMatrix = new FxMatrixF(colorWidth, colorHeight);
             depthImageMatrix = new FxMatrixF(depthWidth, depthHeight);
+            depthImageMatrixAve = new FxMatrixF(depthWidth, depthHeight);
 
             // create a new image element
             colorImageElement = new ImageElement(colorImageMatrix);
@@ -379,8 +381,7 @@ namespace Tester
         
         #endregion
 
-
-        float a = 0.5f;
+        float a = 0.05f;
         float b = 0.1f;
         FxMatrixMask G;
         FxMatrixF s,m;
@@ -390,9 +391,11 @@ namespace Tester
 
             try {
                 // proccessing ...
-                var depth = depthImageMatrix / depthImageMatrix.Max();
+                depthImageMatrixAve = a * depthImageMatrix + (1 - a) * depthImageMatrixAve;
+                var depth = depthImageMatrixAve / depthImageMatrixAve.Max();
                 //depthImageMatrix.Divide(depthImageMatrix.Max());
                 //depthImageMatrix.MultiplyPointwise(colorImageMatrix);
+
 
 
                 if(null == mapper) {
@@ -406,6 +409,7 @@ namespace Tester
                 for(int i=0; i < depthWidth * depthHeight; i++) {
                     depth[i] *= colorImageMatrix[colorCoordinates[i].X, colorCoordinates[i].Y];
                 }
+
 
               //  m = a * depthImageMatrix + (1 - a) * m;
 
@@ -483,8 +487,17 @@ namespace Tester
                 colorImageMatrix.SaveImage(sfd.FileName + "_color.jpg", map);
 
                 depthImageMatrix.SaveCsv(sfd.FileName + "_depth.csv");
+                depthImageMatrixAve.SaveCsv(sfd.FileName + "_ave_depth.csv");
             }
             sensor.Start();
+        }
+
+        int saveCount = 0;
+        private void toolStripButton1_Click(object sender, EventArgs e)
+        {
+            String FileName = "depth_" + saveCount.ToString() + ".csv";
+            saveCount++;
+            depthImageMatrixAve.SaveCsv(FileName);
         }
 
 

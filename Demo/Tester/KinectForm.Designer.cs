@@ -30,11 +30,12 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(KinectForm));
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.button_StartKinect = new System.Windows.Forms.ToolStripButton();
+            this.button_SaveImage = new System.Windows.Forms.ToolStripButton();
             this.canvas1 = new FxMaths.GUI.Canvas();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.labelFPS = new System.Windows.Forms.ToolStripStatusLabel();
-            this.button_SaveImage = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -43,7 +44,8 @@
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.button_StartKinect,
-            this.button_SaveImage});
+            this.button_SaveImage,
+            this.toolStripButton1});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(637, 25);
@@ -59,6 +61,16 @@
             this.button_StartKinect.Size = new System.Drawing.Size(23, 22);
             this.button_StartKinect.Text = "Start Kinect";
             this.button_StartKinect.Click += new System.EventHandler(this.button_StartKinect_Click);
+            // 
+            // button_SaveImage
+            // 
+            this.button_SaveImage.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.button_SaveImage.Image = ((System.Drawing.Image)(resources.GetObject("button_SaveImage.Image")));
+            this.button_SaveImage.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.button_SaveImage.Name = "button_SaveImage";
+            this.button_SaveImage.Size = new System.Drawing.Size(23, 22);
+            this.button_SaveImage.Text = "SaveImage";
+            this.button_SaveImage.Click += new System.EventHandler(this.button_SaveImage_Click);
             // 
             // canvas1
             // 
@@ -95,15 +107,15 @@
             this.labelFPS.Size = new System.Drawing.Size(13, 17);
             this.labelFPS.Text = "0";
             // 
-            // button_SaveImage
+            // toolStripButton1
             // 
-            this.button_SaveImage.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.button_SaveImage.Image = ((System.Drawing.Image)(resources.GetObject("button_SaveImage.Image")));
-            this.button_SaveImage.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.button_SaveImage.Name = "button_SaveImage";
-            this.button_SaveImage.Size = new System.Drawing.Size(23, 22);
-            this.button_SaveImage.Text = "SaveImage";
-            this.button_SaveImage.Click += new System.EventHandler(this.button_SaveImage_Click);
+            this.toolStripButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton1.Image")));
+            this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton1.Name = "toolStripButton1";
+            this.toolStripButton1.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButton1.Text = "AutoSave";
+            this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
             // 
             // KinectForm
             // 
@@ -135,5 +147,6 @@
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel labelFPS;
         private System.Windows.Forms.ToolStripButton button_SaveImage;
+        private System.Windows.Forms.ToolStripButton toolStripButton1;
     }
 }
