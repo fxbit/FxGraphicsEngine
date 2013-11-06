@@ -66,8 +66,8 @@ namespace Tester
             capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_AUTO_EXPOSURE, 1);
             //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_MODE, 1);
             //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FPS, 60);
-            //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH, 1920);
-            //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT, 1080);
+            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH, 640);
+            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT, 480);
             Console.WriteLine("Width:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH));
             Console.WriteLine("Height:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT));
 #if USE_BGR
@@ -100,7 +100,7 @@ namespace Tester
 
             im = FxTools.FxImages_safe_constructors(nextFrame.ToBitmap());
             imEl = new ImageElement(im);
-            imAv = new ImageElement(im);
+            imAv = new ImageElement(nextMat.Resize(nextFrame.Width / 2, nextFrame.Height/2));
 
             canvas1.AddElements(imEl);
             canvas1.AddElements(imAv);
@@ -122,6 +122,10 @@ namespace Tester
             G = new FxMatrixMask(nextMat.Width, nextMat.Height, false);
             s = new FxMatrixF(nextMat.Width, nextMat.Height, 1f);
             m = nextMat;
+
+            /* create a circle with specific radius */
+            double step = Math.PI / 50;
+            var c = new FxMatrixF(nextMat.Width/2, nextMat.Height/2, 0f);
 
             while(_running) {
 
@@ -147,18 +151,48 @@ namespace Tester
                 nextMat.Subtract(nextMat.Min());
                 nextMat.Divide(nextMat.Max());
 
-                for(int i = 0; i < 256; i++) {
-                    for(int j = 0; j < 20; j++)
-                        nextMat[i, j] = (i % 256) / 255.0f;
-                }
-                
                 var grad = nextMat.Gradient(cameraConfigs.edgeDetect);
                 grad.Divide(grad.Max());
 
                 imEl.UpdateInternalImage(grad, cameraConfigs.camFrameMap);
 
-                var mask = grad>0.1f;
-                imAv.UpdateInternalImage(mask.ToFxMatrixF(), cameraConfigs.camResultMap);
+                var mask = (grad.Resize(grad.Width / 2, grad.Height / 2)) > 0.2f;
+                //imAv.UpdateInternalImage(mask.ToFxMatrixF(), cameraConfigs.camResultMap);
+
+                /* in all mask point add a circle */
+                c.SetValue(0);
+                for(int x=0; x < mask.Width; x++) {
+                    for(int y=0; y < mask.Height; y++) {
+                        if(mask[x, y]) {
+                            for(double t=0; t < 2 * Math.PI; t += step) {
+                                int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
+                                int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
+                                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                    c[i, j] += 1.0f;
+                            }
+                        }
+                    }
+                }
+                c.Divide(c.Max());
+                //c.Clamp(0.8f, 1.0f);
+                mask = c > 0.9f;
+                c.SetValue(0);
+                for(int x=0; x < mask.Width; x++) {
+                    for(int y=0; y < mask.Height; y++) {
+                        if(mask[x, y]) {
+                            for(double t=0; t < 2 * Math.PI; t += step) {
+                                int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
+                                int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
+                                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                    c[i, j] += 1.0f;
+                            }
+                        }
+                    }
+                }
+                c.Divide(c.Max());
+                //var cSmall = c.Resize(mask.Width / 2, mask.Height / 2);
+
+                imAv.UpdateInternalImage(c+nextMat.Resize(grad.Width / 2, grad.Height / 2), cameraConfigs.camResultMap);
 
                 counts++;
                 canvas1.ReDraw();
@@ -184,23 +218,115 @@ namespace Tester
 
         private void toolStripButton2_Click(object sender, EventArgs e)
         {
-            Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
-            //Bitmap circles = new Bitmap(@"C:\Dropbox\Camera Uploads\2008-08-14 21.12.42-2.jpg");
-            
+            //Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
+            Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
+
             var mat = FxMatrixF.Load(circles, FxMaths.Matrix.ColorSpace.Grayscale);
-            var grad = mat.Gradient(FxMatrixF.GradientMethod.Sobel);
-            var grad2 = mat.Gradient(FxMatrixF.GradientMethod.Scharr);
+            var grad = mat.Gradient(FxMatrixF.GradientMethod.Roberts);
+            canvas1.AddElements(new ImageElement(grad));
 
-            ImageElement imEl = new ImageElement(grad);
-            canvas1.AddElements(imEl);
+            /* create a circle with specific radius */
+            int rad = 7;
+            double step = Math.PI / 50;
+
+            /* ovelap the circle to the grad */
+            grad.Divide(grad.Max());
+            var mask = grad > 0.5f;
+            canvas1.AddElements(new ImageElement(mask.ToFxMatrixF()));
 
 
-            imEl = new ImageElement(grad2);
-            canvas1.AddElements(imEl);
-        } 
+            /* in all mask point add a circle */
+            var c = new FxMatrixF(mask.Width, mask.Height);
+            TimeStatistics.StartClock();
+            for(int x=0; x < mask.Width; x++) {
+                for(int y=0; y < mask.Height; y++) {
+                    if(mask[x, y]) {
+                        for(double t=0; t < 2 * Math.PI; t += step) {
+                            int i = (int)(x + rad * Math.Cos(t));
+                            int j = (int)(y + rad * Math.Sin(t));
+                            if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                c[i, j] += 1.0f;
+                        }
+                    }
+                }
+            }
+            TimeStatistics.StopClock();
+            c.Divide(c.Max());
+            canvas1.AddElements(new ImageElement(c, new ColorMap(ColorMapDefaults.Jet)));
+            c.SaveCsv("test.csv");
+        }
 
 
         #endregion
+
+
+        private void CaptureVideo()
+        {
+            ImageElement imF = new ImageElement(nextMat);
+            canvas1.AddElements(imF);
+
+            while(_running) {
+
+                /* Load new frame */
+                if(nextFrame != null)
+                    nextFrame.Dispose();
+                nextFrame = capture.QueryGrayFrame();
+                nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
+
+                imF.UpdateInternalImage(nextMat);
+
+                /* refresh images */
+                counts++;
+                canvas1.ReDraw();
+            }
+
+        }
+
+        private void toolStripButton3_Click(object sender, EventArgs e)
+        {
+            // init the camera capturing
+            //capture = new Capture(@"C:\Dropbox\Didaktoriko\SmartCam\Video\MVI_6109.MOV");
+
+            capture = new Capture(@"C:\Dropbox\Didaktoriko\SmartCam\Video\MVI_6109.MOV");
+            
+            //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_AUTO_EXPOSURE, 1);
+            //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_MODE, 1);
+            //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FPS, 60);
+            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH, 640);
+            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT, 480);
+            Console.WriteLine("Width:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH));
+            Console.WriteLine("Height:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT));
+
+            nextFrame = capture.QueryGrayFrame();
+
+            nextMat = FxMatrixF.Load(nextFrame.Bytes,
+                                     nextFrame.Width,
+                                     nextFrame.Height,
+                                     FxMaths.Matrix.ColorSpace.Grayscale);
+
+            // create the capture thread
+            captureThread = new Thread(CaptureVideo);
+
+            // add the timer for the fps measure
+            fpsTimer = new System.Windows.Forms.Timer();
+            fpsTimer.Interval = 1000;
+            watch.Start();
+
+            fpsTimer.Tick += (s, te) => {
+                watch.Stop();
+                float fps = counts * 1000.0f / watch.ElapsedMilliseconds;
+                m_fps.Text = fps.ToString();
+                counts = 0;
+                watch.Reset();
+                watch.Start();
+            };
+
+            _running = true;
+            captureThread.Start();
+            fpsTimer.Start();
+
+            propertyGrid1.SelectedObject = cameraConfigs;
+        }
     }
 
 
@@ -248,6 +374,7 @@ namespace Tester
 
         public float a { get; set; }
         public float b { get; set; }
+        public float rad { get; set; }
         
         public FxMatrixF.GradientMethod edgeDetect { get; set; }
 
@@ -257,6 +384,7 @@ namespace Tester
             a = 0.5f;
             b = 0.1f;
             edgeDetect = FxMatrixF.GradientMethod.Sobel;
+            rad = 20;
         }
     }
 }
