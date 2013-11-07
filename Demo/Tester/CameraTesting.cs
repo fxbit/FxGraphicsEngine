@@ -265,6 +265,16 @@ namespace Tester
             ImageElement imF = new ImageElement(nextMat);
             canvas1.AddElements(imF);
 
+            ImageElement imG = new ImageElement(nextMat);
+            imG.Position.x += nextMat.Width;
+            canvas1.AddElements(imG);
+
+            var m = nextMat.Copy();
+            var s = nextMat.Copy();
+            var G = nextMat != -1;
+            var c = new FxMatrixF(64,48);
+            double step = Math.PI / 20;
+
             while(_running) {
 
                 /* Load new frame */
@@ -273,7 +283,39 @@ namespace Tester
                 nextFrame = capture.QueryGrayFrame();
                 nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
 
+                /* detection algorithm */
+                var diff = nextMat - m;
+                s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
+                m = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * diff + m;
+                G = s > 0.01f;
+
+                /* create a resize value */
+                var mask = G.ToFxMatrixF().Gradient().Resize(64,48) > 0.1f;
+                
+
+                /* in all mask point add a circle */
+                c.SetValue(0);
+                for (int x = 0; x < mask.Width; x++)
+                {
+                    for (int y = 0; y < mask.Height; y++)
+                    {
+                        if (mask[x, y])
+                        {
+                            for (double t = 0; t < 2 * Math.PI; t += step)
+                            {
+                                int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
+                                int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
+                                if (i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                    c[i, j] += 1.0f;
+                            }
+                        }
+                    }
+                }
+                c.Divide(c.Max());
+
+                /* update image elements */
                 imF.UpdateInternalImage(nextMat);
+                imG.UpdateInternalImage(c);
 
                 /* refresh images */
                 counts++;
@@ -291,12 +333,13 @@ namespace Tester
             
             //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_AUTO_EXPOSURE, 1);
             //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_MODE, 1);
-            //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FPS, 60);
-            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH, 640);
-            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT, 480);
+            //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FPS, 30);
+            //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH, 640);
+            //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT, 480);
             Console.WriteLine("Width:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH));
             Console.WriteLine("Height:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT));
 
+            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES, 600);
             nextFrame = capture.QueryGrayFrame();
 
             nextMat = FxMatrixF.Load(nextFrame.Bytes,
@@ -381,10 +424,10 @@ namespace Tester
 
         public CameraConfigs()
         {
-            a = 0.5f;
-            b = 0.1f;
+            a = 0.9f;
+            b = 0.3f;
             edgeDetect = FxMatrixF.GradientMethod.Sobel;
-            rad = 20;
+            rad = 40;
         }
     }
 }

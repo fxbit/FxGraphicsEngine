@@ -7,7 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
+#if USE_KINECT
 using Microsoft.Kinect;
+#endif
 using FxMaths.Matrix;
 using FxMaths.GUI;
 using System.IO;
@@ -18,6 +20,14 @@ namespace Tester
 {
     public partial class KinectForm : DockContent
     {
+
+        public KinectForm()
+        {
+            InitializeComponent();
+        }
+
+
+#if USE_KINECT
         #region Internal Variables
         
         
@@ -157,10 +167,6 @@ namespace Tester
 
         #region Constructor and loader
 
-        public KinectForm()
-        {
-            InitializeComponent();
-        }
 
         private void KinectForm_Load(object sender, EventArgs e)
         {
@@ -499,8 +505,27 @@ namespace Tester
             saveCount++;
             depthImageMatrixAve.SaveCsv(FileName);
         }
+#else
+
+        private void KinectForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button_StartKinect_Click(object sender, EventArgs e)
+        {
+
+        }
 
 
+        private void button_SaveImage_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void toolStripButton1_Click(object sender, EventArgs e)
+        {
+        }
+#endif
     }
 }
 
