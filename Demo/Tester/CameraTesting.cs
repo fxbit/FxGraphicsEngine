@@ -272,7 +272,12 @@ namespace Tester
             var m = nextMat.Copy();
             var s = nextMat.Copy();
             var G = nextMat != -1;
-            var c = new FxMatrixF(64,48);
+            var c = new FxMatrixF(64, 48);
+            var cG = c != -1;
+            var step_w = (int)Math.Ceiling(G.Width / 64.0);
+            var step_h = (int)Math.Ceiling(G.Height / 48.0);
+            var cG_thd = step_w * step_h / 2;
+
             double step = Math.PI / 20;
 
             while(_running) {
@@ -287,35 +292,43 @@ namespace Tester
                 var diff = nextMat - m;
                 s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
                 m = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * diff + m;
-                G = s > 0.01f;
+                G = s > 0.005f;
 
                 /* create a resize value */
-                var mask = G.ToFxMatrixF().Gradient().Resize(64,48) > 0.1f;
-                
+                cG.SetValueFunc((x, y) => {
+                    int sum = 0;
+                    for(int ix = x * step_w; ix < x * step_w + step_w; ix++) {
+                        for(int iy = y * step_h; iy < y * step_h + step_h; iy++) {
+                            sum += G[ix, iy] ? 1 : 0;
+                        }
+                    }
+                    return sum > cG_thd;
+                });
 
-                /* in all mask point add a circle */
+                var mask = cG.ToFxMatrixF().Gradient() > 0.1f;
+
+                // TODO: use http://en.wikipedia.org/wiki/Connected_Component_Labeling
+
+                ///* in all mask point add a circle */
                 c.SetValue(0);
-                for (int x = 0; x < mask.Width; x++)
-                {
-                    for (int y = 0; y < mask.Height; y++)
-                    {
-                        if (mask[x, y])
-                        {
-                            for (double t = 0; t < 2 * Math.PI; t += step)
-                            {
+                for(int x = 0; x < mask.Width; x++) {
+                    for(int y = 0; y < mask.Height; y++) {
+                        if(mask[x, y]) {
+                            for(double t = 0; t < 2 * Math.PI; t += step) {
                                 int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
                                 int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
-                                if (i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
                                     c[i, j] += 1.0f;
                             }
                         }
                     }
                 }
                 c.Divide(c.Max());
+                var cMask = c > 0.8f;
 
                 /* update image elements */
-                imF.UpdateInternalImage(nextMat);
-                imG.UpdateInternalImage(c);
+                imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
+                imG.UpdateInternalImage(cMask.ToFxMatrixF(), cameraConfigs.camResultMap);
 
                 /* refresh images */
                 counts++;
@@ -427,7 +440,7 @@ namespace Tester
             a = 0.9f;
             b = 0.3f;
             edgeDetect = FxMatrixF.GradientMethod.Sobel;
-            rad = 40;
+            rad = 5;
         }
     }
 }
