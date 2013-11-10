@@ -18,6 +18,7 @@ using System.Threading;
 using FxMaths.Matrix;
 using System.Diagnostics;
 using FxMaths;
+using System.Threading.Tasks;
 
 namespace Tester
 {
@@ -89,7 +90,8 @@ namespace Tester
             fpsTimer.Interval = 1000;
             watch.Start();
 
-            fpsTimer.Tick += (s, te) => {
+            fpsTimer.Tick += (s, te) =>
+            {
                 watch.Stop();
                 float fps = counts * 1000.0f / watch.ElapsedMilliseconds;
                 m_fps.Text = fps.ToString();
@@ -100,7 +102,7 @@ namespace Tester
 
             im = FxTools.FxImages_safe_constructors(nextFrame.ToBitmap());
             imEl = new ImageElement(im);
-            imAv = new ImageElement(nextMat.Resize(nextFrame.Width / 2, nextFrame.Height/2));
+            imAv = new ImageElement(nextMat.Resize(nextFrame.Width / 2, nextFrame.Height / 2));
 
             canvas1.AddElements(imEl);
             canvas1.AddElements(imAv);
@@ -114,7 +116,7 @@ namespace Tester
         }
 
         FxMatrixMask G;
-        FxMatrixF s,m;
+        FxMatrixF s, m;
 
         private void CaptureCam()
         {
@@ -125,11 +127,12 @@ namespace Tester
 
             /* create a circle with specific radius */
             double step = Math.PI / 50;
-            var c = new FxMatrixF(nextMat.Width/2, nextMat.Height/2, 0f);
+            var c = new FxMatrixF(nextMat.Width / 2, nextMat.Height / 2, 0f);
 
-            while(_running) {
+            while (_running)
+            {
 
-                if(nextFrame != null)
+                if (nextFrame != null)
                     nextFrame.Dispose();
 
 #if USE_BGR
@@ -161,13 +164,17 @@ namespace Tester
 
                 /* in all mask point add a circle */
                 c.SetValue(0);
-                for(int x=0; x < mask.Width; x++) {
-                    for(int y=0; y < mask.Height; y++) {
-                        if(mask[x, y]) {
-                            for(double t=0; t < 2 * Math.PI; t += step) {
+                for (int x = 0; x < mask.Width; x++)
+                {
+                    for (int y = 0; y < mask.Height; y++)
+                    {
+                        if (mask[x, y])
+                        {
+                            for (double t = 0; t < 2 * Math.PI; t += step)
+                            {
                                 int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
                                 int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
-                                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                if (i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
                                     c[i, j] += 1.0f;
                             }
                         }
@@ -177,13 +184,17 @@ namespace Tester
                 //c.Clamp(0.8f, 1.0f);
                 mask = c > 0.9f;
                 c.SetValue(0);
-                for(int x=0; x < mask.Width; x++) {
-                    for(int y=0; y < mask.Height; y++) {
-                        if(mask[x, y]) {
-                            for(double t=0; t < 2 * Math.PI; t += step) {
+                for (int x = 0; x < mask.Width; x++)
+                {
+                    for (int y = 0; y < mask.Height; y++)
+                    {
+                        if (mask[x, y])
+                        {
+                            for (double t = 0; t < 2 * Math.PI; t += step)
+                            {
                                 int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
                                 int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
-                                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                                if (i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
                                     c[i, j] += 1.0f;
                             }
                         }
@@ -192,7 +203,7 @@ namespace Tester
                 c.Divide(c.Max());
                 //var cSmall = c.Resize(mask.Width / 2, mask.Height / 2);
 
-                imAv.UpdateInternalImage(c+nextMat.Resize(grad.Width / 2, grad.Height / 2), cameraConfigs.camResultMap);
+                imAv.UpdateInternalImage(c + nextMat.Resize(grad.Width / 2, grad.Height / 2), cameraConfigs.camResultMap);
 
                 counts++;
                 canvas1.ReDraw();
@@ -202,7 +213,8 @@ namespace Tester
 
         private void CameraTesting_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if(captureThread != null) {
+            if (captureThread != null)
+            {
                 _running = false;
                 captureThread.Abort();
                 captureThread.Join();
@@ -214,16 +226,275 @@ namespace Tester
         #endregion
 
 
-        #region Static image testing 
+
+        //The method returns a dictionary, where the key is the label
+        //and the list contains all the pixels with that label
+        public Dictionary<float, LinkedList<Point>> ProcessCCL(FxMatrixMask mat, out FxMatrixF labels)
+        {
+            //Matrix to store pixels' labels
+            labels = new FxMatrixF(mat.Width, mat.Height);
+
+            //I particulary don't like how I store the label equality table
+            //But I don't know how else can I store it
+            //I use LinkedList to add and remove items faster
+            Dictionary<float, LinkedList<float>> equalityTable = new Dictionary<float, LinkedList<float>>();
+            //Current label
+            int currentKey = 1;
+            for (int y = 1; y < mat.Height; y++)
+            {
+                for (int x = 1; x < mat.Width; x++)
+                {
+                    if (mat[x, y])
+                    {
+                        //Minumum label of the neighbours' labels
+                        int label = (int)Math.Min(labels[x - 1, y], labels[x, y - 1]);
+
+                        //If there are no neighbours
+                        if (label == 0)
+                        {
+                            //Create a new unique label
+                            labels[x, y] = currentKey;
+                            equalityTable.Add(currentKey, new LinkedList<float>());
+                            equalityTable[currentKey].AddFirst(currentKey);
+                            currentKey++;
+                        }
+                        else
+                        {
+                            labels[x, y] = label;
+                            float west = labels[x - 1, y], north = labels[x, y - 1];
+                            //A little trick:
+                            //Because of those "ifs" the lowest label value
+                            //will always be the first in the list
+                            //but I'm afraid that because of them
+                            //the running time also increases
+                            if (!equalityTable[label].Contains(west))
+                                if (west < equalityTable[label].First.Value)
+                                    equalityTable[label].AddFirst(west);
+                            if (!equalityTable[label].Contains(north))
+                                if (north < equalityTable[label].First.Value)
+                                    equalityTable[label].AddFirst(north);
+                        }
+                    }
+                }
+            }
+            for (int y = mat.Height - 2; y >= 0; y--)
+            {
+                for (int x = mat.Width - 2; x >= 0; x--)
+                {
+                    if (mat[x, y])
+                    {
+                        //Minumum label of the neighbours' labels
+                        int label = (int)Math.Min(labels[x + 1, y], labels[x, y + 1]);
+
+                        //If there are no neighbours
+                        if (label == 0)
+                        {
+                            //Create a new unique label
+                            labels[x, y] = currentKey;
+                            equalityTable.Add(currentKey, new LinkedList<float>());
+                            equalityTable[currentKey].AddFirst(currentKey);
+                            currentKey++;
+                        }
+                        else
+                        {
+                            labels[x, y] = label;
+                            float west = labels[x + 1, y], north = labels[x, y + 1];
+                            //A little trick:
+                            //Because of those "ifs" the lowest label value
+                            //will always be the first in the list
+                            //but I'm afraid that because of them
+                            //the running time also increases
+                            if (!equalityTable[label].Contains(west))
+                                if (west < equalityTable[label].First.Value)
+                                    equalityTable[label].AddFirst(west);
+                            if (!equalityTable[label].Contains(north))
+                                if (north < equalityTable[label].First.Value)
+                                    equalityTable[label].AddFirst(north);
+                        }
+                    }
+                }
+            }
+            //This dictionary will be returned as the result
+            //I'm not proud of using dictionary here too, I guess there 
+            //is a better way to store the result
+            Dictionary<float, LinkedList<Point>> result = new Dictionary<float, LinkedList<Point>>();
+            //I define the variable outside the loops in order 
+            //to reuse the memory address
+            int cellValue;
+            for (int x = 0; x < mat.Width; x++)
+            {
+                for (int y = 0; y < mat.Height; y++)
+                {
+                    cellValue = (int)labels[x, y];
+                    //If the pixel is not a background
+                    if (cellValue != 0)
+                    {
+                        //Take the minimum value from the label equality table 
+                        float value = equalityTable[cellValue].First.Value;
+                        //I'd like to get rid of these lines
+                        if (!result.ContainsKey(value))
+                            result.Add(value, new LinkedList<Point>());
+                        result[value].AddLast(new Point(x, y));
+                    }
+                }
+            }
+            return result;
+        }
+
+
+
+
+
+
+        public FxMatrixF ProcessCCL(FxMatrixMask mask)
+        {
+            int Width = mask.Width;
+            int Height = mask.Height;
+            int win = 1;
+            FxMatrixF result = new FxMatrixF(Width, Height);
+            FxMatrixF resultTemp = new FxMatrixF(Width, Height);
+
+            // set a uniq id in each position
+            Parallel.For(0, Height, (y) =>
+            {
+                int offsetEnd = (y + 1) * Width;
+                int offsetX = y * Width;
+                for (int x = offsetX; x < offsetEnd; x++)
+                {
+                    if (mask[x])
+                        result[x] = x;
+                }
+            });
+
+            int count = 0;
+            // try to check with neighbor
+            while (true)
+            {
+                Boolean findChanged = false;
+                Parallel.For(0, Height, (y) =>
+                {
+                    int iy_start = (y > win) ? y - win : 0;
+                    int iy_end = (y + win + 1 < Height) ? y + win + 1 : Height;
+                    for (int x = 0; x < Width; x++)
+                    {
+                        if (mask[x, y])
+                        {
+                            // find the smaller id
+                            float smaller = float.MaxValue;
+                            int ix_start = (x > win) ? x - win : 0;
+                            int ix_end = (x + win + 1 < Width) ? x + win + 1 : Width;
+                            for (int iy = iy_start; iy < iy_end; iy++)
+                            {
+                                for (int ix = ix_start; ix < ix_end; ix++)
+                                {
+                                    if (mask[ix, iy] && (smaller > result[ix, iy]))
+                                        smaller = result[ix, iy];
+                                }
+                            }
+                            if (result[x, y] != smaller)
+                            {
+                                findChanged = true;
+                                result[x, y] = smaller;
+                            }
+                        }
+                    }
+                });
+
+                if (!findChanged)
+                    break;
+
+                count++;
+            }
+            Console.WriteLine("Count:" + count.ToString());
+            return result;
+        }
+
+
+        private bool mark(int x, int y, FxMatrixMask mask, FxMatrixF result, int count)
+        {
+            if (x < 0 || x >= mask.Width || y < 0 || y >= mask.Height)
+                return false;
+
+            if (mask[x, y])
+            {
+                result[x, y] = count;
+                mask[x, y] = false;
+                return true;
+            }
+            return false;
+        }
+
+        private void addStack(int x, int y)
+        {
+            stack.Push(Tuple.Create(x, y - 1));
+            stack.Push(Tuple.Create(x, y + 1));
+
+            stack.Push(Tuple.Create(x + 1, y - 1));
+            stack.Push(Tuple.Create(x + 1, y));
+            stack.Push(Tuple.Create(x + 1, y + 1));
+
+            stack.Push(Tuple.Create(x - 1, y - 1));
+            stack.Push(Tuple.Create(x - 1, y));
+            stack.Push(Tuple.Create(x - 1, y + 1));
+        }
+
+        Stack<Tuple<int, int>> stack = new Stack<Tuple<int, int>>(1000);
+
+        public FxMatrixF ProcessCCL2(FxMatrixMask mask)
+        {
+            int Width = mask.Width;
+            int Height = mask.Height;
+            int maskSize = Width*Height;
+
+            FxMatrixMask remainMask = mask.Copy();
+
+            FxMatrixF labelMap = new FxMatrixF(Width, Height);
+            FxMatrixF resultTemp = new FxMatrixF(Width, Height);
+
+            int labelCount = 0;
+            for (int i = 0; i < maskSize;i++)
+            {
+                /* find the next start point */
+                if (remainMask[i])
+                {
+                    int x;
+                    int y = Math.DivRem(i, Width, out x);
+                    remainMask[i] = false;
+                    labelMap[x, y] = labelCount;
+
+                    /* propacate the search in sub pixels */
+                    addStack(x, y);
+
+                    /* 4 cases */
+                    while (stack.Count > 0)
+                    {
+                        Tuple<int, int> dxy = stack.Pop();
+
+                        if (mark(dxy.Item1, dxy.Item2, remainMask, labelMap, labelCount))
+                        {
+                            addStack(dxy.Item1, dxy.Item2);
+                        }
+                    }
+
+                    labelCount++;
+                }
+            }
+
+            Console.WriteLine("LabelCount:" + labelCount.ToString());
+
+            return labelMap;
+        }
+
+        #region Static image testing
 
         private void toolStripButton2_Click(object sender, EventArgs e)
         {
-            //Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
-            Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
+            Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
+            //Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
 
             var mat = FxMatrixF.Load(circles, FxMaths.Matrix.ColorSpace.Grayscale);
             var grad = mat.Gradient(FxMatrixF.GradientMethod.Roberts);
-            canvas1.AddElements(new ImageElement(grad));
+            //canvas1.AddElements(new ImageElement(grad));
 
             /* create a circle with specific radius */
             int rad = 7;
@@ -231,33 +502,51 @@ namespace Tester
 
             /* ovelap the circle to the grad */
             grad.Divide(grad.Max());
-            var mask = grad > 0.5f;
+            var mask = (mat > 0.5f).MedianFilt(3, 3);
             canvas1.AddElements(new ImageElement(mask.ToFxMatrixF()));
 
 
-            /* in all mask point add a circle */
-            var c = new FxMatrixF(mask.Width, mask.Height);
+            ///* in all mask point add a circle */
+            //var c = new FxMatrixF(mask.Width, mask.Height);
+            //TimeStatistics.StartClock();
+            //for(int x=0; x < mask.Width; x++) {
+            //    for(int y=0; y < mask.Height; y++) {
+            //        if(mask[x, y]) {
+            //            for(double t=0; t < 2 * Math.PI; t += step) {
+            //                int i = (int)(x + rad * Math.Cos(t));
+            //                int j = (int)(y + rad * Math.Sin(t));
+            //                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+            //                    c[i, j] += 1.0f;
+            //            }
+            //        }
+            //    }
+            //}
+            //TimeStatistics.StopClock();
+            //c.Divide(c.Max());
+            //c.SaveCsv("test.csv");
+
+
             TimeStatistics.StartClock();
-            for(int x=0; x < mask.Width; x++) {
-                for(int y=0; y < mask.Height; y++) {
-                    if(mask[x, y]) {
-                        for(double t=0; t < 2 * Math.PI; t += step) {
-                            int i = (int)(x + rad * Math.Cos(t));
-                            int j = (int)(y + rad * Math.Sin(t));
-                            if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
-                                c[i, j] += 1.0f;
-                        }
-                    }
-                }
-            }
+            FxMatrixF labels;
+            int count;
+            labels = mask.Labeling(out count);
+            labels.Divide(labels.Max());
             TimeStatistics.StopClock();
-            c.Divide(c.Max());
-            canvas1.AddElements(new ImageElement(c, new ColorMap(ColorMapDefaults.Jet)));
-            c.SaveCsv("test.csv");
+
+            canvas1.AddElements(new ImageElement(labels, new ColorMap(ColorMapDefaults.Jet)));
         }
 
 
         #endregion
+
+
+
+
+
+
+
+
+
 
 
         private void CaptureVideo()
@@ -276,14 +565,15 @@ namespace Tester
             var cG = c != -1;
             var step_w = (int)Math.Ceiling(G.Width / 64.0);
             var step_h = (int)Math.Ceiling(G.Height / 48.0);
-            var cG_thd = step_w * step_h / 2;
+            var cG_thd = step_w * step_h / 3;
 
             double step = Math.PI / 20;
 
-            while(_running) {
+            while (_running)
+            {
 
                 /* Load new frame */
-                if(nextFrame != null)
+                if (nextFrame != null)
                     nextFrame.Dispose();
                 nextFrame = capture.QueryGrayFrame();
                 nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
@@ -295,40 +585,56 @@ namespace Tester
                 G = s > 0.005f;
 
                 /* create a resize value */
-                cG.SetValueFunc((x, y) => {
+                cG.SetValueFunc((x, y) =>
+                {
                     int sum = 0;
-                    for(int ix = x * step_w; ix < x * step_w + step_w; ix++) {
-                        for(int iy = y * step_h; iy < y * step_h + step_h; iy++) {
+                    for (int ix = x * step_w; ix < x * step_w + step_w; ix++)
+                    {
+                        for (int iy = y * step_h; iy < y * step_h + step_h; iy++)
+                        {
                             sum += G[ix, iy] ? 1 : 0;
                         }
                     }
                     return sum > cG_thd;
                 });
 
-                var mask = cG.ToFxMatrixF().Gradient() > 0.1f;
+                //var mask = cG.ToFxMatrixF().MedianFilt().Gradient() > 0.1f;
 
-                // TODO: use http://en.wikipedia.org/wiki/Connected_Component_Labeling
+                //// TODO: use http://en.wikipedia.org/wiki/Connected_Component_Labeling
 
-                ///* in all mask point add a circle */
-                c.SetValue(0);
-                for(int x = 0; x < mask.Width; x++) {
-                    for(int y = 0; y < mask.Height; y++) {
-                        if(mask[x, y]) {
-                            for(double t = 0; t < 2 * Math.PI; t += step) {
-                                int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
-                                int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
-                                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
-                                    c[i, j] += 1.0f;
-                            }
-                        }
-                    }
-                }
-                c.Divide(c.Max());
-                var cMask = c > 0.8f;
+                /////* in all mask point add a circle */
+                //c.SetValue(0);
+                //for(int x = 0; x < mask.Width; x++) {
+                //    for(int y = 0; y < mask.Height; y++) {
+                //        if(mask[x, y]) {
+                //            for(double t = 0; t < 2 * Math.PI; t += step) {
+                //                int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
+                //                int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
+                //                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
+                //                    c[i, j] += 1.0f;
+                //            }
+                //        }
+                //    }
+                //}
+                //c.Divide(c.Max());
+                //var cMask = c > 0.8f;
+
+                //TimeStatistics.StartClock();
+                //FxMatrixF labels;
+                //var test = ProcessCCL(cG, out labels);
+                //labels.Divide(labels.Max());
+                //TimeStatistics.StopClock();
+
+
+                TimeStatistics.StartClock();
+                FxMatrixF labels;
+                labels = ProcessCCL(cG);
+                labels.Divide(labels.Max());
+                TimeStatistics.StopClock();
 
                 /* update image elements */
-                imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
-                imG.UpdateInternalImage(cMask.ToFxMatrixF(), cameraConfigs.camResultMap);
+                imF.UpdateInternalImage(cG.ToFxMatrixF(), cameraConfigs.camFrameMap);
+                imG.UpdateInternalImage(labels, cameraConfigs.camFrameMap);
 
                 /* refresh images */
                 counts++;
@@ -343,7 +649,7 @@ namespace Tester
             //capture = new Capture(@"C:\Dropbox\Didaktoriko\SmartCam\Video\MVI_6109.MOV");
 
             capture = new Capture(@"C:\Dropbox\Didaktoriko\SmartCam\Video\MVI_6109.MOV");
-            
+
             //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_AUTO_EXPOSURE, 1);
             //  capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_MODE, 1);
             //capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FPS, 30);
@@ -368,7 +674,8 @@ namespace Tester
             fpsTimer.Interval = 1000;
             watch.Start();
 
-            fpsTimer.Tick += (s, te) => {
+            fpsTimer.Tick += (s, te) =>
+            {
                 watch.Stop();
                 float fps = counts * 1000.0f / watch.ElapsedMilliseconds;
                 m_fps.Text = fps.ToString();
@@ -406,7 +713,7 @@ namespace Tester
             }
         }
 
-        
+
         #endregion
 
 
@@ -425,13 +732,13 @@ namespace Tester
                 _CamResult = value;
                 camResultMap = new ColorMap(value);
             }
-        } 
+        }
         #endregion
 
         public float a { get; set; }
         public float b { get; set; }
         public float rad { get; set; }
-        
+
         public FxMatrixF.GradientMethod edgeDetect { get; set; }
 
 
