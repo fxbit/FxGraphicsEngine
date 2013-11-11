@@ -19,6 +19,8 @@ using FxMaths.Matrix;
 using System.Diagnostics;
 using FxMaths;
 using System.Threading.Tasks;
+using Emgu.CV.UI;
+using Emgu.CV.VideoSurveillance;
 
 namespace Tester
 {
@@ -29,7 +31,6 @@ namespace Tester
             InitializeComponent();
 
         }
-
 
 
         #region Live camera testing
@@ -227,270 +228,12 @@ namespace Tester
 
 
 
-        //The method returns a dictionary, where the key is the label
-        //and the list contains all the pixels with that label
-        public Dictionary<float, LinkedList<Point>> ProcessCCL(FxMatrixMask mat, out FxMatrixF labels)
-        {
-            //Matrix to store pixels' labels
-            labels = new FxMatrixF(mat.Width, mat.Height);
-
-            //I particulary don't like how I store the label equality table
-            //But I don't know how else can I store it
-            //I use LinkedList to add and remove items faster
-            Dictionary<float, LinkedList<float>> equalityTable = new Dictionary<float, LinkedList<float>>();
-            //Current label
-            int currentKey = 1;
-            for (int y = 1; y < mat.Height; y++)
-            {
-                for (int x = 1; x < mat.Width; x++)
-                {
-                    if (mat[x, y])
-                    {
-                        //Minumum label of the neighbours' labels
-                        int label = (int)Math.Min(labels[x - 1, y], labels[x, y - 1]);
-
-                        //If there are no neighbours
-                        if (label == 0)
-                        {
-                            //Create a new unique label
-                            labels[x, y] = currentKey;
-                            equalityTable.Add(currentKey, new LinkedList<float>());
-                            equalityTable[currentKey].AddFirst(currentKey);
-                            currentKey++;
-                        }
-                        else
-                        {
-                            labels[x, y] = label;
-                            float west = labels[x - 1, y], north = labels[x, y - 1];
-                            //A little trick:
-                            //Because of those "ifs" the lowest label value
-                            //will always be the first in the list
-                            //but I'm afraid that because of them
-                            //the running time also increases
-                            if (!equalityTable[label].Contains(west))
-                                if (west < equalityTable[label].First.Value)
-                                    equalityTable[label].AddFirst(west);
-                            if (!equalityTable[label].Contains(north))
-                                if (north < equalityTable[label].First.Value)
-                                    equalityTable[label].AddFirst(north);
-                        }
-                    }
-                }
-            }
-            for (int y = mat.Height - 2; y >= 0; y--)
-            {
-                for (int x = mat.Width - 2; x >= 0; x--)
-                {
-                    if (mat[x, y])
-                    {
-                        //Minumum label of the neighbours' labels
-                        int label = (int)Math.Min(labels[x + 1, y], labels[x, y + 1]);
-
-                        //If there are no neighbours
-                        if (label == 0)
-                        {
-                            //Create a new unique label
-                            labels[x, y] = currentKey;
-                            equalityTable.Add(currentKey, new LinkedList<float>());
-                            equalityTable[currentKey].AddFirst(currentKey);
-                            currentKey++;
-                        }
-                        else
-                        {
-                            labels[x, y] = label;
-                            float west = labels[x + 1, y], north = labels[x, y + 1];
-                            //A little trick:
-                            //Because of those "ifs" the lowest label value
-                            //will always be the first in the list
-                            //but I'm afraid that because of them
-                            //the running time also increases
-                            if (!equalityTable[label].Contains(west))
-                                if (west < equalityTable[label].First.Value)
-                                    equalityTable[label].AddFirst(west);
-                            if (!equalityTable[label].Contains(north))
-                                if (north < equalityTable[label].First.Value)
-                                    equalityTable[label].AddFirst(north);
-                        }
-                    }
-                }
-            }
-            //This dictionary will be returned as the result
-            //I'm not proud of using dictionary here too, I guess there 
-            //is a better way to store the result
-            Dictionary<float, LinkedList<Point>> result = new Dictionary<float, LinkedList<Point>>();
-            //I define the variable outside the loops in order 
-            //to reuse the memory address
-            int cellValue;
-            for (int x = 0; x < mat.Width; x++)
-            {
-                for (int y = 0; y < mat.Height; y++)
-                {
-                    cellValue = (int)labels[x, y];
-                    //If the pixel is not a background
-                    if (cellValue != 0)
-                    {
-                        //Take the minimum value from the label equality table 
-                        float value = equalityTable[cellValue].First.Value;
-                        //I'd like to get rid of these lines
-                        if (!result.ContainsKey(value))
-                            result.Add(value, new LinkedList<Point>());
-                        result[value].AddLast(new Point(x, y));
-                    }
-                }
-            }
-            return result;
-        }
-
-
-
-
-
-
-        public FxMatrixF ProcessCCL(FxMatrixMask mask)
-        {
-            int Width = mask.Width;
-            int Height = mask.Height;
-            int win = 1;
-            FxMatrixF result = new FxMatrixF(Width, Height);
-            FxMatrixF resultTemp = new FxMatrixF(Width, Height);
-
-            // set a uniq id in each position
-            Parallel.For(0, Height, (y) =>
-            {
-                int offsetEnd = (y + 1) * Width;
-                int offsetX = y * Width;
-                for (int x = offsetX; x < offsetEnd; x++)
-                {
-                    if (mask[x])
-                        result[x] = x;
-                }
-            });
-
-            int count = 0;
-            // try to check with neighbor
-            while (true)
-            {
-                Boolean findChanged = false;
-                Parallel.For(0, Height, (y) =>
-                {
-                    int iy_start = (y > win) ? y - win : 0;
-                    int iy_end = (y + win + 1 < Height) ? y + win + 1 : Height;
-                    for (int x = 0; x < Width; x++)
-                    {
-                        if (mask[x, y])
-                        {
-                            // find the smaller id
-                            float smaller = float.MaxValue;
-                            int ix_start = (x > win) ? x - win : 0;
-                            int ix_end = (x + win + 1 < Width) ? x + win + 1 : Width;
-                            for (int iy = iy_start; iy < iy_end; iy++)
-                            {
-                                for (int ix = ix_start; ix < ix_end; ix++)
-                                {
-                                    if (mask[ix, iy] && (smaller > result[ix, iy]))
-                                        smaller = result[ix, iy];
-                                }
-                            }
-                            if (result[x, y] != smaller)
-                            {
-                                findChanged = true;
-                                result[x, y] = smaller;
-                            }
-                        }
-                    }
-                });
-
-                if (!findChanged)
-                    break;
-
-                count++;
-            }
-            Console.WriteLine("Count:" + count.ToString());
-            return result;
-        }
-
-
-        private bool mark(int x, int y, FxMatrixMask mask, FxMatrixF result, int count)
-        {
-            if (x < 0 || x >= mask.Width || y < 0 || y >= mask.Height)
-                return false;
-
-            if (mask[x, y])
-            {
-                result[x, y] = count;
-                mask[x, y] = false;
-                return true;
-            }
-            return false;
-        }
-
-        private void addStack(int x, int y)
-        {
-            stack.Push(Tuple.Create(x, y - 1));
-            stack.Push(Tuple.Create(x, y + 1));
-
-            stack.Push(Tuple.Create(x + 1, y - 1));
-            stack.Push(Tuple.Create(x + 1, y));
-            stack.Push(Tuple.Create(x + 1, y + 1));
-
-            stack.Push(Tuple.Create(x - 1, y - 1));
-            stack.Push(Tuple.Create(x - 1, y));
-            stack.Push(Tuple.Create(x - 1, y + 1));
-        }
-
-        Stack<Tuple<int, int>> stack = new Stack<Tuple<int, int>>(1000);
-
-        public FxMatrixF ProcessCCL2(FxMatrixMask mask)
-        {
-            int Width = mask.Width;
-            int Height = mask.Height;
-            int maskSize = Width*Height;
-
-            FxMatrixMask remainMask = mask.Copy();
-
-            FxMatrixF labelMap = new FxMatrixF(Width, Height);
-            FxMatrixF resultTemp = new FxMatrixF(Width, Height);
-
-            int labelCount = 0;
-            for (int i = 0; i < maskSize;i++)
-            {
-                /* find the next start point */
-                if (remainMask[i])
-                {
-                    int x;
-                    int y = Math.DivRem(i, Width, out x);
-                    remainMask[i] = false;
-                    labelMap[x, y] = labelCount;
-
-                    /* propacate the search in sub pixels */
-                    addStack(x, y);
-
-                    /* 4 cases */
-                    while (stack.Count > 0)
-                    {
-                        Tuple<int, int> dxy = stack.Pop();
-
-                        if (mark(dxy.Item1, dxy.Item2, remainMask, labelMap, labelCount))
-                        {
-                            addStack(dxy.Item1, dxy.Item2);
-                        }
-                    }
-
-                    labelCount++;
-                }
-            }
-
-            Console.WriteLine("LabelCount:" + labelCount.ToString());
-
-            return labelMap;
-        }
-
         #region Static image testing
 
         private void toolStripButton2_Click(object sender, EventArgs e)
         {
-            Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
-            //Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
+            //Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
+            Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
 
             var mat = FxMatrixF.Load(circles, FxMaths.Matrix.ColorSpace.Grayscale);
             var grad = mat.Gradient(FxMatrixF.GradientMethod.Roberts);
@@ -534,6 +277,30 @@ namespace Tester
             TimeStatistics.StopClock();
 
             canvas1.AddElements(new ImageElement(labels, new ColorMap(ColorMapDefaults.Jet)));
+
+            ImageViewer viewer = new ImageViewer();
+
+
+
+
+            TimeStatistics.StartClock();
+            BlobDetector bd = new BlobDetector(Emgu.CV.CvEnum.BLOB_DETECTOR_TYPE.CC);
+            Bitmap bit = mask.ToBitmap();
+            Image<Gray, Byte> im = new Image<Gray, Byte>(bit);
+            BlobSeq blobSeq = new BlobSeq();
+            BlobSeq emptyBlobSeq = new BlobSeq();
+            bd.DetectNewBlob(im, blobSeq, emptyBlobSeq);
+            TimeStatistics.StopClock();
+
+            for (int i = 0; i < blobSeq.Count; i++)
+            {
+                MCvBlob blob = blobSeq[i];
+                Console.WriteLine("Blob size: " + blob.Size);
+            }
+
+
+            viewer.Image = im;
+            viewer.Show();
         }
 
 
@@ -561,23 +328,33 @@ namespace Tester
             var m = nextMat.Copy();
             var s = nextMat.Copy();
             var G = nextMat != -1;
-            var c = new FxMatrixF(64, 48);
+            var c = new FxMatrixF(2 * 64, 2 * 48);
             var cG = c != -1;
-            var step_w = (int)Math.Ceiling(G.Width / 64.0);
-            var step_h = (int)Math.Ceiling(G.Height / 48.0);
+            var step_w = (int)Math.Ceiling(G.Width / (2 * 64.0));
+            var step_h = (int)Math.Ceiling(G.Height / (2 * 48.0));
             var cG_thd = step_w * step_h / 3;
 
-            double step = Math.PI / 20;
+            //double step = Math.PI / 20;
+
+            BlobTrackerAutoParam<Bgr> param = new BlobTrackerAutoParam<Bgr>();
+            param.FGDetector = new FGDetector<Bgr>(Emgu.CV.CvEnum.FORGROUND_DETECTOR_TYPE.FGD);
+            param.FGTrainFrames = 10;
+           // param.BlobTracker = new BlobTracker(Emgu.CV.CvEnum.BLOBTRACKER_TYPE.CCMSPF);
+
+            BlobTrackerAuto<Bgr> tracker = new BlobTrackerAuto<Bgr>(param);
+            var nextFrame = capture.QueryFrame();
+            int skip_count = 50;
 
             while (_running)
             {
-
                 /* Load new frame */
                 if (nextFrame != null)
                     nextFrame.Dispose();
-                nextFrame = capture.QueryGrayFrame();
-                nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
 
+                nextFrame = capture.QueryFrame();
+
+#if false
+                nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
                 /* detection algorithm */
                 var diff = nextMat - m;
                 s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
@@ -585,6 +362,7 @@ namespace Tester
                 G = s > 0.005f;
 
                 /* create a resize value */
+                Random rand = new Random();
                 cG.SetValueFunc((x, y) =>
                 {
                     int sum = 0;
@@ -597,6 +375,64 @@ namespace Tester
                     }
                     return sum > cG_thd;
                 });
+                cG = cG.MedianFilt();
+                skip_count--;
+                if (skip_count > 0)
+                    continue;
+                var cG_cv = new Image<Bgr, Byte>(cG.ToBitmap());
+
+#endif
+
+                try
+                {
+                    tracker.Process(nextFrame);
+                    Image<Gray, Byte> img = tracker.ForegroundMask;
+
+                    MCvFont font = new MCvFont(Emgu.CV.CvEnum.FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
+                    foreach (MCvBlob blob in tracker)
+                    {
+                        img.Draw(new CircleF(blob.Center, 50), new Gray(128.0), 2);
+                        img.Draw(blob.ID.ToString(), ref font, Point.Round(blob.Center), new Gray(128.0));
+                    }
+                    //// viewer.Image = img;
+                    nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
+                    imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
+                    nextMat.Load(img.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
+                    imG.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+
+                /* refresh images */
+                counts++;
+                canvas1.ReDraw();
+
+                continue;
+
+                //nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
+
+                ///* detection algorithm */
+                //var diff = nextMat - m;
+                //s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
+                //m = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * diff + m;
+                //G = s > 0.005f;
+
+                ///* create a resize value */
+                //cG.SetValueFunc((x, y) =>
+                //{
+                //    int sum = 0;
+                //    for (int ix = x * step_w; ix < x * step_w + step_w; ix++)
+                //    {
+                //        for (int iy = y * step_h; iy < y * step_h + step_h; iy++)
+                //        {
+                //            sum += G[ix, iy] ? 1 : 0;
+                //        }
+                //    }
+                //    return sum > cG_thd;
+                //});
+                //cG = cG.MedianFilt();
 
                 //var mask = cG.ToFxMatrixF().MedianFilt().Gradient() > 0.1f;
 
@@ -626,11 +462,13 @@ namespace Tester
                 //TimeStatistics.StopClock();
 
 
-                TimeStatistics.StartClock();
+                //TimeStatistics.StartClock();
                 FxMatrixF labels;
-                labels = ProcessCCL(cG);
+                int count;
+                labels = cG.Labeling(out count);
                 labels.Divide(labels.Max());
-                TimeStatistics.StopClock();
+                //Console.WriteLine("count:" + count);
+                //TimeStatistics.StopClock();
 
                 /* update image elements */
                 imF.UpdateInternalImage(cG.ToFxMatrixF(), cameraConfigs.camFrameMap);
@@ -658,7 +496,7 @@ namespace Tester
             Console.WriteLine("Width:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_WIDTH));
             Console.WriteLine("Height:" + capture.GetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_FRAME_HEIGHT));
 
-            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES, 600);
+            capture.SetCaptureProperty(Emgu.CV.CvEnum.CAP_PROP.CV_CAP_PROP_POS_FRAMES, 900);
             nextFrame = capture.QueryGrayFrame();
 
             nextMat = FxMatrixF.Load(nextFrame.Bytes,
