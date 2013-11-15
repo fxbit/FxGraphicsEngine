@@ -321,9 +321,25 @@ namespace Tester
             ImageElement imF = new ImageElement(nextMat);
             canvas1.AddElements(imF);
 
+            ImageElement imM = new ImageElement(nextMat);
+            imM.Position.Y += nextMat.Height;
+            canvas1.AddElements(imM);
+
+            ImageElement imS = new ImageElement(nextMat);
+            imS.Position.x += nextMat.Width;
+            canvas1.AddElements(imS);
+
             ImageElement imG = new ImageElement(nextMat);
             imG.Position.x += nextMat.Width;
+            imG.Position.Y += nextMat.Height;
             canvas1.AddElements(imG);
+
+            ImageElement imG_small = new ImageElement(nextMat);
+            imG_small.Position.x += 2*nextMat.Width;
+            imG_small.Position.Y += nextMat.Height;
+            canvas1.AddElements(imG_small);
+
+            canvas1.FitView();
 
             var m = nextMat.Copy();
             var s = nextMat.Copy();
@@ -345,139 +361,39 @@ namespace Tester
             var nextFrame = capture.QueryFrame();
             int skip_count = 50;
 
+            nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
+            FxBlobTracker fxtracker = new FxBlobTracker(nextMat);
+
             while (_running)
             {
                 /* Load new frame */
                 if (nextFrame != null)
                     nextFrame.Dispose();
 
+                /* read next frame */
                 nextFrame = capture.QueryFrame();
-
-#if false
                 nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
-                /* detection algorithm */
-                var diff = nextMat - m;
-                s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
-                m = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * diff + m;
-                G = s > 0.005f;
 
-                /* create a resize value */
-                Random rand = new Random();
-                cG.SetValueFunc((x, y) =>
-                {
-                    int sum = 0;
-                    for (int ix = x * step_w; ix < x * step_w + step_w; ix++)
-                    {
-                        for (int iy = y * step_h; iy < y * step_h + step_h; iy++)
-                        {
-                            sum += G[ix, iy] ? 1 : 0;
-                        }
-                    }
-                    return sum > cG_thd;
-                });
-                cG = cG.MedianFilt();
-                skip_count--;
-                if (skip_count > 0)
-                    continue;
-                var cG_cv = new Image<Bgr, Byte>(cG.ToBitmap());
+                /* process the new matrix */
+                fxtracker.Process(nextMat);
 
-#endif
-
-                try
-                {
-                    tracker.Process(nextFrame);
-                    Image<Gray, Byte> img = tracker.ForegroundMask;
-
-                    MCvFont font = new MCvFont(Emgu.CV.CvEnum.FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
-                    foreach (MCvBlob blob in tracker)
-                    {
-                        img.Draw(new CircleF(blob.Center, 50), new Gray(128.0), 2);
-                        img.Draw(blob.ID.ToString(), ref font, Point.Round(blob.Center), new Gray(128.0));
-                    }
-                    //// viewer.Image = img;
-                    nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
-                    imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
-                    nextMat.Load(img.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
-                    imG.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-
-                /* refresh images */
-                counts++;
-                canvas1.ReDraw();
-
-                continue;
-
-                //nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
-
-                ///* detection algorithm */
-                //var diff = nextMat - m;
-                //s = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * (diff * diff - s) + s;
-                //m = (cameraConfigs.a + G * (cameraConfigs.b - cameraConfigs.a)) * diff + m;
-                //G = s > 0.005f;
-
-                ///* create a resize value */
-                //cG.SetValueFunc((x, y) =>
-                //{
-                //    int sum = 0;
-                //    for (int ix = x * step_w; ix < x * step_w + step_w; ix++)
-                //    {
-                //        for (int iy = y * step_h; iy < y * step_h + step_h; iy++)
-                //        {
-                //            sum += G[ix, iy] ? 1 : 0;
-                //        }
-                //    }
-                //    return sum > cG_thd;
-                //});
-                //cG = cG.MedianFilt();
-
-                //var mask = cG.ToFxMatrixF().MedianFilt().Gradient() > 0.1f;
-
-                //// TODO: use http://en.wikipedia.org/wiki/Connected_Component_Labeling
-
-                /////* in all mask point add a circle */
-                //c.SetValue(0);
-                //for(int x = 0; x < mask.Width; x++) {
-                //    for(int y = 0; y < mask.Height; y++) {
-                //        if(mask[x, y]) {
-                //            for(double t = 0; t < 2 * Math.PI; t += step) {
-                //                int i = (int)(x + cameraConfigs.rad * Math.Cos(t));
-                //                int j = (int)(y + cameraConfigs.rad * Math.Sin(t));
-                //                if(i >= 0 && i < mask.Width && j >= 0 && j < mask.Height)
-                //                    c[i, j] += 1.0f;
-                //            }
-                //        }
-                //    }
-                //}
-                //c.Divide(c.Max());
-                //var cMask = c > 0.8f;
-
-                //TimeStatistics.StartClock();
-                //FxMatrixF labels;
-                //var test = ProcessCCL(cG, out labels);
-                //labels.Divide(labels.Max());
-                //TimeStatistics.StopClock();
-
-
-                //TimeStatistics.StartClock();
-                FxMatrixF labels;
-                int count;
-                labels = cG.Labeling(out count);
-                labels.Divide(labels.Max());
-                //Console.WriteLine("count:" + count);
-                //TimeStatistics.StopClock();
-
-                /* update image elements */
-                imF.UpdateInternalImage(cG.ToFxMatrixF(), cameraConfigs.camFrameMap);
-                imG.UpdateInternalImage(labels, cameraConfigs.camFrameMap);
+                /* update images */
+                imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
+                imM.UpdateInternalImage(fxtracker.m, cameraConfigs.camFrameMap);
+                imS.UpdateInternalImage(fxtracker.s, cameraConfigs.camFrameMap);
+                imG.UpdateInternalImage(fxtracker.FGMask.ToFxMatrixF(), cameraConfigs.camFrameMap);
+                imG_small.UpdateInternalImage(fxtracker.G_small.ToFxMatrixF(), cameraConfigs.camFrameMap);
 
                 /* refresh images */
                 counts++;
                 canvas1.ReDraw();
             }
+
+        }
+
+
+        private void toolStripButton4_Click(object sender, EventArgs e)
+        {
 
         }
 
@@ -528,6 +444,7 @@ namespace Tester
 
             propertyGrid1.SelectedObject = cameraConfigs;
         }
+
     }
 
 
