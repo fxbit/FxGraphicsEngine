@@ -10,48 +10,56 @@ using System.Drawing;
 using FxMaths.GUI;
 
 [assembly: System.Diagnostics.DebuggerVisualizer(
-        typeof(DebugVisualizers.FxMaths.DebugFxMatrixF),
+        typeof(DebugVisualizers.FxMaths.DebugFxMatrix),
         typeof(Microsoft.VisualStudio.DebuggerVisualizers.VisualizerObjectSource),
         Target = typeof(FxMaths.Matrix.FxMatrixF),
-        Description = "My First Visualizer")]
+        Description = "Image Viewing")]
+[assembly: System.Diagnostics.DebuggerVisualizer(
+        typeof(DebugVisualizers.FxMaths.DebugFxMatrix),
+        typeof(Microsoft.VisualStudio.DebuggerVisualizers.VisualizerObjectSource),
+        Target = typeof(FxMaths.Matrix.FxMatrixMask),
+        Description = "Image Viewing")]
 namespace DebugVisualizers.FxMaths
 {
-    public class DebugFxMatrixF : DialogDebuggerVisualizer
+    public class DebugFxMatrix : DialogDebuggerVisualizer
     {
-
         protected override void Show(IDialogVisualizerService windowService, IVisualizerObjectProvider objectProvider)
         {
-            FxMatrixF mat = (FxMatrixF)objectProvider.GetObject();
-            Form form = new Form();
-            form.Text = string.Format("Width: {0}, Height: {1}",
-                                     mat.Width, mat.Height);
-            form.ClientSize = new Size(mat.Width, mat.Height);
-            form.FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            object obj = objectProvider.GetObject();
+            FxMatrixF mat;
+            if (obj is FxMatrixF)
+                mat = obj as FxMatrixF;
+            else if (obj is FxMatrixMask)
+                mat = (obj as FxMatrixMask).ToFxMatrixF();
+            else
+                return;
+            
+            //Form form = new Form();
+            //form.Text = string.Format("Width: {0}, Height: {1}",
+            //                         mat.Width, mat.Height);
+            //form.ClientSize = new Size(mat.Width, mat.Height);
+            //form.FormBorderStyle = FormBorderStyle.FixedToolWindow;
 
             Canvas canvas = new Canvas();
-            canvas.Dock = System.Windows.Forms.DockStyle.Fill;
             canvas.Location = new System.Drawing.Point(0, 0);
             canvas.Margin = new System.Windows.Forms.Padding(4);
             canvas.Name = "canvas1";
-            canvas.Size = new System.Drawing.Size(669, 513);
-            canvas.TabIndex = 0;
+            canvas.Size = new System.Drawing.Size(mat.Width, mat.Height+32);
+            canvas.MinimumSize = new System.Drawing.Size(mat.Width, mat.Height + 32);
             canvas.Zoom = new System.Drawing.SizeF(1F, 1F);
 
             ImageElement im = new ImageElement(mat);
             canvas.AddElements(im);
-
-            form.Controls.Add(canvas);
             canvas.FitView();
-            canvas.ReDraw();
 
-            
-            windowService.ShowDialog(form);
-            //MessageBox.Show(mat[0].ToString());
+            //form.Controls.Add(canvas);
+            //form.Show();
+            windowService.ShowDialog(canvas);
         }
 
         public static void TestShowVisualizer(object objectToVisualize)
         {
-            VisualizerDevelopmentHost visualizerHost = new VisualizerDevelopmentHost(objectToVisualize, typeof(DebugFxMatrixF));
+            VisualizerDevelopmentHost visualizerHost = new VisualizerDevelopmentHost(objectToVisualize, typeof(DebugFxMatrix));
             visualizerHost.ShowVisualizer();
         }
     }
