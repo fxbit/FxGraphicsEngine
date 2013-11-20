@@ -41,6 +41,7 @@ namespace DebugVisualizers.FxMaths
             //form.FormBorderStyle = FormBorderStyle.FixedToolWindow;
 
             Canvas canvas = new Canvas();
+            canvas.Dock = DockStyle.Fill;
             canvas.Location = new System.Drawing.Point(0, 0);
             canvas.Margin = new System.Windows.Forms.Padding(4);
             canvas.Name = "canvas1";
@@ -48,7 +49,7 @@ namespace DebugVisualizers.FxMaths
             canvas.MinimumSize = new System.Drawing.Size(mat.Width, mat.Height + 32);
             canvas.Zoom = new System.Drawing.SizeF(1F, 1F);
 
-            ImageElement im = new ImageElement(mat);
+            ImageElement im = new ImageElement(mat, new global::FxMaths.Images.ColorMap(global::FxMaths.Images.ColorMapDefaults.Jet));
             canvas.AddElements(im);
             canvas.FitView();
 
