@@ -232,8 +232,8 @@ namespace Tester
 
         private void toolStripButton2_Click(object sender, EventArgs e)
         {
-            //Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
-            Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
+            Bitmap circles = new Bitmap(@"C:\Dropbox\CHT_Grd_Scrshot.jpg");
+            //Bitmap circles = new Bitmap(@"C:\Users\FxBit\Desktop\test.jpg");
 
             var mat = FxMatrixF.Load(circles, FxMaths.Matrix.ColorSpace.Grayscale);
             var grad = mat.Gradient(FxMatrixF.GradientMethod.Roberts);
@@ -278,7 +278,7 @@ namespace Tester
 
             canvas1.AddElements(new ImageElement(labels, new ColorMap(ColorMapDefaults.Jet)));
 
-            ImageViewer viewer = new ImageViewer();
+            
 
 
 
@@ -298,9 +298,9 @@ namespace Tester
                 Console.WriteLine("Blob size: " + blob.Size);
             }
 
-
-            viewer.Image = im;
-            viewer.Show();
+            //ImageViewer viewer = new ImageViewer();
+            //viewer.Image = im;
+           // viewer.Show();
         }
 
 
@@ -319,25 +319,25 @@ namespace Tester
         private void CaptureVideo()
         {
             ImageElement imF = new ImageElement(nextMat);
-            canvas1.AddElements(imF);
+            canvas1.AddElements(imF, false);
 
             ImageElement imM = new ImageElement(nextMat);
             imM.Position.Y += nextMat.Height;
-            canvas1.AddElements(imM);
+            canvas1.AddElements(imM, false);
 
             ImageElement imS = new ImageElement(nextMat);
             imS.Position.x += nextMat.Width;
-            canvas1.AddElements(imS);
+            canvas1.AddElements(imS, false);
 
             ImageElement imG = new ImageElement(nextMat);
             imG.Position.x += nextMat.Width;
             imG.Position.Y += nextMat.Height;
-            canvas1.AddElements(imG);
+            canvas1.AddElements(imG, false);
 
             ImageElement imG_small = new ImageElement(nextMat);
             imG_small.Position.x += 2*nextMat.Width;
             imG_small.Position.Y += nextMat.Height;
-            canvas1.AddElements(imG_small);
+            canvas1.AddElements(imG_small, false);
 
             canvas1.FitView();
 
@@ -379,10 +379,16 @@ namespace Tester
 
                 /* update images */
                 imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
-                imM.UpdateInternalImage(fxtracker.m, cameraConfigs.camFrameMap);
+                //imM.UpdateInternalImage(fxtracker.m, cameraConfigs.camFrameMap);
                 imS.UpdateInternalImage(fxtracker.s, cameraConfigs.camFrameMap);
                 imG.UpdateInternalImage(fxtracker.FGMask.ToFxMatrixF(), cameraConfigs.camFrameMap);
                 imG_small.UpdateInternalImage(fxtracker.G_small.ToFxMatrixF(), cameraConfigs.camFrameMap);
+
+
+                var blobs = new FxContour(fxtracker.G_small);
+                imM.UpdateInternalImage(blobs.ToFxMatrixF(64,48), cameraConfigs.camFrameMap);
+                
+
 
                 /* refresh images */
                 counts++;
