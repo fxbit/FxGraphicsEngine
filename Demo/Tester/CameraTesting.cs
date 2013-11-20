@@ -372,6 +372,9 @@ namespace Tester
 
                 /* read next frame */
                 nextFrame = capture.QueryFrame();
+                if (nextFrame == null)
+                    break;
+
                 nextMat.Load(nextFrame.Bytes, FxMaths.Matrix.ColorSpace.Grayscale);
 
                 /* process the new matrix */
@@ -388,8 +391,6 @@ namespace Tester
                 var blobs = new FxContour(fxtracker.G_small);
                 imM.UpdateInternalImage(blobs.ToFxMatrixF(64,48), cameraConfigs.camFrameMap);
                 
-
-
                 /* refresh images */
                 counts++;
                 canvas1.ReDraw();
