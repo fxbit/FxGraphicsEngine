@@ -380,16 +380,27 @@ namespace Tester
                 /* process the new matrix */
                 fxtracker.Process(nextMat);
 
+
+                var blobs = new FxContour(fxtracker.G_small);
+                var result = blobs.ToFxMatrixF(64, 48);
+                var cMat = nextMat.Copy();
+
+                foreach (FxBlob b in fxtracker.ListBlobs)
+                {
+                    result.DrawCircle(b.Center, b.Radius, 1f);
+                    cMat.DrawCircle(b.Center * fxtracker.step_w, b.Radius * fxtracker.step_w, 1);
+                }
+
                 /* update images */
-                imF.UpdateInternalImage(nextMat, cameraConfigs.camFrameMap);
+                imF.UpdateInternalImage(cMat, cameraConfigs.camFrameMap);
                 //imM.UpdateInternalImage(fxtracker.m, cameraConfigs.camFrameMap);
                 imS.UpdateInternalImage(fxtracker.s, cameraConfigs.camFrameMap);
                 imG.UpdateInternalImage(fxtracker.FGMask.ToFxMatrixF(), cameraConfigs.camFrameMap);
                 imG_small.UpdateInternalImage(fxtracker.G_small.ToFxMatrixF(), cameraConfigs.camFrameMap);
 
 
-                var blobs = new FxContour(fxtracker.G_small);
-                imM.UpdateInternalImage(blobs.ToFxMatrixF(64,48), cameraConfigs.camFrameMap);
+
+                imM.UpdateInternalImage(result, cameraConfigs.camFrameMap);
                 
                 /* refresh images */
                 counts++;
