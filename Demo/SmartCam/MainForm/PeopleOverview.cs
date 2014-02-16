@@ -51,11 +51,22 @@ namespace MainForm
         public void PeopleUpdate(List<Person> personsList)
         {
             // remove all the old geometry
-            gpe.ClearGeometry();
+            gpe.ClearGeometry(false);
 
             // add all persons
             foreach (Person p in personsList)
             {
+                // simulation path
+                Path pa = new Path(p.Path);
+                gpe.AddGeometry(pa, false);
+
+                // with kalman
+                pa = new Path(p.PathKalman);
+                pa.LineColor = SharpDX.Color.Red;
+                pa.UseDefaultColor = false;
+                gpe.AddGeometry(pa, false);
+
+                // the circle
                 Circle c = new Circle(p.Position, 10);
                 gpe.AddGeometry(c, false);
             }

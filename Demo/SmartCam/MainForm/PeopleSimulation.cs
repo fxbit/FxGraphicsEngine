@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FxMaths.GUI;
 using FxMaths.Vector;
 using FxMaths.Matrix;
+using FxMaths.Utils;
 using System.Threading;
 
 
@@ -18,6 +19,10 @@ namespace MainForm
         public FxVector2f Direction;
         public FxVector2f Position;
         public float Speed;
+        public List<FxVector2f> Path;
+        public List<FxVector2f> PathKalman;
+        public FxKalman1D kalmanX;
+        public FxKalman1D kalmanY;
         #endregion
 
 
@@ -26,23 +31,22 @@ namespace MainForm
         public Person()
         {
             Position = new FxVector2f(); Direction = new FxVector2f(); Speed = 0.0f;
+            Path = new List<FxVector2f>();
+            PathKalman = new List<FxVector2f>();
+            kalmanX = new FxKalman1D(0.01f, 0.01f, 0.1f, 200, 0);
+            kalmanY = new FxKalman1D(0.01f, 0.01f, 0.1f, 200, 0);
         }
 
         public Person(FxVector2f Position, FxVector2f Direction, float Speed)
         {
             this.Position = Position; this.Direction = Direction; this.Speed = Speed;
             this.Direction.Normalize();
+            Path = new List<FxVector2f>();
+            PathKalman = new List<FxVector2f>();
+            kalmanX = new FxKalman1D(0.01f, 0.0001f, 0.1f, 200, Position.x);
+            kalmanY = new FxKalman1D(0.01f, 0.0001f, 0.1f, 200, Position.y);
         }
         #endregion
-
-
-        public void Move(float speedMultiplier, float directionAngleChange)
-        {
-            Position += Speed * Direction;
-            Speed *= speedMultiplier;
-            Direction.Rotation(directionAngleChange);
-        }
-
     }
 
 
@@ -89,37 +93,64 @@ namespace MainForm
 
         private void SimulationRun()
         {
+            int dt_ms = 100;
+            int newPersonCounter = 0;
+            FxVector2f filded = new FxVector2f();
             while (simulationRun)
             {
                 // if we can add people add them
                 if (PersonList.Count < _peopleNum)
                 {
-                    int numOfNewPersons = rand.Next(5);
-                    for (int i = 0; i < numOfNewPersons; i++)
-                        PersonList.Add(new Person(EntrancePosition, EntranceDirection, 5*rand.Next(1000)/1000.0f + 2));
+                    newPersonCounter++;
+                    if (newPersonCounter > 10)
+                    {
+                        int numOfNewPersons = rand.Next(_peopleNum / 10 + 1);
+                        for (int i = 0; i < numOfNewPersons; i++)
+                            PersonList.Add(new Person(EntrancePosition, EntranceDirection, 4.0f * rand.Next(1000) / 1000.0f + 1.0f));
+
+                        newPersonCounter = 0;
+                    }
                 }
 
                 // move the blobs in random directions
                 foreach (var person in PersonList)
                 {
-                    float speedChange = 1 + (rand.Next(100) > 50 ? -0.2f : +0.2f) * rand.Next(1000) / 1000.0f;
-                    float directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(rand.NextDouble() * Math.PI/4.0f);
+                    float speedChange = 1 + (rand.Next(100) > 50 ? -0.1f : +0.1f) * rand.Next(1000) / 1000.0f;
+                    float directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(rand.NextDouble() * Math.PI/8.0f);
 
                     // move person
                     // check the person position and moving
                     FxVector2f nextPosition = person.Position + person.Speed * person.Direction;
                     float value = map[person.Position];
-                    float valueNext = map[nextPosition];
-                    
-                    if(valueNext>0.9f)
+
+                    if (nextPosition.x > 0 && nextPosition.y > 0 && nextPosition.x < map.Width && nextPosition.y < map.Height)
                     {
-                        person.Position = nextPosition;
+                        float valueNext = map[nextPosition];
+                        if (valueNext > 0.9f)
+                        {
+                            // calculate next position
+                            person.Path.Add(nextPosition);
+
+                            // calculate the position with kalman to pe more smooth the transaction
+                            filded.x = person.kalmanX.Update(nextPosition.x, dt_ms);
+                            filded.y = person.kalmanY.Update(nextPosition.y, dt_ms);
+                            person.Position = filded;
+                            person.PathKalman.Add(filded);
+                        }
+                        else
+                            directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(rand.NextDouble() * Math.PI);
                     }
                     else
-                    {
                         directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(rand.NextDouble() * Math.PI);
-                    }
+
+                    // update the speed
                     person.Speed *= speedChange;
+
+                    // limit the max speed
+                    if (person.Speed > 4f)
+                        person.Speed = 4;
+
+                    // rotate the direction
                     person.Direction.Rotation(directionAngleChange);
                 }
 
@@ -127,7 +158,7 @@ namespace MainForm
                 PsrList(this);
 
                 // delay the next frame
-                Thread.Sleep(500);
+                Thread.Sleep(dt_ms);
             }
         }
 
@@ -136,10 +167,16 @@ namespace MainForm
         {
             if (simulationThread == null)
             {
+                // add the callback event
+                PsrList += psr;
+
+                // clean the people list
+                PersonList.Clear();
+
+                // start the thread
                 simulationThread = new Thread(new ThreadStart(SimulationRun));
                 simulationRun = true;
                 simulationThread.Start();
-                PsrList += psr;
             }
         }
 

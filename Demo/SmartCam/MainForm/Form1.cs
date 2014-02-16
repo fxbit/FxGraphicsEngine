@@ -38,14 +38,15 @@ namespace MainForm
         public static PeopleSimulation peopleSimulation = null;
 
 
-        public static FxMatrixF im;
+        public static FxMatrixF katopsi = null;
+        public static FxMatrixF heatMap = null;
 
         #region Form
         public MainForm()
         {
             InitializeComponent();
 
-            im = FxMatrixF.Load("Katopsi.jpg", FxMaths.Matrix.ColorSpace.Grayscale);
+            katopsi = FxMatrixF.Load("Katopsi.jpg", FxMaths.Matrix.ColorSpace.Grayscale);
 
             // init the console
             UIConsole = new ConsoleOutput();
@@ -53,7 +54,7 @@ namespace MainForm
             consoleOutputToolStripMenuItem.Checked = true;
 
             // init the people over view
-            UIPeopleOverview = new PeopleOverview(im);
+            UIPeopleOverview = new PeopleOverview(katopsi);
             UIPeopleOverview.Show(dockPanel1, DockState.Document);
             peopleOverviewToolStripMenuItem.Checked = true;
         }
@@ -124,17 +125,41 @@ namespace MainForm
 
 
         #region Simulator
-        
+
+        int refreshCount = 0;
+
         private void peopleRefreshCB(PeopleSimulation ps)
         {
+            
             /* now we must update People Overview */
             if (UIPeopleOverview != null)
                 UIPeopleOverview.PeopleUpdate(ps.PersonList);
+
+            /* create a heet map */
+            if (refreshCount < 10)
+            {
+                if (refreshCount == 0)
+                {
+                    heatMap = katopsi.Copy();
+                }
+
+                foreach(Person p in ps.PersonList)
+                {
+                    heatMap.DrawCircle(p.Position, 10.0f, 0.5f);
+                }
+            }
+            else
+            {
+                refreshCount = 0;
+            }
+
+            refreshCount++;
+
         }
 
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
-            peopleSimulation = new PeopleSimulation(20, new FxVector2f(560,145), new FxVector2f(-1,0), im);
+            peopleSimulation = new PeopleSimulation(10, new FxVector2f(560,145), new FxVector2f(-1,0), katopsi);
             peopleSimulation.Start(peopleRefreshCB);
         } 
 
