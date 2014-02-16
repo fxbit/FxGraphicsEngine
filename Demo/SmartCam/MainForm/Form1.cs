@@ -159,7 +159,7 @@ namespace MainForm
 
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
-            peopleSimulation = new PeopleSimulation(10, new FxVector2f(560,145), new FxVector2f(-1,0), katopsi);
+            peopleSimulation = new PeopleSimulation(20, new FxVector2f(560,145), new FxVector2f(-1,0), katopsi);
             peopleSimulation.Start(peopleRefreshCB);
         } 
 
