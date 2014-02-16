@@ -15,6 +15,7 @@ using FxMaths.GUI;
 using FxMaths.Vector;
 using FxMaths.GMaps;
 using FxMaths;
+using FxMaths.Matrix;
 
 namespace MainForm
 {
@@ -31,13 +32,20 @@ namespace MainForm
         /// </summary>
         public static PeopleOverview UIPeopleOverview = null;
 
+        /// <summary>
+        /// The class that simulate the people movments.
+        /// </summary>
+        public static PeopleSimulation peopleSimulation = null;
 
+
+        public static FxMatrixF im;
 
         #region Form
         public MainForm()
         {
             InitializeComponent();
 
+            im = FxMatrixF.Load("Katopsi.jpg", FxMaths.Matrix.ColorSpace.Grayscale);
 
             // init the console
             UIConsole = new ConsoleOutput();
@@ -45,7 +53,7 @@ namespace MainForm
             consoleOutputToolStripMenuItem.Checked = true;
 
             // init the people over view
-            UIPeopleOverview = new PeopleOverview();
+            UIPeopleOverview = new PeopleOverview(im);
             UIPeopleOverview.Show(dockPanel1, DockState.Document);
             peopleOverviewToolStripMenuItem.Checked = true;
         }
@@ -110,11 +118,6 @@ namespace MainForm
             peopleOverviewToolStripMenuItem.Checked = !peopleOverviewToolStripMenuItem.Checked;
         }
 
-        private void toolStripButton1_Click(object sender, EventArgs e)
-        {
-
-        } 
-
 
         #endregion
 
@@ -122,6 +125,26 @@ namespace MainForm
 
         #region Simulator
         
+        private void peopleRefreshCB(PeopleSimulation ps)
+        {
+            /* now we must update People Overview */
+            if (UIPeopleOverview != null)
+                UIPeopleOverview.PeopleUpdate(ps.PersonList);
+        }
+
+        private void toolStripButton1_Click(object sender, EventArgs e)
+        {
+            peopleSimulation = new PeopleSimulation(20, new FxVector2f(560,145), new FxVector2f(-1,0), im);
+            peopleSimulation.Start(peopleRefreshCB);
+        } 
+
         #endregion
+
+
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            peopleSimulation.Stop();
+        }
     }
 }
