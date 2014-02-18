@@ -110,7 +110,7 @@ namespace MainForm
 
         private void SimulationRun()
         {
-            int dt_ms = 100;
+            int dt_ms = 50;
             int newPersonCounter = 0;
             FxVector2f filded = new FxVector2f();
             while (simulationRun)

@@ -25,6 +25,8 @@ namespace MainForm
             InitializeComponent();
 
             gpe = new GeometryPlotElement();
+            gpe.Name = "People";
+            gpe.lockMoving = true;
             canvas1.AddElements(gpe);
 
         }
@@ -35,10 +37,14 @@ namespace MainForm
 
             // add building 
             ImageElement ie = new ImageElement(im, new ColorMap(ColorMapDefaults.Bones));
+            ie.Name = "Katopsi";
+            ie.lockMoving = true;
             canvas1.AddElements(ie);
 
             // add geometry plot
             gpe = new GeometryPlotElement();
+            gpe.Name = "People";
+            gpe.lockMoving = true;
             canvas1.AddElements(gpe);
 
         }
