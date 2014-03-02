@@ -322,21 +322,21 @@ namespace Tester
             canvas1.AddElements(imF, false);
 
             ImageElement imM = new ImageElement(nextMat);
-            imM.Position.Y += nextMat.Height;
+            imM._Position.Y += nextMat.Height;
             canvas1.AddElements(imM, false);
 
             ImageElement imS = new ImageElement(nextMat);
-            imS.Position.x += nextMat.Width;
+            imS._Position.x += nextMat.Width;
             canvas1.AddElements(imS, false);
 
             ImageElement imG = new ImageElement(nextMat);
-            imG.Position.x += nextMat.Width;
-            imG.Position.Y += nextMat.Height;
+            imG._Position.x += nextMat.Width;
+            imG._Position.Y += nextMat.Height;
             canvas1.AddElements(imG, false);
 
             ImageElement imG_small = new ImageElement(nextMat);
-            imG_small.Position.x += 2*nextMat.Width;
-            imG_small.Position.Y += nextMat.Height;
+            imG_small._Position.x += 2*nextMat.Width;
+            imG_small._Position.Y += nextMat.Height;
             canvas1.AddElements(imG_small, false);
 
             canvas1.FitView();
