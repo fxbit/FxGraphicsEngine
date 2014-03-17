@@ -154,6 +154,7 @@
     <Compile Include="Core\ComputeShader.cs" />
     <Compile Include="Core\PrimaryObjects3D\Mesh.cs" />
     <Compile Include="Core\Object3D.cs" />
+    <Compile Include="Core\PrimaryObjects3D\PointCloud.cs" />
     <Compile Include="Core\PrimaryObjects3D\Sphere.cs" />
     <Compile Include="Core\PrimaryObjects3D\Terrain.cs" />
     <Compile Include="Core\Profiling.cs" />

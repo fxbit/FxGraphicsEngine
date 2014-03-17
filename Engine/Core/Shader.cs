@@ -102,6 +102,11 @@ namespace GraphicsEngine.Core {
         public ShaderBytecode m_VertexShaderByteCode;
 
         /// <summary>
+        /// The bytecode of the geometry shader
+        /// </summary>
+        public ShaderBytecode m_GeometryShaderByteCode;
+
+        /// <summary>
         /// Shader effect
         /// </summary>
         public FXEffect m_effect;
@@ -121,7 +126,7 @@ namespace GraphicsEngine.Core {
         #endregion
 
 
-        public Shader(String Name, String VS_EntryPoint="VS_Main" , String PS_EntryPoint = "PS_Main" ,Boolean PreCompiled=false)
+        public Shader(String Name, String VS_EntryPoint = "VS_Main", String PS_EntryPoint = "PS_Main", String GS_EntryPoint = "GS_Main", Boolean PreCompiled = false)
         {
             Device dev = Engine.g_device;
 
@@ -166,16 +171,19 @@ namespace GraphicsEngine.Core {
                 // set the compile feature
                 String CompileLevelPS;
                 String CompileLevelVS;
+                String CompileLevelGS;
 
                 if (Settings.FeatureLevel == FeatureLevel.Level_11_0)
                 {
                     CompileLevelPS="ps_5_0";
                     CompileLevelVS = "vs_5_0";
+                    CompileLevelGS = "gs_5_0";
                 }
                 else
                 {
                     CompileLevelPS = "ps_4_0";
                     CompileLevelVS = "vs_4_0";
+                    CompileLevelGS = "gs_4_0";
                 }
 
                 try
@@ -193,6 +201,19 @@ namespace GraphicsEngine.Core {
                                                 VS_EntryPoint,               /// The entry point for the shader
                                                 CompileLevelVS,              /// What specifications (shader version) to compile with
                                                 sf, EffectFlags.None, null, includeFX);
+
+                    try
+                    {
+                        /// compile the shader to byte code
+                        m_GeometryShaderByteCode = ShaderBytecode.CompileFromFile(
+                                                    ShaderRootPath + Name,       /// File Path of the file containing the code 
+                                                    GS_EntryPoint,               /// The entry point for the shader
+                                                    CompileLevelGS,              /// What specifications (shader version) to compile with
+                                                    sf, EffectFlags.None, null, includeFX);
+                    }catch(Exception ex)
+                    {
+                        // the geometry shader is not mandatory
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -202,7 +223,7 @@ namespace GraphicsEngine.Core {
             }
 
             /// init effect 
-            m_effect = new FXEffect( dev, m_PixelShaderByteCode, m_VertexShaderByteCode );
+            m_effect = new FXEffect( dev, m_PixelShaderByteCode, m_VertexShaderByteCode, null, m_GeometryShaderByteCode );
 
             /// init all the variables 
             InitVariables();
