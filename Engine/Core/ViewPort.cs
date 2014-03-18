@@ -7,7 +7,7 @@ using System.Text;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX;
-using FxGraphicsEngine.Core;
+using GraphicsEngine.Core;
 
 namespace GraphicsEngine.Core {
     public class Viewport {
@@ -305,7 +305,7 @@ namespace GraphicsEngine.Core {
     }
 }
 
-namespace FxGraphicsEngine.Core
+namespace GraphicsEngine.Core
 {
     public struct CamViewport
     {

@@ -10,7 +10,7 @@ using SharpDX;
 namespace GraphicsEngine.Core.Shaders
 {
 
-    [StructLayout( LayoutKind.Explicit, Size = 400 )] // 396
+    [StructLayout( LayoutKind.Explicit, Size = 524 )] // 396
     public struct cbViewMatrix
     {
         /// <summary>
@@ -51,10 +51,23 @@ namespace GraphicsEngine.Core.Shaders
         public Matrix g_mViewInverse;
 
         /// <summary>
-        /// the position of the camera 
+        /// matrix with Projection
         /// </summary>
         [FieldOffset( 384 )]
+        public Matrix g_mProjection;
+
+        /// <summary>
+        /// matrix with View * Projection
+        /// </summary>
+        [FieldOffset(448)]
+        public Matrix g_mViewProjection;
+
+        /// <summary>
+        /// the position of the camera 
+        /// </summary>
+        [FieldOffset( 512 )]
         public Vector3 g_vCameraPosition;
+
     }
 
 

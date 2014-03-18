@@ -128,7 +128,12 @@ cbuffer cbViewMatrix{
 	// inverse view matrix
 	matrix g_mViewInverse : ViewInverse;
 
+	// matrix with Projection
+	matrix g_mProjection : Projection;
+
+	// matrix with Projection
+	matrix g_mViewProjection : Projection;
+
 	// the position of the camera 
 	float3 g_vCameraPosition  = { 10.0f,10.0f,10.0f};
-
 };

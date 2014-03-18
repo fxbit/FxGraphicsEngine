@@ -55,6 +55,7 @@
             this.outputToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addCameraViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addKinectViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.testJpegToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.meshToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addSamplePlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addVideoPlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -68,7 +69,7 @@
             this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.HitTest = new System.Windows.Forms.Timer(this.components);
-            this.testJpegToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addPointCloudToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -166,13 +167,21 @@
             this.addKinectViewportToolStripMenuItem.Text = "Add Kinect Viewport";
             this.addKinectViewportToolStripMenuItem.Click += new System.EventHandler(this.addKinectViewportToolStripMenuItem_Click);
             // 
+            // testJpegToolStripMenuItem
+            // 
+            this.testJpegToolStripMenuItem.Name = "testJpegToolStripMenuItem";
+            this.testJpegToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.testJpegToolStripMenuItem.Text = "TestJpeg";
+            this.testJpegToolStripMenuItem.Click += new System.EventHandler(this.testJpegToolStripMenuItem_Click);
+            // 
             // meshToolStripMenuItem
             // 
             this.meshToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.addSamplePlaneToolStripMenuItem,
             this.addVideoPlaneToolStripMenuItem,
             this.addVideoSphereToolStripMenuItem,
-            this.addCEIDToolStripMenuItem});
+            this.addCEIDToolStripMenuItem,
+            this.addPointCloudToolStripMenuItem});
             this.meshToolStripMenuItem.Name = "meshToolStripMenuItem";
             this.meshToolStripMenuItem.Size = new System.Drawing.Size(74, 20);
             this.meshToolStripMenuItem.Text = "DirectX 3D";
@@ -305,12 +314,12 @@
             this.HitTest.Enabled = true;
             this.HitTest.Tick += new System.EventHandler(this.HitTest_Tick);
             // 
-            // testJpegToolStripMenuItem
+            // addPointCloudToolStripMenuItem
             // 
-            this.testJpegToolStripMenuItem.Name = "testJpegToolStripMenuItem";
-            this.testJpegToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
-            this.testJpegToolStripMenuItem.Text = "TestJpeg";
-            this.testJpegToolStripMenuItem.Click += new System.EventHandler(this.testJpegToolStripMenuItem_Click);
+            this.addPointCloudToolStripMenuItem.Name = "addPointCloudToolStripMenuItem";
+            this.addPointCloudToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+            this.addPointCloudToolStripMenuItem.Text = "Add Point Cloud";
+            this.addPointCloudToolStripMenuItem.Click += new System.EventHandler(this.addPointCloudToolStripMenuItem_Click);
             // 
             // TesterForm
             // 
@@ -362,6 +371,7 @@
         private System.Windows.Forms.ToolStripMenuItem addCameraViewportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addKinectViewportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem testJpegToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem addPointCloudToolStripMenuItem;
     }
 }
 

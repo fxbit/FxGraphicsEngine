@@ -871,6 +871,45 @@ namespace Tester
 
 
 
+        #region Add Point Cloud
+
+        private void addPointCloudToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            mp.Initialize(Engine.g_device);
+
+            List<FxVector3f> Points = new List<FxVector3f>();
+            List<FxVector3f> Colors = new List<FxVector3f>();
+            Random rand = new Random();
+            FxVector3f min = new FxVector3f(10);
+            FxVector3f max = new FxVector3f(1000);
+            for (int x = 0; x < 512; x += 2)
+            {
+                for (int y = 0; y < 420; y += 2)
+                {
+                    for (int z = 0; z < 1; z++)
+                    {
+                        FxVector3f p;
+                        p.x = x * 0.1f;
+                        p.z = y * 0.1f;
+                        //p.y = (float)(Math.Cos(p.x) * Math.Cos(p.x) + Math.Cos(p.z) * Math.Cos(p.z) + Math.Cos(z) * Math.Cos(z)) * 5;
+                        p.y = (float)Math.Log(p.x * p.x * p.x + p.z * p.z * p.z - 3 * p.x - 3 * p.z);
+                        Points.Add(p);
+                        Colors.Add(rand.NextFxVector3f());
+                    }
+                }
+            }
+
+            PointCloud pc = new PointCloud(Points, Colors);
+
+
+            /// add the mesh to the engine mesh list
+            Engine.g_MeshManager.AddMesh(pc);
+        } 
+
+
+        #endregion
+
         #endregion
 
 
@@ -1036,5 +1075,6 @@ namespace Tester
                 System.IO.File.WriteAllText("image.c", sb.ToString());
             }
         }
+
     }
 }

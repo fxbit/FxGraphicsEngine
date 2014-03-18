@@ -139,8 +139,12 @@ namespace GraphicsEngine {
                 int sum=0;
 
                 // add all the polygons of the scenes
-                foreach ( GraphicsEngine.Core.PrimaryObjects3D.Mesh mesh in g_MeshManager.g_Object3DList ) {
-                    sum += mesh.m_polygons.Count; 
+                foreach (Object3D obj  in g_MeshManager.g_Object3DList ) {
+                    if(obj is GraphicsEngine.Core.PrimaryObjects3D.Mesh)
+                    {
+                        GraphicsEngine.Core.PrimaryObjects3D.Mesh mesh = obj as GraphicsEngine.Core.PrimaryObjects3D.Mesh;
+                        sum += mesh.m_polygons.Count; 
+                    }
                 }
 
                 return sum;
@@ -192,18 +196,18 @@ namespace GraphicsEngine {
             if (g_device == null)
             {
 
-
+#if true
                 /// Create the DirectX Device
-                g_device = new Device(g_factory.GetAdapter(0),
+                g_device = new Device(g_factory.GetAdapter(1),
                                       (Settings.Debug) ? DeviceCreationFlags.Debug : DeviceCreationFlags.None,
                                       new FeatureLevel[] { FeatureLevel.Level_11_0 });
 
-                /*
-                                g_device = new Device(DriverType.Reference,
-                                                        (Settings.Debug) ? DeviceCreationFlags.Debug : DeviceCreationFlags.None,
-                                                        new FeatureLevel[] { FeatureLevel.Level_11_0 });
-
-                 * */
+#else           
+                g_device = new Device(DriverType.Warp,
+                                        (Settings.Debug) ? DeviceCreationFlags.Debug : DeviceCreationFlags.None,
+                                        new FeatureLevel[] { FeatureLevel.Level_11_0 });
+#endif
+                 
                 // check if we have one device to our system
                 if (!(((g_device.FeatureLevel & FeatureLevel.Level_10_0) != 0) || ((g_device.FeatureLevel & FeatureLevel.Level_10_1) != 0) || ((g_device.FeatureLevel & FeatureLevel.Level_11_0) != 0)))
                 {

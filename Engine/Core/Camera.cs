@@ -166,7 +166,7 @@ namespace GraphicsEngine.Core {
             m_RotVelocity = new Vector2(0, 0);
 
             m_RotationScaler = 0.002f;
-            m_MoveScaler = 0.3f;
+            m_MoveScaler = 0.1f;
 
             m_MouseDelta = new Vector2(0, 0);
             m_FramesToSmoothMouseData = 20.0f;

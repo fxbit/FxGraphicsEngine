@@ -86,6 +86,8 @@ namespace GraphicsEngine.Core {
         protected FXVariable<Matrix> m_ViewMatrixVariable;
         protected FXVariable<Matrix> m_WorldViewMatrixVariable;
         protected FXVariable<Matrix> m_WorldViewProjectionMatrixVariable;
+        protected FXVariable<Matrix> m_ViewProjectionMatrixVariable;
+        protected FXVariable<Matrix> m_ProjectionMatrixVariable;
         protected FXVariable<Matrix> m_WorldInverseTranspose;
         protected FXVariable<Matrix> m_ViewInverse;
 
@@ -175,7 +177,7 @@ namespace GraphicsEngine.Core {
 
                 if (Settings.FeatureLevel == FeatureLevel.Level_11_0)
                 {
-                    CompileLevelPS="ps_5_0";
+                    CompileLevelPS = "ps_5_0";
                     CompileLevelVS = "vs_5_0";
                     CompileLevelGS = "gs_5_0";
                 }
@@ -233,7 +235,6 @@ namespace GraphicsEngine.Core {
         {
             m_ViewConstantBuffer = m_effect.GetConstantBufferByName( "cbViewMatrix" );
 
-
             /// Obtain the variables from effect
             m_WorldInverseTranspose = m_ViewConstantBuffer.GetMemberByName<Matrix>( "g_mWorldInverseTrans" );
             m_ViewInverse = m_ViewConstantBuffer.GetMemberByName<Matrix>( "g_mViewInverse" );
@@ -242,7 +243,9 @@ namespace GraphicsEngine.Core {
             m_WorldMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>( "g_mWorld" );
             m_ViewMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>( "g_mView" );
             m_WorldViewMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>( "g_mWorldView" );
-            m_WorldViewProjectionMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>( "g_mWorldViewProjection" );
+            m_WorldViewProjectionMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>("g_mWorldViewProjection");
+            m_ProjectionMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>("g_mProjection");
+            m_ViewProjectionMatrixVariable = m_ViewConstantBuffer.GetMemberByName<Matrix>("g_mViewProjection");
 
             /// Camera Position
             m_CameraPosition = m_ViewConstantBuffer.GetMemberByName<Vector3>("g_vCameraPosition");
@@ -307,11 +310,17 @@ namespace GraphicsEngine.Core {
             /// set the world*view*Projection matrix
             m_WorldViewProjectionMatrixVariable.Set(m_WorldMatrix * viewMatrix * Engine.g_RenderCamera.ProjMatrix);
 
+            /// set the view*Projection
+            m_ViewProjectionMatrixVariable.Set(viewMatrix * Engine.g_RenderCamera.ProjMatrix);
+
             /// set the world*view matrix
             m_WorldViewMatrixVariable.Set( m_WorldMatrix * viewMatrix);
 
             /// set the view matrix
             m_ViewMatrixVariable.Set(viewMatrix);
+
+            /// set the projection matrix
+            m_ProjectionMatrixVariable.Set(Engine.g_RenderCamera.ProjMatrix);
 
             viewMatrix.Invert();
 
