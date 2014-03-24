@@ -3,7 +3,7 @@
 #include "Lib/Structure.fx"
 #define FLT_MAX 1E+37
 
-#define quadLength 0.1f
+#define quadLength 0.2f
 
 struct Particle{
 	float3 pos    	: POSITION;
@@ -18,8 +18,8 @@ StructuredBuffer<Particle> particleBuffer;
 struct PS_INPUT
 {
 	float4	pos		: SV_POSITION;
-	float2  tex0	: TEXCOORD0;
 	float3	color	: COLOR;
+	float2  tex0	: TEXCOORD0;
 };
 
 //--------------------------------------------------------------------------------------
@@ -28,7 +28,6 @@ struct PS_INPUT
 struct GS_INPUT
 {
 	float4	pos		: SV_POSITION;
-	float2  tex0	: TEXCOORD0;
 	float3	color	: COLOR;
 };
 
@@ -51,10 +50,9 @@ GS_INPUT VS_Main(uint vid : SV_VertexID)
 //--------------------------------------------------------------------------------------
 float4 PS_Main(PS_INPUT input) : SV_TARGET
 {
-	float4 output = g_TextureDiffuse.Sample(samAniClamp, input.tex0);
-	//output.rgb = output.rgb * input.color;
-	output.rgb = input.color;
-	output.a = 1.0f;
+	float4 output = g_TextureDiffuse.Sample(samPointClamp, input.tex0);
+	output.a = output.r;
+	output.rgb = output.rgb * input.color;
 	return output;
 }
 
@@ -65,46 +63,6 @@ float4 PS_Main(PS_INPUT input) : SV_TARGET
 [maxvertexcount(4)]
 void GS_Main(point GS_INPUT p[1], inout TriangleStream<PS_INPUT> triStream)
 {
-#if 0
-	PS_INPUT p1 = (PS_INPUT)0;
-	float3 edge;
-
-	float3 normal = p[0].pos.xyz - g_vCameraPosition;
-	normal = mul(float4(normal, 1), g_mView).xyz;
-
-	float3 rightAxis = cross(float3(0.0f, 1.0f, 0.0f), normal);
-	float3 upAxis = cross(normal, rightAxis);
-
-	float3 rightVector = normalize(rightAxis);
-	float3 upVector = normalize(upAxis);
-	float3 center = mul(float4(p[0].pos, 1), g_mView).xyz;
-
-	edge = center + rightVector*(quadLength)+upVector*(quadLength);
-	p1.tex0 = float2(1.0f, 0.0f);
-	p1.pos = mul(float4(edge, 1), g_mProjection);
-	p1.color = p[0].color;
-	triStream.Append(p1);
-
-	edge = center + rightVector*(quadLength)+upVector*(-quadLength);
-	p1.tex0 = float2(1.0f, 1.0f);
-	p1.pos = mul(float4(edge, 1), g_mProjection);
-	p1.color = p[0].color;
-	triStream.Append(p1);
-
-	edge = center + rightVector*(-quadLength) + upVector*(quadLength);
-	p1.tex0 = float2(0.0f, 0.0f);
-	p1.pos = mul(float4(edge, 1), g_mProjection);
-	p1.color = p[0].color;
-	triStream.Append(p1);
-
-	edge = center + rightVector*(-quadLength) + upVector*(-quadLength);
-	p1.tex0 = float2(0.0f, 1.0f);
-	p1.pos = mul(float4(edge, 1), g_mProjection);
-	p1.color = p[0].color;
-	triStream.Append(p1);
-
-#else
-
 	PS_INPUT p1;
 	float3 up = float3(0.0f, 1.0f, 0.0f);
 	float3 look = p[0].pos.xyz - g_vCameraPosition;
@@ -138,6 +96,4 @@ void GS_Main(point GS_INPUT p[1], inout TriangleStream<PS_INPUT> triStream)
 	p1.tex0 = float2(1.0f, 0.0f);
 	p1.color = p[0].color;
 	triStream.Append(p1);
-
-#endif
 }

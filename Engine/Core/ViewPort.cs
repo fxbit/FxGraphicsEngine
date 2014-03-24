@@ -245,7 +245,8 @@ namespace GraphicsEngine.Core {
 
             /// Clear or fill the Render target with a single color
             devCont.ClearRenderTargetView(
-                m_RenderTarget, new Color4( 0.0f, 0.125f, 0.3f, 1.0f ) );
+                m_RenderTarget, new Color4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+                //m_RenderTarget, new Color4( 0.0f, 0.125f, 0.3f, 1.0f ) );
 
             /// clear the depth buffer to 1.0 (max depth)
             devCont.ClearDepthStencilView(
@@ -265,6 +266,14 @@ namespace GraphicsEngine.Core {
                 m_RasterizerStateDesc = new RasterizerStateDescription();
                 m_RasterizerStateDesc.CullMode = Settings.CullMode;
                 m_RasterizerStateDesc.FillMode = Settings.FillMode;
+                m_RasterizerStateDesc.IsDepthClipEnabled = true;
+                m_RasterizerStateDesc.IsScissorEnabled = false;
+                m_RasterizerStateDesc.IsMultisampleEnabled = false;
+                m_RasterizerStateDesc.IsAntialiasedLineEnabled = false;
+                m_RasterizerStateDesc.SlopeScaledDepthBias = 0.0f;
+                m_RasterizerStateDesc.DepthBiasClamp = 0.0f;
+                m_RasterizerStateDesc.DepthBias = 0;
+                
 
                 m_RasterizerState = new RasterizerState( Engine.g_device, m_RasterizerStateDesc );
             }

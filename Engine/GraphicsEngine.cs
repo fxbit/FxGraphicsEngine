@@ -116,6 +116,12 @@ namespace GraphicsEngine {
 
         #endregion
 
+
+
+
+        private BlendState g_blendState;
+
+        private DepthStencilState g_depthStencilState;
         #endregion
 
 
@@ -180,25 +186,27 @@ namespace GraphicsEngine {
             //MessageBox.Show(adapterCount.ToString());
 
             // we try to select the PerfHUD adapter 
-            for (int i = 0; i < adapterCount; i++) {
+            for (int i = 0; i < adapterCount; i++)
+            {
                 Adapter adapt = g_factory.GetAdapter(i);
                 //MessageBox.Show(adapt.Description.Description);
 
-                if (adapt.Description.Description == "NVIDIA PerfHUD") {
+                if (adapt.Description.Description == "NVIDIA PerfHUD")
+                {
                     g_device = new Device(
                         adapt,
-                        DeviceCreationFlags.Debug );
+                        DeviceCreationFlags.Debug);
                 }
 
                 Console.WriteLine(i.ToString() + adapt.Description.Description);
             }
-            
+
             if (g_device == null)
             {
 
 #if true
                 /// Create the DirectX Device
-                g_device = new Device(g_factory.GetAdapter(1),
+                g_device = new Device(g_factory.GetAdapter(0),
                                       (Settings.Debug) ? DeviceCreationFlags.Debug : DeviceCreationFlags.None,
                                       new FeatureLevel[] { FeatureLevel.Level_11_0 });
 
@@ -207,7 +215,7 @@ namespace GraphicsEngine {
                                         (Settings.Debug) ? DeviceCreationFlags.Debug : DeviceCreationFlags.None,
                                         new FeatureLevel[] { FeatureLevel.Level_11_0 });
 #endif
-                 
+
                 // check if we have one device to our system
                 if (!(((g_device.FeatureLevel & FeatureLevel.Level_10_0) != 0) || ((g_device.FeatureLevel & FeatureLevel.Level_10_1) != 0) || ((g_device.FeatureLevel & FeatureLevel.Level_11_0) != 0)))
                 {
@@ -221,7 +229,7 @@ namespace GraphicsEngine {
                     g_modeDesc.RefreshRate = new Rational(60, 1);
                     /// Default
                     g_modeDesc.Scaling = DisplayModeScaling.Unspecified;
-                    g_modeDesc.ScanlineOrdering =  DisplayModeScanlineOrder.Progressive;
+                    g_modeDesc.ScanlineOrdering = DisplayModeScanlineOrder.Progressive;
 
                     /// ClientSize is the size of the
                     /// form without the title and borders
@@ -324,14 +332,14 @@ namespace GraphicsEngine {
 
                     g_swapChain = new SwapChain(g_factory, g_device, g_swapDesc);
 
-                    #endregion 
+                    #endregion
 #endif
                 }
 
                 // set the feature level
                 Settings.FeatureLevel = g_device.FeatureLevel;
             }
-            
+
 
             /// init mesh manager 
             g_MeshManager = new Object3DManager();
@@ -347,11 +355,36 @@ namespace GraphicsEngine {
             /// Set flag to indicate that engine is running
             g_Running = true;
 
-            Logger.WriteLine( "The Graphing Engine have be start " );
+            Logger.WriteLine("The Graphing Engine have be start ");
 
             // set the event handler
-            RenderLoopHandler = new EventHandler( RenderLoop );
+            RenderLoopHandler = new EventHandler(RenderLoop);
 
+            var rtb = new RenderTargetBlendDescription()
+            {
+                IsBlendEnabled = true,
+                BlendOperation = BlendOperation.Add,
+                AlphaBlendOperation = BlendOperation.Add,
+                DestinationBlend = BlendOption.One,
+                DestinationAlphaBlend = BlendOption.Zero,
+                SourceBlend = BlendOption.One,
+                SourceAlphaBlend = BlendOption.One,
+                RenderTargetWriteMask = ColorWriteMaskFlags.All
+            };
+
+            BlendStateDescription blendDesc = new BlendStateDescription();
+            blendDesc.AlphaToCoverageEnable = false;
+            blendDesc.IndependentBlendEnable = false;
+            blendDesc.RenderTarget[0] = rtb;
+
+
+            g_blendState = new BlendState(g_device, blendDesc);
+
+
+            DepthStencilStateDescription dssd = new DepthStencilStateDescription();
+            dssd.DepthComparison = Comparison.Less;
+            dssd.IsDepthEnabled = true;
+            g_depthStencilState = new DepthStencilState(g_device, new DepthStencilStateDescription());
         }
 
         #endregion
@@ -710,12 +743,15 @@ namespace GraphicsEngine {
                 DeviceContext []devCont = { selectedContext };
                 foreach ( Core.Viewport viewport in ViewportManager.ListOfViewport ) {
 
+                    // set the blend state
+                    selectedContext.OutputMerger.SetBlendState(g_blendState, new Color4(0.0f, 0.0f, 0.0f, 0.0f), -1);
+                    selectedContext.OutputMerger.SetDepthStencilState(g_depthStencilState);
+
                     //Performance.BeginEvent( new Color4( System.Drawing.Color.Red ), "EnableViewport" );
                     // enable the specific viewport
                     viewport.EnableViewport( selectedContext );
                     //viewport.EnableViewport( devCont1 );
                     //Performance.EndEvent();
-
 
                     //Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "PreProcessing" );
                     /// call all cb
@@ -745,8 +781,6 @@ namespace GraphicsEngine {
                     //Engine.g_device.ImmediateContext.ExecuteCommandList( df_cl, true );
 
                     //Performance.EndEvent();
-
-
 
                     //Performance.BeginEvent( new Color4( System.Drawing.Color.Yellow ), "Display" );
                     // display the result

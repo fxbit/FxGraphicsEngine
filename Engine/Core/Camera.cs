@@ -114,6 +114,8 @@ namespace GraphicsEngine.Core {
         private float m_FramesToSmoothMouseData;
         #endregion
 
+
+
         #region Properties
         public Matrix ViewMatrix { get { return m_View; } }
 
@@ -141,6 +143,8 @@ namespace GraphicsEngine.Core {
         public Vector3 Direction { get { return m_LookAt - m_Eye; } }
         #endregion
 
+
+
         #region Constructors
         /// <summary>
         /// 
@@ -166,7 +170,7 @@ namespace GraphicsEngine.Core {
             m_RotVelocity = new Vector2(0, 0);
 
             m_RotationScaler = 0.002f;
-            m_MoveScaler = 0.1f;
+            m_MoveScaler = 0.01f;
 
             m_MouseDelta = new Vector2(0, 0);
             m_FramesToSmoothMouseData = 20.0f;
@@ -175,6 +179,8 @@ namespace GraphicsEngine.Core {
             m_Windows_Height = height;
         }
         #endregion
+
+
 
         #region Public Functions
         /// <summary>
@@ -297,6 +303,8 @@ namespace GraphicsEngine.Core {
         }
         #endregion
 
+
+
         #region Private Function
         /// <summary>
         /// Maps the keyboard keys to camera actions
@@ -347,6 +355,8 @@ namespace GraphicsEngine.Core {
             m_Velocity = Accel;
         }
         #endregion
+
+
 
         #region Handle Input
 

@@ -33,6 +33,7 @@ namespace GraphicsEngine.Core.Shaders
         #endregion
 
 
+
         #region Constructor
         public ShaderPointCloud()
             : base(ShaderName)
@@ -46,6 +47,32 @@ namespace GraphicsEngine.Core.Shaders
             InitShader();
         }
         #endregion
+
+
+
+        #region Texture Selection
+        /// <summary>
+        /// Set the texture that the billboard is using
+        /// </summary>
+        /// <param name="texturePath">Where on disk the texture is saved</param>
+        public Texture SetTexture(string texturePath)
+        {
+            /// add the texture to tha manager and if is not new just get the resource
+            Texture tex = TextureManager.AddTexture(texturePath);
+            m_TextureDiffuse.SetResource(tex.shaderResource);
+            return tex;
+        }
+
+        /// <summary>
+        /// Set the texture that the mesh use
+        /// </summary>
+        /// <param name="tex">The texture resource.</param>
+        public void SetTexture(Texture tex)
+        {
+            m_TextureDiffuse.SetResource(tex.shaderResource);
+        } 
+        #endregion
+
 
 
         private void InitShader()

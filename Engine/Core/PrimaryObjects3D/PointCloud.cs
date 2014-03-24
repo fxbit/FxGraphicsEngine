@@ -18,6 +18,7 @@ using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
 using GraphicsEngine.Core;
 using FXFramework;
+using GraphicsEngine.Core.Shaders;
 
 namespace GraphicsEngine.Core.PrimaryObjects3D
 {
@@ -70,7 +71,7 @@ namespace GraphicsEngine.Core.PrimaryObjects3D
         /// <summary>
         /// The shader that use this mesh
         /// </summary>
-        private Shader m_shader;
+        private ShaderPointCloud m_shader;
 
         /// <summary>
         /// Buffer with the Particles
@@ -106,6 +107,9 @@ namespace GraphicsEngine.Core.PrimaryObjects3D
             m_shader = new Shaders.ShaderPointCloud();
             m_numParticles = Points.Count;
 
+            m_shader.SetTexture("c://Particle.png");
+            
+            
             /// write the particles to the stream
             for (int i = 0; i < m_numParticles; i++)
             {
