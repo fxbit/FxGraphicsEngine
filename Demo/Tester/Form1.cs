@@ -161,6 +161,29 @@ namespace Tester
 
         #endregion
 
+
+
+
+        #region K4W
+
+        private void addK4WViewportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            // start the graphic engine
+            StartGraphicEngine();
+
+            // create a new viewport
+            KinectV2Form viewport = new KinectV2Form(engine);
+
+            // add the viewport to the dock
+            viewport.Show(dockPanel1, DockState.Document);
+        }
+        
+        #endregion
+
+
+
+
         #endregion
 
 

@@ -206,7 +206,7 @@ namespace GraphicsEngine {
 
 #if true
                 /// Create the DirectX Device
-                g_device = new Device(g_factory.GetAdapter(0),
+                g_device = new Device(g_factory.GetAdapter(1),
                                       (Settings.Debug) ? DeviceCreationFlags.Debug : DeviceCreationFlags.None,
                                       new FeatureLevel[] { FeatureLevel.Level_11_0 });
 

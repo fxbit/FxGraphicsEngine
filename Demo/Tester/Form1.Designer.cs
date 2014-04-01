@@ -61,6 +61,7 @@
             this.addVideoPlaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addVideoSphereToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addCEIDToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addPointCloudToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.direct2DToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.directComputeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -69,7 +70,7 @@
             this.dockPanel1 = new WeifenLuo.WinFormsUI.Docking.DockPanel();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.HitTest = new System.Windows.Forms.Timer(this.components);
-            this.addPointCloudToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addK4WViewportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -127,7 +128,8 @@
             this.outputToolStripMenuItem,
             this.addCameraViewportToolStripMenuItem,
             this.addKinectViewportToolStripMenuItem,
-            this.testJpegToolStripMenuItem});
+            this.testJpegToolStripMenuItem,
+            this.addK4WViewportToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "View";
@@ -213,6 +215,13 @@
             this.addCEIDToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
             this.addCEIDToolStripMenuItem.Text = "Add CEID";
             this.addCEIDToolStripMenuItem.Click += new System.EventHandler(this.addCEIDToolStripMenuItem_Click);
+            // 
+            // addPointCloudToolStripMenuItem
+            // 
+            this.addPointCloudToolStripMenuItem.Name = "addPointCloudToolStripMenuItem";
+            this.addPointCloudToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
+            this.addPointCloudToolStripMenuItem.Text = "Add Point Cloud";
+            this.addPointCloudToolStripMenuItem.Click += new System.EventHandler(this.addPointCloudToolStripMenuItem_Click);
             // 
             // direct2DToolStripMenuItem
             // 
@@ -314,12 +323,12 @@
             this.HitTest.Enabled = true;
             this.HitTest.Tick += new System.EventHandler(this.HitTest_Tick);
             // 
-            // addPointCloudToolStripMenuItem
+            // addK4WViewportToolStripMenuItem
             // 
-            this.addPointCloudToolStripMenuItem.Name = "addPointCloudToolStripMenuItem";
-            this.addPointCloudToolStripMenuItem.Size = new System.Drawing.Size(170, 22);
-            this.addPointCloudToolStripMenuItem.Text = "Add Point Cloud";
-            this.addPointCloudToolStripMenuItem.Click += new System.EventHandler(this.addPointCloudToolStripMenuItem_Click);
+            this.addK4WViewportToolStripMenuItem.Name = "addK4WViewportToolStripMenuItem";
+            this.addK4WViewportToolStripMenuItem.Size = new System.Drawing.Size(190, 22);
+            this.addK4WViewportToolStripMenuItem.Text = "Add K4W Viewport";
+            this.addK4WViewportToolStripMenuItem.Click += new System.EventHandler(this.addK4WViewportToolStripMenuItem_Click);
             // 
             // TesterForm
             // 
@@ -372,6 +381,7 @@
         private System.Windows.Forms.ToolStripMenuItem addKinectViewportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem testJpegToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addPointCloudToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem addK4WViewportToolStripMenuItem;
     }
 }
 
