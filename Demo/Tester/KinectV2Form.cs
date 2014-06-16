@@ -79,7 +79,9 @@ namespace Tester
         /// <summary>
         /// Intermediate storage for frame data converted to color
         /// </summary>
-        private FxMatrixF pixels = null;
+        private FxMatrixF depthImageMatrix = null;
+        private FxMatrixF colorImageMatrix = null;
+        private FxMatrixF depthImageMatrixAve = null;
 
         /// <summary>
         /// Intermediate storage for the depth to color mapping
@@ -107,6 +109,15 @@ namespace Tester
         /// Timer for FPS calculation
         /// </summary>
         private Stopwatch stopwatch = null;
+
+        private ImageElement depthImageElement;
+        private ImageElement colorImageElement;
+
+        /// <summary>
+        /// Color map of depth viewer.
+        /// </summary>
+        private ColorMap depthColorMap = new ColorMap(ColorMapDefaults.Jet);
+
         #endregion
 
 
@@ -116,6 +127,7 @@ namespace Tester
         {
             InitializeComponent();
 
+#if false
             // save localy the graphic engine
             this.engine = engine;
 
@@ -125,6 +137,19 @@ namespace Tester
 
             // set the moving camera
             Engine.g_MoveCamera = RenderArea_Viewport.m_Camera;
+#endif 
+
+            // allocate the Matrix
+            colorImageMatrix = new FxMatrixF(640, 480);
+            depthImageMatrix = new FxMatrixF(640, 480);
+            depthImageMatrixAve = new FxMatrixF(640, 480);
+
+            // create a new image element
+            colorImageElement = new ImageElement(colorImageMatrix);
+            depthImageElement = new ImageElement(depthImageMatrix);
+
+            canvas1.AddElements(colorImageElement, false);
+            canvas1.AddElements(depthImageElement, false);
         }
 
         private void KinectV2Form_FormClosing(object sender, FormClosingEventArgs e)
@@ -230,11 +255,21 @@ namespace Tester
 
                 // allocate space to put the pixels being received and converted
                 frameData = new ushort[frameDescription.Width * frameDescription.Height];
-                pixels = new FxMatrixF(frameDescription.Width, frameDescription.Height);
+                depthImageMatrix = new FxMatrixF(frameDescription.Width, frameDescription.Height);
+                depthImageMatrixAve = depthImageMatrix.Copy();
                 colorPoints = new ColorSpacePoint[frameDescription.Width * frameDescription.Height];
+
+                reader.MultiSourceFrameArrived += reader_MultiSourceFrameArrived;
             }
             else
                 MessageBox.Show("Error: failed to open kinect sensor");
+        }
+
+        void reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e)
+        {
+            var frames = e.FrameReference.AcquireFrame();
+
+            DepthFrameHandling(frames);
         }
 
         bool oneTimeShot = false;
@@ -312,7 +347,7 @@ namespace Tester
                                 // We're preserving detail, although the intensity will "wrap."
                                 // Values outside the reliable depth range are mapped to 0 (black).
                                 //pixels[i] = 1.0f - ((depth >= minDepth && depth <= maxDepth) ? depth : 0) * imaxDepth;
-                                pixels[i] = 1.0f - depth * imaxDepth;
+                                depthImageMatrix[i] = 1.0f - depth * imaxDepth;
                             }
 
                             if (!oneTimeShot)
@@ -328,7 +363,7 @@ namespace Tester
                                         FxVector3f p;
                                         p.x = x * 0.08f;
                                         p.z = y * 0.08f;
-                                        p.y = pixels[x,y]*5.0f;
+                                        p.y = depthImageMatrix[x,y]*5.0f;
                                         Points.Add(p);
 
 #if false
@@ -347,7 +382,7 @@ namespace Tester
 
 
 #else
-                                        byte b = (byte)(pixels[x, y]*256);
+                                        byte b = (byte)(depthImageMatrix[x, y]*256);
                                         Colors.Add(new FxVector3f(cm[b,0]/256.0f, cm[b,1]/256.0f, cm[b,2]/256.0f));
 #endif
                                     }
@@ -381,12 +416,109 @@ namespace Tester
             catch (Exception) { }
 
 
+            DepthFrameHandling(frame);
+        }
+
+        private void DepthFrameHandling(MultiSourceFrame frame)
+        {
             try
             {
                 DepthFrame depthFrame = frame.DepthFrameReference.AcquireFrame();
+                DepthFrameReference frameReference = frame.DepthFrameReference;
+                if (depthFrame != null)
+                {
+                    // DepthFrame is IDisposable
+                    using (depthFrame)
+                    {
+                        FrameDescription frameDescription = depthFrame.FrameDescription;
+
+                        #region FPS
+                        this.framesSinceUpdate++;
+
+                        // update status unless last message is sticky for a while
+                        if (DateTime.Now >= nextStatusUpdate)
+                        {
+                            // calcuate fps based on last frame received
+                            double fps = 0.0;
+
+                            if (stopwatch.IsRunning)
+                            {
+                                stopwatch.Stop();
+                                fps = framesSinceUpdate / stopwatch.Elapsed.TotalSeconds;
+                                stopwatch.Reset();
+                            }
+
+                            nextStatusUpdate = DateTime.Now + TimeSpan.FromSeconds(1);
+                            toolStripLabel_fps.Text = fps + " " + (frameReference.RelativeTime - this.startTime).ToString() + "mS";
+                        }
+
+                        if (!stopwatch.IsRunning)
+                        {
+                            framesSinceUpdate = 0;
+                            stopwatch.Start();
+                        }
+                        #endregion
+
+                        // verify data and write the new depth frame data to the display bitmap
+                        if (((frameDescription.Width * frameDescription.Height) == frameData.Length))
+                        {
+                            // Copy the pixel data from the image to a temporary array
+                            depthFrame.CopyFrameDataToArray(frameData);
+
+                            coordinateMapper.MapDepthFrameToColorSpace(frameData, colorPoints);
+
+                            // Get the min and max reliable depth for the current frame
+                            ushort minDepth = depthFrame.DepthMinReliableDistance;
+                            ushort maxDepth = depthFrame.DepthMaxReliableDistance;
+                            float imaxDepth = 1.0f / maxDepth;
+                            for (int i = 0; i < this.frameData.Length; ++i)
+                            {
+                                // Get the depth for this pixel
+                                ushort depth = this.frameData[i];
+
+                                // To convert to a byte, we're discarding the most-significant
+                                // rather than least-significant bits.
+                                // We're preserving detail, although the intensity will "wrap."
+                                // Values outside the reliable depth range are mapped to 0 (black).
+                                //pixels[i] = 1.0f - ((depth >= minDepth && depth <= maxDepth) ? depth : 0) * imaxDepth;
+                                depthImageMatrix[i] = 1.0f - depth * imaxDepth;
+                            }
+
+                            depthImageMatrixAve.Multiply(0.85f);
+                            depthImageMatrixAve += 0.15f*depthImageMatrix;
+
+                            // Updating viewports...
+                            depthImageElement.UpdateInternalImage(depthImageMatrix, depthColorMap, true);
+                            colorImageElement.UpdateInternalImage(depthImageMatrixAve, depthColorMap, true);
+                            canvas1.ReDraw();
+
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
+        }
+
+        private void toolStripButton3_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+            if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ColorMap map = new ColorMap(ColorMapDefaults.Gray);
+                lock (depthImageMatrix)
+                {
+                    depthImageMatrix.SaveImage(sfd.FileName + "_depth.jpg", map);
+                    depthImageMatrix.SaveCsv(sfd.FileName + "_depth.csv");
+                }
 
 
-            } catch (Exception) { }
+                lock(depthImageMatrixAve)
+                {
+                    depthImageMatrixAve.SaveImage(sfd.FileName + "_ave_depth.jpg", map);
+                    depthImageMatrixAve.SaveCsv(sfd.FileName + "_ave_depth.csv");
+                }
+            }
+
         }
 
     }
