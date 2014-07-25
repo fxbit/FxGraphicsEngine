@@ -92,7 +92,7 @@ namespace Tester
         /// <summary>
         /// The time of the first frame received
         /// </summary>
-        private long startTime = 0;
+        private TimeSpan startTime;
 
 
         /// <summary>
@@ -206,7 +206,7 @@ namespace Tester
             this.stopwatch = new Stopwatch();
 
             // for Alpha, one sensor is supported
-            kinectSensor = KinectSensor.Default;
+            kinectSensor = KinectSensor.GetDefault();
 
             if (kinectSensor != null)
             {
@@ -282,7 +282,7 @@ namespace Tester
         {
             DepthFrameReference frameReference = e.FrameReference;
 
-            if (this.startTime == 0)
+            if (this.startTime == null)
             {
                 this.startTime = frameReference.RelativeTime;
             }
