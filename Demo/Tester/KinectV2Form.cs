@@ -521,5 +521,117 @@ namespace Tester
 
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #region Ellipse Code
+
+
+        FxMatrixF imMat = null;
+        ImageElement ieEllipseImage = null;
+        GeometryPlotElement gpeEllipseImage = null;
+        FxMaths.Geometry.Rectangle rect = null;
+
+
+        private void toolStripButton_EllipseOpenImage_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            if(ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                imMat = FxMatrixF.LoadCsv(ofd.FileName);
+                ieEllipseImage = new ImageElement(imMat, new ColorMap(ColorMapDefaults.Jet));
+                ieEllipseImage.lockMoving = true;
+                canvas_ellipse.AddElements(ieEllipseImage);
+            }
+        }
+
+
+
+        private void canvas_ellipse_OnCanvasMouseClick(object sender, CanvasMouseClickEventArgs e)
+        {
+            Console.WriteLine("CanvasHit " + e.hitPoint.ToString() + "  " + e.insidePoint + " ");
+            if (e.hitElement != null)
+                Console.Write("Hit:" + e.hitElement.ToString());
+
+            // check if we are sub region selection
+            if (toolStripButton_eclipse_SelectSubRegion.Checked)
+            {
+                // check if we are hitting the image
+                if (e.hitElement == ieEllipseImage)
+                {
+                    // init the rectangle
+                    if (rect == null)
+                    {
+                        rect = new FxMaths.Geometry.Rectangle(e.hitPoint, e.hitPoint);
+                        gpeEllipseImage.AddGeometry(rect);
+                    }
+                    else
+                    {
+                        rect.EndPoint = e.hitPoint;
+                        toolStripButton_eclipse_SelectSubRegion.Checked = false;
+                    }
+                }
+            }
+        }
+
+
+
+        private void toolStripButton_eclipse_SelectSubRegion_Click(object sender, EventArgs e)
+        {
+            if (toolStripButton_eclipse_SelectSubRegion.Checked)
+            {
+                toolStripButton_eclipse_SelectSubRegion.Checked = false;
+
+                // clean old geometry element
+                if(gpeEllipseImage!=null)
+                    gpeEllipseImage.ClearGeometry(true);
+
+                if (rect != null)
+                {
+                    rect.Dispose();
+                    rect = null;
+                }
+            }
+            else
+            {
+
+                toolStripButton_eclipse_SelectSubRegion.Checked = true;
+
+                // init geometry plot
+                if (gpeEllipseImage == null)
+                {
+                    gpeEllipseImage = new GeometryPlotElement();
+                    canvas_ellipse.AddElements(gpeEllipseImage);
+                    gpeEllipseImage.Position = ieEllipseImage._Position;
+                }
+                else
+                    gpeEllipseImage.ClearGeometry(true);
+
+
+                if (rect != null)
+                {
+                    rect.Dispose();
+                    rect = null;
+                }
+            }
+        }
+
+
+        #endregion
+
+
+
     }
 }

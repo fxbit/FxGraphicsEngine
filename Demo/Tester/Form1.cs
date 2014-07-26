@@ -170,7 +170,7 @@ namespace Tester
         {
 
             // start the graphic engine
-            StartGraphicEngine();
+            //StartGraphicEngine();
 
             // create a new viewport
             KinectV2Form viewport = new KinectV2Form(engine);

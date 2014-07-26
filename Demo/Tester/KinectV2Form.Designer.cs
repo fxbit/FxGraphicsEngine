@@ -35,16 +35,24 @@
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.toolStripLabel_fps = new System.Windows.Forms.ToolStripLabel();
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton3 = new System.Windows.Forms.ToolStripButton();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.canvas1 = new FxMaths.GUI.Canvas();
-            this.toolStripButton3 = new System.Windows.Forms.ToolStripButton();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.canvas_ellipse = new FxMaths.GUI.Canvas();
+            this.toolStrip2 = new System.Windows.Forms.ToolStrip();
+            this.toolStripButton_EllipseOpenImage = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton_eclipse_SelectSubRegion = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             ((System.ComponentModel.ISupportInitialize)(this.RenderArea)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            this.tabPage3.SuspendLayout();
+            this.toolStrip2.SuspendLayout();
             this.SuspendLayout();
             // 
             // RenderArea
@@ -104,10 +112,21 @@
             this.toolStripButton2.Text = "GetOneFrame";
             this.toolStripButton2.Click += new System.EventHandler(this.toolStripButton2_Click);
             // 
+            // toolStripButton3
+            // 
+            this.toolStripButton3.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButton3.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton3.Image")));
+            this.toolStripButton3.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton3.Name = "toolStripButton3";
+            this.toolStripButton3.Size = new System.Drawing.Size(23, 22);
+            this.toolStripButton3.Text = "Save Frame";
+            this.toolStripButton3.Click += new System.EventHandler(this.toolStripButton3_Click);
+            // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 25);
             this.tabControl1.Name = "tabControl1";
@@ -146,15 +165,66 @@
             this.canvas1.TabIndex = 0;
             this.canvas1.Zoom = new System.Drawing.SizeF(1F, 1F);
             // 
-            // toolStripButton3
+            // tabPage3
             // 
-            this.toolStripButton3.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.toolStripButton3.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton3.Image")));
-            this.toolStripButton3.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton3.Name = "toolStripButton3";
-            this.toolStripButton3.Size = new System.Drawing.Size(23, 22);
-            this.toolStripButton3.Text = "toolStripButton3";
-            this.toolStripButton3.Click += new System.EventHandler(this.toolStripButton3_Click);
+            this.tabPage3.Controls.Add(this.canvas_ellipse);
+            this.tabPage3.Controls.Add(this.toolStrip2);
+            this.tabPage3.Location = new System.Drawing.Point(4, 22);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(733, 609);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "EllipseExtraction";
+            this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // canvas_ellipse
+            // 
+            this.canvas_ellipse.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.canvas_ellipse.Location = new System.Drawing.Point(3, 42);
+            this.canvas_ellipse.Name = "canvas_ellipse";
+            this.canvas_ellipse.Size = new System.Drawing.Size(727, 564);
+            this.canvas_ellipse.TabIndex = 1;
+            this.canvas_ellipse.Zoom = new System.Drawing.SizeF(1F, 1F);
+            this.canvas_ellipse.OnCanvasMouseClick += new FxMaths.GUI.Canvas.CanvasMouseClickHandler(this.canvas_ellipse_OnCanvasMouseClick);
+            // 
+            // toolStrip2
+            // 
+            this.toolStrip2.ImageScalingSize = new System.Drawing.Size(32, 32);
+            this.toolStrip2.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripButton_EllipseOpenImage,
+            this.toolStripButton_eclipse_SelectSubRegion,
+            this.toolStripSeparator1});
+            this.toolStrip2.Location = new System.Drawing.Point(3, 3);
+            this.toolStrip2.Name = "toolStrip2";
+            this.toolStrip2.Size = new System.Drawing.Size(727, 39);
+            this.toolStrip2.TabIndex = 0;
+            this.toolStrip2.Text = "toolStrip2";
+            // 
+            // toolStripButton_EllipseOpenImage
+            // 
+            this.toolStripButton_EllipseOpenImage.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButton_EllipseOpenImage.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_EllipseOpenImage.Image")));
+            this.toolStripButton_EllipseOpenImage.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_EllipseOpenImage.Name = "toolStripButton_EllipseOpenImage";
+            this.toolStripButton_EllipseOpenImage.Size = new System.Drawing.Size(36, 36);
+            this.toolStripButton_EllipseOpenImage.Text = "Open Image";
+            this.toolStripButton_EllipseOpenImage.Click += new System.EventHandler(this.toolStripButton_EllipseOpenImage_Click);
+            // 
+            // toolStripButton_eclipse_SelectSubRegion
+            // 
+            this.toolStripButton_eclipse_SelectSubRegion.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButton_eclipse_SelectSubRegion.Image = global::Tester.Properties.Resources.select_rectangular;
+            this.toolStripButton_eclipse_SelectSubRegion.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_eclipse_SelectSubRegion.Name = "toolStripButton_eclipse_SelectSubRegion";
+            this.toolStripButton_eclipse_SelectSubRegion.Size = new System.Drawing.Size(36, 36);
+            this.toolStripButton_eclipse_SelectSubRegion.Text = "Select Sub Region";
+            this.toolStripButton_eclipse_SelectSubRegion.ToolTipText = "Select Sub Region";
+            this.toolStripButton_eclipse_SelectSubRegion.Click += new System.EventHandler(this.toolStripButton_eclipse_SelectSubRegion_Click);
+            // 
+            // toolStripSeparator1
+            // 
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 39);
             // 
             // KinectV2Form
             // 
@@ -173,6 +243,10 @@
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
+            this.tabPage3.ResumeLayout(false);
+            this.tabPage3.PerformLayout();
+            this.toolStrip2.ResumeLayout(false);
+            this.toolStrip2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -189,7 +263,13 @@
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
-        private FxMaths.GUI.Canvas canvas1;
         private System.Windows.Forms.ToolStripButton toolStripButton3;
+        private FxMaths.GUI.Canvas canvas1;
+        private System.Windows.Forms.TabPage tabPage3;
+        private System.Windows.Forms.ToolStrip toolStrip2;
+        private System.Windows.Forms.ToolStripButton toolStripButton_EllipseOpenImage;
+        private FxMaths.GUI.Canvas canvas_ellipse;
+        private System.Windows.Forms.ToolStripButton toolStripButton_eclipse_SelectSubRegion;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
     }
 }

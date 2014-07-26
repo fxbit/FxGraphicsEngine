@@ -337,6 +337,7 @@
     <Content Include="Resources\lightmap.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="Resources\select-rectangular.png" />
     <Content Include="Resources\tmima2.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
