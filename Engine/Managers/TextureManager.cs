@@ -66,14 +66,14 @@ namespace GraphicsEngine.Managers {
 
         #region Load utils
 
-        public static Texture2D LoadFromFile(Device device, ImagingFactory2 factory, string fileName)
+        public static Texture2D LoadFromFile(Device device, ImagingFactory factory, string fileName)
         {
             var bs = LoadBitmap(factory, fileName);
             var texture = CreateTexture2DFromBitmap(device, bs);
             return texture;
 
         }
-        public static BitmapSource LoadBitmap(ImagingFactory2 factory, string filename)
+        public static BitmapSource LoadBitmap(ImagingFactory factory, string filename)
         {
             var bitmapDecoder = new SharpDX.WIC.BitmapDecoder(
                 factory,

@@ -49,7 +49,7 @@ namespace GraphicsEngine {
 
         public static Func<SharpDX.DirectInput.Key, Boolean> AppHandleKeys = null;
         public static Device g_device;
-        public static ImagingFactory2 g_image_factory;
+        public static ImagingFactory g_image_factory;
 
         #region private variables for render
         public static Factory g_factory;
@@ -350,7 +350,7 @@ namespace GraphicsEngine {
 
 
             // init the image factory...
-            g_image_factory = new ImagingFactory2();
+            g_image_factory = new ImagingFactory();
 
             /// Set flag to indicate that engine is running
             g_Running = true;
