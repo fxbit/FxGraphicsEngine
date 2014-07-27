@@ -46,6 +46,7 @@
             this.toolStripButton_EllipseOpenImage = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton_eclipse_SelectSubRegion = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripButton_ellipse_extract = new System.Windows.Forms.ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)(this.RenderArea)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
@@ -193,7 +194,8 @@
             this.toolStrip2.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripButton_EllipseOpenImage,
             this.toolStripButton_eclipse_SelectSubRegion,
-            this.toolStripSeparator1});
+            this.toolStripSeparator1,
+            this.toolStripButton_ellipse_extract});
             this.toolStrip2.Location = new System.Drawing.Point(3, 3);
             this.toolStrip2.Name = "toolStrip2";
             this.toolStrip2.Size = new System.Drawing.Size(727, 39);
@@ -225,6 +227,16 @@
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 39);
+            // 
+            // toolStripButton_ellipse_extract
+            // 
+            this.toolStripButton_ellipse_extract.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButton_ellipse_extract.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_ellipse_extract.Image")));
+            this.toolStripButton_ellipse_extract.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_ellipse_extract.Name = "toolStripButton_ellipse_extract";
+            this.toolStripButton_ellipse_extract.Size = new System.Drawing.Size(36, 36);
+            this.toolStripButton_ellipse_extract.Text = "Extract";
+            this.toolStripButton_ellipse_extract.Click += new System.EventHandler(this.toolStripButton_ellipse_extract_Click);
             // 
             // KinectV2Form
             // 
@@ -271,5 +283,6 @@
         private FxMaths.GUI.Canvas canvas_ellipse;
         private System.Windows.Forms.ToolStripButton toolStripButton_eclipse_SelectSubRegion;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripButton toolStripButton_ellipse_extract;
     }
 }

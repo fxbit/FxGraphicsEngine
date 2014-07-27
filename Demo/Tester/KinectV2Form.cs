@@ -588,6 +588,7 @@ namespace Tester
 
 
 
+
         private void toolStripButton_eclipse_SelectSubRegion_Click(object sender, EventArgs e)
         {
             if (toolStripButton_eclipse_SelectSubRegion.Checked)
@@ -627,6 +628,27 @@ namespace Tester
                 }
             }
         }
+
+
+
+
+        private void toolStripButton_ellipse_extract_Click(object sender, EventArgs e)
+        {
+            // extract the rectangle that contain 
+            if ((!imMat.Equals(null)) &&
+                (rect != null))
+            {
+                var subMat = imMat.GetSubMatrix(rect.StartPoint, rect.EndPoint) as FxMatrixF;
+                ImageElement imSub = new ImageElement(subMat, new ColorMap(ColorMapDefaults.Jet));
+                imSub._Position.x = ieEllipseImage.Size.x + ieEllipseImage.Position.x;
+                canvas_ellipse.AddElements(imSub);
+            }
+
+
+
+        }
+
+
 
 
         #endregion
