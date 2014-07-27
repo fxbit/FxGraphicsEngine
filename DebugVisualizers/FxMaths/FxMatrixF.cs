@@ -27,18 +27,21 @@ namespace DebugVisualizers.FxMaths
         {
             object obj = objectProvider.GetObject();
             FxMatrixF mat;
-            if (obj is FxMatrixF)
+            if (obj is FxMatrixF || obj is FxMatrix<float>)
                 mat = obj as FxMatrixF;
             else if (obj is FxMatrixMask)
                 mat = (obj as FxMatrixMask).ToFxMatrixF();
             else
                 return;
+             
+            /*
+            Form form = new Form();
             
-            //Form form = new Form();
-            //form.Text = string.Format("Width: {0}, Height: {1}",
-            //                         mat.Width, mat.Height);
-            //form.ClientSize = new Size(mat.Width, mat.Height);
-            //form.FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            form.Text = string.Format("Width: {0}, Height: {1}",
+                                     mat.Width, mat.Height);
+            form.ClientSize = new Size(mat.Width, mat.Height);
+            form.FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            */
 
             Canvas canvas = new Canvas();
             canvas.Dock = DockStyle.Fill;
@@ -49,6 +52,7 @@ namespace DebugVisualizers.FxMaths
             canvas.MinimumSize = new System.Drawing.Size(mat.Width, mat.Height + 32);
             canvas.Zoom = new System.Drawing.SizeF(1F, 1F);
 
+            
             ImageElement im = new ImageElement(mat, new global::FxMaths.Images.ColorMap(global::FxMaths.Images.ColorMapDefaults.Jet));
             canvas.AddElements(im);
             canvas.FitView();
