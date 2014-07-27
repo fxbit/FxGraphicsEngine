@@ -181,16 +181,16 @@
             // canvas_ellipse
             // 
             this.canvas_ellipse.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.canvas_ellipse.Location = new System.Drawing.Point(3, 42);
+            this.canvas_ellipse.Location = new System.Drawing.Point(3, 34);
             this.canvas_ellipse.Name = "canvas_ellipse";
-            this.canvas_ellipse.Size = new System.Drawing.Size(727, 564);
+            this.canvas_ellipse.Size = new System.Drawing.Size(727, 572);
             this.canvas_ellipse.TabIndex = 1;
             this.canvas_ellipse.Zoom = new System.Drawing.SizeF(1F, 1F);
             this.canvas_ellipse.OnCanvasMouseClick += new FxMaths.GUI.Canvas.CanvasMouseClickHandler(this.canvas_ellipse_OnCanvasMouseClick);
             // 
             // toolStrip2
             // 
-            this.toolStrip2.ImageScalingSize = new System.Drawing.Size(32, 32);
+            this.toolStrip2.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.toolStrip2.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripButton_EllipseOpenImage,
             this.toolStripButton_eclipse_SelectSubRegion,
@@ -198,7 +198,7 @@
             this.toolStripButton_ellipse_extract});
             this.toolStrip2.Location = new System.Drawing.Point(3, 3);
             this.toolStrip2.Name = "toolStrip2";
-            this.toolStrip2.Size = new System.Drawing.Size(727, 39);
+            this.toolStrip2.Size = new System.Drawing.Size(727, 31);
             this.toolStrip2.TabIndex = 0;
             this.toolStrip2.Text = "toolStrip2";
             // 
@@ -208,7 +208,7 @@
             this.toolStripButton_EllipseOpenImage.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_EllipseOpenImage.Image")));
             this.toolStripButton_EllipseOpenImage.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButton_EllipseOpenImage.Name = "toolStripButton_EllipseOpenImage";
-            this.toolStripButton_EllipseOpenImage.Size = new System.Drawing.Size(36, 36);
+            this.toolStripButton_EllipseOpenImage.Size = new System.Drawing.Size(28, 28);
             this.toolStripButton_EllipseOpenImage.Text = "Open Image";
             this.toolStripButton_EllipseOpenImage.Click += new System.EventHandler(this.toolStripButton_EllipseOpenImage_Click);
             // 
@@ -218,7 +218,7 @@
             this.toolStripButton_eclipse_SelectSubRegion.Image = global::Tester.Properties.Resources.select_rectangular;
             this.toolStripButton_eclipse_SelectSubRegion.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButton_eclipse_SelectSubRegion.Name = "toolStripButton_eclipse_SelectSubRegion";
-            this.toolStripButton_eclipse_SelectSubRegion.Size = new System.Drawing.Size(36, 36);
+            this.toolStripButton_eclipse_SelectSubRegion.Size = new System.Drawing.Size(28, 28);
             this.toolStripButton_eclipse_SelectSubRegion.Text = "Select Sub Region";
             this.toolStripButton_eclipse_SelectSubRegion.ToolTipText = "Select Sub Region";
             this.toolStripButton_eclipse_SelectSubRegion.Click += new System.EventHandler(this.toolStripButton_eclipse_SelectSubRegion_Click);
@@ -226,7 +226,7 @@
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 39);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 31);
             // 
             // toolStripButton_ellipse_extract
             // 
@@ -234,7 +234,7 @@
             this.toolStripButton_ellipse_extract.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_ellipse_extract.Image")));
             this.toolStripButton_ellipse_extract.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButton_ellipse_extract.Name = "toolStripButton_ellipse_extract";
-            this.toolStripButton_ellipse_extract.Size = new System.Drawing.Size(36, 36);
+            this.toolStripButton_ellipse_extract.Size = new System.Drawing.Size(28, 28);
             this.toolStripButton_ellipse_extract.Text = "Extract";
             this.toolStripButton_ellipse_extract.Click += new System.EventHandler(this.toolStripButton_ellipse_extract_Click);
             // 

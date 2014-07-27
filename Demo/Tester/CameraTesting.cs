@@ -105,8 +105,8 @@ namespace Tester
             imEl = new ImageElement(im);
             imAv = new ImageElement(nextMat.Resize(nextFrame.Width / 2, nextFrame.Height / 2));
 
-            canvas1.AddElements(imEl);
-            canvas1.AddElements(imAv);
+            canvas1.AddElement(imEl);
+            canvas1.AddElement(imAv);
             imAv.Position = new FxMaths.Vector.FxVector2f(nextFrame.Width, 0);
 
             _running = true;
@@ -246,7 +246,7 @@ namespace Tester
             /* ovelap the circle to the grad */
             grad.Divide(grad.Max());
             var mask = (mat > 0.5f).MedianFilt(3, 3);
-            canvas1.AddElements(new ImageElement(mask.ToFxMatrixF()));
+            canvas1.AddElement(new ImageElement(mask.ToFxMatrixF()));
 
 
             ///* in all mask point add a circle */
@@ -276,7 +276,7 @@ namespace Tester
             labels.Divide(labels.Max());
             TimeStatistics.StopClock();
 
-            canvas1.AddElements(new ImageElement(labels, new ColorMap(ColorMapDefaults.Jet)));
+            canvas1.AddElement(new ImageElement(labels, new ColorMap(ColorMapDefaults.Jet)));
 
             
 
@@ -319,25 +319,25 @@ namespace Tester
         private void CaptureVideo()
         {
             ImageElement imF = new ImageElement(nextMat);
-            canvas1.AddElements(imF, false);
+            canvas1.AddElement(imF, false);
 
             ImageElement imM = new ImageElement(nextMat);
             imM._Position.Y += nextMat.Height;
-            canvas1.AddElements(imM, false);
+            canvas1.AddElement(imM, false);
 
             ImageElement imS = new ImageElement(nextMat);
             imS._Position.x += nextMat.Width;
-            canvas1.AddElements(imS, false);
+            canvas1.AddElement(imS, false);
 
             ImageElement imG = new ImageElement(nextMat);
             imG._Position.x += nextMat.Width;
             imG._Position.Y += nextMat.Height;
-            canvas1.AddElements(imG, false);
+            canvas1.AddElement(imG, false);
 
             ImageElement imG_small = new ImageElement(nextMat);
             imG_small._Position.x += 2*nextMat.Width;
             imG_small._Position.Y += nextMat.Height;
-            canvas1.AddElements(imG_small, false);
+            canvas1.AddElement(imG_small, false);
 
             canvas1.FitView();
 

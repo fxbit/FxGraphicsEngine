@@ -148,8 +148,8 @@ namespace Tester
             colorImageElement = new ImageElement(colorImageMatrix);
             depthImageElement = new ImageElement(depthImageMatrix);
 
-            canvas1.AddElements(colorImageElement, false);
-            canvas1.AddElements(depthImageElement, false);
+            canvas1.AddElement(colorImageElement, false);
+            canvas1.AddElement(depthImageElement, false);
         }
 
         private void KinectV2Form_FormClosing(object sender, FormClosingEventArgs e)
@@ -551,9 +551,9 @@ namespace Tester
             if(ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 imMat = FxMatrixF.LoadCsv(ofd.FileName);
-                ieEllipseImage = new ImageElement(imMat, new ColorMap(ColorMapDefaults.Jet));
+                ieEllipseImage = new ImageElement(imMat, new ColorMap(ColorMapDefaults.Gray));
                 ieEllipseImage.lockMoving = true;
-                canvas_ellipse.AddElements(ieEllipseImage);
+                canvas_ellipse.AddElement(ieEllipseImage);
             }
         }
 
@@ -614,7 +614,7 @@ namespace Tester
                 if (gpeEllipseImage == null)
                 {
                     gpeEllipseImage = new GeometryPlotElement();
-                    canvas_ellipse.AddElements(gpeEllipseImage);
+                    canvas_ellipse.AddElement(gpeEllipseImage);
                     gpeEllipseImage.Position = ieEllipseImage._Position;
                 }
                 else
@@ -635,13 +635,75 @@ namespace Tester
         private void toolStripButton_ellipse_extract_Click(object sender, EventArgs e)
         {
             // extract the rectangle that contain 
-            if ((!imMat.Equals(null)) &&
+            if ((imMat as object != null) &&
                 (rect != null))
             {
+                int numLabels;
+
+                // get the sub matrix
                 var subMat = imMat.GetSubMatrix(rect.StartPoint, rect.EndPoint) as FxMatrixF;
-                ImageElement imSub = new ImageElement(subMat, new ColorMap(ColorMapDefaults.Jet));
+
+                // make binary the image based on the start and end point of rectangle
+                float t = subMat[0, 0];
+                if (t > subMat[subMat.Width - 1, subMat.Height - 1])
+                    t = subMat[subMat.Width - 1, subMat.Height - 1];
+                var binMat = subMat < t - 0.02f;
+                
+                // find the labels of the image
+                var labels = binMat.Labeling(out numLabels);
+
+                var imSub = new ImageElement(binMat.ToFxMatrixF(), new ColorMap(ColorMapDefaults.Jet));
                 imSub._Position.x = ieEllipseImage.Size.x + ieEllipseImage.Position.x;
-                canvas_ellipse.AddElements(imSub);
+                imSub.lockMoving = true;
+                canvas_ellipse.AddElement(imSub, false, false);
+
+                var imSub2 = new ImageElement(labels, new ColorMap(ColorMapDefaults.Jet));
+                imSub2._Position.x = ieEllipseImage.Size.x + ieEllipseImage.Position.x;
+                imSub2._Position.y = imSub.Size.y + imSub.Position.y;
+                imSub2.lockMoving = true;
+                canvas_ellipse.AddElement(imSub2, false, false);
+
+                WriteLine("Num Labels : " + numLabels.ToString());
+
+                var contours = new FxContour(binMat, 20, 500);
+
+                WriteLine("Num Contours : " + contours.NumChains);
+
+                int i=0;
+                foreach (var x in contours.ChainList)
+                {
+                    // draw the rectanges in the sub image
+                    FxVector2f start = x.RectStart + imSub2._Position + new FxVector2f(1,1);
+                    FxVector2f end = start + x.RectSize;
+                    FxMaths.Geometry.Rectangle r = new FxMaths.Geometry.Rectangle(start, end);
+                    gpeEllipseImage.AddGeometry(r, false);
+
+
+                    // draw the rectanges in main image
+                    start = x.RectStart + rect.StartPoint;// +new FxVector2f(1, 1);
+                    end = start + x.RectSize;
+                    r = new FxMaths.Geometry.Rectangle(start, end);
+                    gpeEllipseImage.AddGeometry(r, false);
+
+
+                    // draw the centroids 
+                    FxVector2f cen = x.GetCentroid() + rect.StartPoint;
+                    var l = new FxMaths.Geometry.Line(cen - new FxVector2f(0, 2), cen + new FxVector2f(0, 2));
+                    l.LineWidth = 0.5f;
+                    gpeEllipseImage.AddGeometry(l, false);
+                    l = new FxMaths.Geometry.Line(cen - new FxVector2f(2, 0), cen + new FxVector2f(2, 0));
+                    l.LineWidth = 0.5f;
+                    gpeEllipseImage.AddGeometry(l, false);
+
+
+
+                    // print the centroid
+                    WriteLine("[" + i.ToString() + "] Pixels:" + x.Count + " Centroid: " + x.GetCentroid().ToString());
+                    i++;
+                }
+
+                canvas_ellipse.ReDraw();
+
             }
 
 
@@ -655,5 +717,19 @@ namespace Tester
 
 
 
+
+
+
+
+        void WriteLine(String str)
+        {
+            // write to the form
+            //Console_Text.Text += str + "\n";
+
+            // write to the console
+            //Console.WriteLine(str);
+
+            Tester.TesterForm.UIConsole.WriteLine(str);
+        }
     }
 }

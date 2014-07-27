@@ -749,7 +749,7 @@ namespace Delaunay
                         if (tmpFace.halfEdgeID != uint.MaxValue)
                         {
                             GeometryPlotElement trianglesPlot = new GeometryPlotElement();
-                            canvas.AddElements(trianglesPlot, false);
+                            canvas.AddElement(trianglesPlot, false);
                             float lineWidth = 1.5f;
 
                             //csHalfEdge he = csHalfEdgeListResult[tmpFace.halfEdgeID + i * maxHalfEdgePerThread];
@@ -800,41 +800,41 @@ namespace Delaunay
                                 text1 = new TextElement(vert1ID.ToString() + "->" + tmp1.ToString("0.00"));
                                 text1.Position = vert1 as FxVector2f? ?? new FxVector2f(0, 0);
                                 text1._TextFormat.fontSize = fontSize;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
 
                                 text1 = new TextElement(vert2ID.ToString() + "->" + tmp2.ToString("0.00"));
                                 text1.Position = vert2 as FxVector2f? ?? new FxVector2f(0, 0);
                                 text1._TextFormat.fontSize = fontSize;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
 
                                 text1 = new TextElement(vert3ID.ToString() + "->" + tmp3.ToString("0.00"));
                                 text1.Position = vert3 as FxVector2f? ?? new FxVector2f(0, 0);
                                 text1._TextFormat.fontSize = fontSize;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
 
                                 text1 = new TextElement(he1ID.ToString());
                                 text1.FontColor = new Color4(Color.Brown.R, Color.Brown.G, Color.Brown.B, 1.0f);
                                 text1._TextFormat.fontSize = fontSize;
                                 text1.Position = (2 * tmp1 + 2 * tmp2 + tmp3) / 5.0f;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
 
                                 text1 = new TextElement(he2ID.ToString());
                                 text1.FontColor = new Color4(Color.Brown.R, Color.Brown.G, Color.Brown.B, 1.0f);
                                 text1._TextFormat.fontSize = fontSize;
                                 text1.Position = (tmp1 + 2 * tmp2 + 2 * tmp3) / 5.0f;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
 
                                 text1 = new TextElement(he3ID.ToString());
                                 text1.FontColor = new Color4(Color.Brown.R, Color.Brown.G, Color.Brown.B, 1.0f);
                                 text1._TextFormat.fontSize = fontSize;
                                 text1.Position = (2 * tmp1 + tmp2 + 2 * tmp3) / 5.0f;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
 
                                 text1 = new TextElement(j.ToString());
                                 text1.FontColor = new Color4(Color.Yellow.R, Color.Yellow.G, Color.Yellow.B, 1.0f);
                                 text1._TextFormat.fontSize = fontSize;
                                 text1.Position = (tmp1 + tmp2 + tmp3) / 3.0f;
-                                canvas.AddElements(text1, false);
+                                canvas.AddElement(text1, false);
                             }
 
 
@@ -882,7 +882,7 @@ namespace Delaunay
                 plot.AddGeometry(new Circle(vec, 5));
 
             }
-            canvas.AddElements(plot);
+            canvas.AddElement(plot);
         }
 
         internal void DrawTriangles(Canvas canvas)

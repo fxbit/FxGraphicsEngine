@@ -54,7 +54,7 @@ namespace DebugVisualizers.FxMaths
 
             
             ImageElement im = new ImageElement(mat, new global::FxMaths.Images.ColorMap(global::FxMaths.Images.ColorMapDefaults.Jet));
-            canvas.AddElements(im);
+            canvas.AddElement(im);
             canvas.FitView();
 
             //form.Controls.Add(canvas);
