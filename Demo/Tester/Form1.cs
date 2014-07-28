@@ -61,7 +61,7 @@ namespace Tester
 
             // init the console
             UIConsole = new ConsoleOutput();
-            UIConsole.Show(dockPanel1, DockState.DockBottom);
+            UIConsole.Show(dockPanel1, DockState.DockRightAutoHide);
             outputToolStripMenuItem.Checked = true;
         }
 
