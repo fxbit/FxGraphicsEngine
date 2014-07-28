@@ -47,6 +47,8 @@
             this.toolStripButton_eclipse_SelectSubRegion = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripButton_ellipse_extract = new System.Windows.Forms.ToolStripButton();
+            this.toolStripDropDownButton_TestingList = new System.Windows.Forms.ToolStripDropDownButton();
+            this.ellipseDetectionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.RenderArea)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.tabControl1.SuspendLayout();
@@ -195,7 +197,8 @@
             this.toolStripButton_EllipseOpenImage,
             this.toolStripButton_eclipse_SelectSubRegion,
             this.toolStripSeparator1,
-            this.toolStripButton_ellipse_extract});
+            this.toolStripButton_ellipse_extract,
+            this.toolStripDropDownButton_TestingList});
             this.toolStrip2.Location = new System.Drawing.Point(3, 3);
             this.toolStrip2.Name = "toolStrip2";
             this.toolStrip2.Size = new System.Drawing.Size(727, 31);
@@ -237,6 +240,25 @@
             this.toolStripButton_ellipse_extract.Size = new System.Drawing.Size(28, 28);
             this.toolStripButton_ellipse_extract.Text = "Extract";
             this.toolStripButton_ellipse_extract.Click += new System.EventHandler(this.toolStripButton_ellipse_extract_Click);
+            // 
+            // toolStripDropDownButton_TestingList
+            // 
+            this.toolStripDropDownButton_TestingList.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripDropDownButton_TestingList.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ellipseDetectionToolStripMenuItem});
+            this.toolStripDropDownButton_TestingList.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton_TestingList.Image")));
+            this.toolStripDropDownButton_TestingList.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripDropDownButton_TestingList.Name = "toolStripDropDownButton_TestingList";
+            this.toolStripDropDownButton_TestingList.Size = new System.Drawing.Size(37, 28);
+            this.toolStripDropDownButton_TestingList.Text = "Testing List";
+            this.toolStripDropDownButton_TestingList.ToolTipText = "Testing List";
+            // 
+            // ellipseDetectionToolStripMenuItem
+            // 
+            this.ellipseDetectionToolStripMenuItem.Name = "ellipseDetectionToolStripMenuItem";
+            this.ellipseDetectionToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.ellipseDetectionToolStripMenuItem.Text = "Ellipse Detection";
+            this.ellipseDetectionToolStripMenuItem.Click += new System.EventHandler(this.ellipseDetectionToolStripMenuItem_Click);
             // 
             // KinectV2Form
             // 
@@ -284,5 +306,7 @@
         private System.Windows.Forms.ToolStripButton toolStripButton_eclipse_SelectSubRegion;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripButton toolStripButton_ellipse_extract;
+        private System.Windows.Forms.ToolStripDropDownButton toolStripDropDownButton_TestingList;
+        private System.Windows.Forms.ToolStripMenuItem ellipseDetectionToolStripMenuItem;
     }
 }

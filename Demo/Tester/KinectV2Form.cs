@@ -543,6 +543,7 @@ namespace Tester
         ImageElement ieEllipseImage = null;
         GeometryPlotElement gpeEllipseImage = null;
         FxMaths.Geometry.Rectangle rect = null;
+        FxMatrixF results = null; // Results of centers 
 
 
         private void toolStripButton_EllipseOpenImage_Click(object sender, EventArgs e)
@@ -551,7 +552,7 @@ namespace Tester
             if(ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 imMat = FxMatrixF.LoadCsv(ofd.FileName);
-                ieEllipseImage = new ImageElement(imMat, new ColorMap(ColorMapDefaults.Gray));
+                ieEllipseImage = new ImageElement(imMat, new ColorMap(ColorMapDefaults.Jet));
                 ieEllipseImage.lockMoving = true;
                 canvas_ellipse.AddElement(ieEllipseImage);
             }
@@ -665,23 +666,26 @@ namespace Tester
 
                 WriteLine("Num Labels : " + numLabels.ToString());
 
-                var contours = new FxContour(binMat, 20, 500);
+                var contours = new FxContour(binMat, 10, 300);
 
                 WriteLine("Num Contours : " + contours.NumChains);
+
+                results = new FxMatrixF(3, contours.NumChains);
 
                 int i=0;
                 foreach (var x in contours.ChainList)
                 {
+                    float delta = 1;
                     // draw the rectanges in the sub image
-                    FxVector2f start = x.RectStart + imSub2._Position + new FxVector2f(1,1);
+                    FxVector2f start = x.RectStart + imSub2._Position + new FxVector2f(1, 1);
                     FxVector2f end = start + x.RectSize;
                     FxMaths.Geometry.Rectangle r = new FxMaths.Geometry.Rectangle(start, end);
                     gpeEllipseImage.AddGeometry(r, false);
 
 
                     // draw the rectanges in main image
-                    start = x.RectStart + rect.StartPoint;// +new FxVector2f(1, 1);
-                    end = start + x.RectSize;
+                    start = x.RectStart + rect.StartPoint + new FxVector2f(-delta, -delta);
+                    end = start + x.RectSize + new FxVector2f(2 * delta, 2 * delta);
                     r = new FxMaths.Geometry.Rectangle(start, end);
                     gpeEllipseImage.AddGeometry(r, false);
 
@@ -696,18 +700,47 @@ namespace Tester
                     gpeEllipseImage.AddGeometry(l, false);
 
 
+                    // calculate the depth
+                    float[] depth = new float[4];
+                    FxVector2f pos = x.RectStart + rect.StartPoint;
+                    depth[0] = imMat[pos.x - delta, pos.y - delta];
+                    depth[1] = imMat[pos.x + x.RectSize.x + delta, pos.y - delta];
+                    depth[2] = imMat[pos.x - delta, pos.y + x.RectSize.y + delta];
+                    depth[3] = imMat[pos.x + x.RectSize.x + delta, pos.y + x.RectSize.y + delta];
+                    results[2, i] = (depth[0] + depth[1] + depth[2] + depth[3]) / 4.0f;
+
+
+                    // save centroid
+                    results[0, i] = cen.x;
+                    results[1, i] = cen.y;
 
                     // print the centroid
-                    WriteLine("[" + i.ToString() + "] Pixels:" + x.Count + " Centroid: " + x.GetCentroid().ToString());
+                    WriteLine("[" + i.ToString() + "] Depth:" + results[2, i].ToString() + "  Pixels:" + x.Count + " Centroid: " + cen.ToString());
                     i++;
+
+
+                    // show the vector of one blob
+                    if (i == 1)
+                    {
+                        FxVectorF vec_i = new FxVectorF(x.Count);
+                        FxVectorF vec_r = new FxVectorF(x.Count);
+                        vec_i[0] = x[0].i;
+                        vec_r[0] = x[0].r;
+                        for (int j = 1; i < x.Count; j++)
+                        {
+                            vec_i[j] = vec_i[j - 1] + x[j].i;
+                            vec_r[j] = vec_r[j - 1] + x[j].r;
+                        }
+
+
+                    }
                 }
 
                 canvas_ellipse.ReDraw();
 
+                results.SaveCsv("ellipseResults.csv");
+
             }
-
-
-
         }
 
 
@@ -730,6 +763,84 @@ namespace Tester
             //Console.WriteLine(str);
 
             Tester.TesterForm.UIConsole.WriteLine(str);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        private void ellipseDetectionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            if(ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+
+                // load image
+                imMat = FxMatrixF.Load(ofd.FileName);
+                ieEllipseImage = new ImageElement(imMat, new ColorMap(ColorMapDefaults.Jet));
+                ieEllipseImage.lockMoving = true;
+                canvas_ellipse.AddElement(ieEllipseImage);
+
+                // add plot element 
+                gpeEllipseImage = new GeometryPlotElement();
+                canvas_ellipse.AddElement(gpeEllipseImage);
+
+
+                var contours = new FxContour(imMat<0.5f);
+
+                WriteLine("Num Contours : " + contours.NumChains);
+
+                int i = 0;
+                foreach (var x in contours.ChainList)
+                {
+                    // draw the rectanges in main image
+                    FxVector2f start = x.RectStart ;
+                    FxVector2f end = start + x.RectSize;
+                    FxMaths.Geometry.Rectangle r = new FxMaths.Geometry.Rectangle(start, end);
+                    gpeEllipseImage.AddGeometry(r, false);
+
+
+                    // draw the centroids 
+                    FxVector2f cen = x.GetCentroid();
+                    var l = new FxMaths.Geometry.Line(cen - new FxVector2f(0, 2), cen + new FxVector2f(0, 2));
+                    l.LineWidth = 0.5f;
+                    gpeEllipseImage.AddGeometry(l, false);
+                    l = new FxMaths.Geometry.Line(cen - new FxVector2f(2, 0), cen + new FxVector2f(2, 0));
+                    l.LineWidth = 0.5f;
+                    gpeEllipseImage.AddGeometry(l, false);
+
+
+                    i++;
+                    // show the vector of one blob
+                    if (i == 1)
+                    {
+                        FxVectorF vec_i = new FxVectorF(x.Count);
+                        FxVectorF vec_r = new FxVectorF(x.Count);
+                        vec_i[0] = x[0].i;
+                        vec_r[0] = x[0].r;
+                        for (int j = 1; j < x.Count; j++)
+                        {
+                            vec_i[j] = vec_i[j - 1] + x[j].i;
+                            vec_r[j] = vec_r[j - 1] + x[j].r;
+                        }
+                    }
+                }
+
+                canvas_ellipse.ReDraw();
+            }
         }
     }
 }
