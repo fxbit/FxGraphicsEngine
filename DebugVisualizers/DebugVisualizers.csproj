@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="FxMaths\FxVectorF.cs" />
     <Compile Include="FxMaths\FxMatrixF.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
