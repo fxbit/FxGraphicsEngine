@@ -804,17 +804,17 @@ namespace Tester
                 WriteLine("Num Contours : " + contours.NumChains);
 
                 int i = 0;
-                foreach (var x in contours.ChainList)
+                foreach (var cont in contours.ChainList)
                 {
                     // draw the rectanges in main image
-                    FxVector2f start = x.RectStart ;
-                    FxVector2f end = start + x.RectSize;
+                    FxVector2f start = cont.RectStart ;
+                    FxVector2f end = start + cont.RectSize;
                     FxMaths.Geometry.Rectangle r = new FxMaths.Geometry.Rectangle(start, end);
                     gpeEllipseImage.AddGeometry(r, false);
 
 
                     // draw the centroids 
-                    FxVector2f cen = x.GetCentroid();
+                    FxVector2f cen = cont.GetCentroid();
                     var l = new FxMaths.Geometry.Line(cen - new FxVector2f(0, 2), cen + new FxVector2f(0, 2));
                     l.LineWidth = 0.5f;
                     gpeEllipseImage.AddGeometry(l, false);
@@ -822,21 +822,51 @@ namespace Tester
                     l.LineWidth = 0.5f;
                     gpeEllipseImage.AddGeometry(l, false);
 
-
+                    
                     i++;
                     // show the vector of one blob
                     if (i == 1)
                     {
-                        FxVectorF vec_i = new FxVectorF(x.Count);
-                        FxVectorF vec_r = new FxVectorF(x.Count);
-                        vec_i[0] = x[0].i;
-                        vec_r[0] = x[0].r;
-                        for (int j = 1; j < x.Count; j++)
+                        FxMatrixF res = new FxMatrixF(2, cont.Count);
+
+                        FxVectorF vec_i = new FxVectorF(cont.Count);
+                        FxVectorF vec_r = new FxVectorF(cont.Count);
+                        vec_i[0] = cont[0].i;
+                        res[0, 0] = cont[0].i;
+                        vec_r[0] = cont[0].r;
+                        res[1, 0] = cont[0].r;
+                        for (int j = 1; j < cont.Count; j++)
                         {
-                            vec_i[j] = vec_i[j - 1] + x[j].i;
-                            vec_r[j] = vec_r[j - 1] + x[j].r;
+                            vec_i[j] = vec_i[j - 1] + cont[j].i;
+                            res[0, j] = vec_i[j];
+                            vec_r[j] = vec_r[j - 1] + cont[j].r;
+                            res[1, j] = vec_r[j];
                         }
+                       // res.SaveCsv("cont.csv");
+
+                        // show  the plot of this vector
+                        var pe_i = new PloterElement(vec_i);
+                        pe_i._Position = new FxVector2f(ieEllipseImage._Position.x + ieEllipseImage.Size.x, ieEllipseImage._Position.y);
+                        canvas_ellipse.AddElement(pe_i);
+
+                        var pe_r = new PloterElement(vec_r);
+                        pe_r._Position = new FxVector2f(ieEllipseImage._Position.x + ieEllipseImage.Size.x, ieEllipseImage._Position.y + pe_i.Size.y);
+                        canvas_ellipse.AddElement(pe_r);
+
+
+
+                        // debug the ellipse
+
+                        for (int j = cont.Count - 200; j < cont.Count; j++)
+                        {
+                            imMat[(int)(vec_r[j] + cont.StartPoint.x), (int)(vec_i[j] + cont.StartPoint.y)] = 0.5f;
+                        }
+                        ieEllipseImage.UpdateInternalImage(imMat, new ColorMap(ColorMapDefaults.Jet));
+
                     }
+
+                    
+
                 }
 
                 canvas_ellipse.ReDraw();
