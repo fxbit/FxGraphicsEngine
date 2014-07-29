@@ -799,11 +799,12 @@ namespace Tester
                 canvas_ellipse.AddElement(gpeEllipseImage);
 
 
-                var contours = new FxContour(imMat<0.5f);
+                var contours = new FxContour(imMat<0.2f);
 
                 WriteLine("Num Contours : " + contours.NumChains);
 
                 int i = 0;
+                float pe_pos_y = ieEllipseImage._Position.y;
                 foreach (var cont in contours.ChainList)
                 {
                     // draw the rectanges in main image
@@ -822,51 +823,51 @@ namespace Tester
                     l.LineWidth = 0.5f;
                     gpeEllipseImage.AddGeometry(l, false);
 
-                    
-                    i++;
-                    // show the vector of one blob
-                    if (i == 1)
-                    {
-                        FxMatrixF res = new FxMatrixF(2, cont.Count);
 
+                    // add the numbering of the contours
+                    var t = new TextElement(i.ToString());
+                    t._Position = cen;
+                    t.FontColor = SharpDX.Color.Green;
+                    t._TextFormat.fontSize = 16.0f;
+                    canvas_ellipse.AddElement(t);
+
+                    // show the chain vector in plot
+                    {
                         FxVectorF vec_i = new FxVectorF(cont.Count);
                         FxVectorF vec_r = new FxVectorF(cont.Count);
                         vec_i[0] = cont[0].i;
-                        res[0, 0] = cont[0].i;
                         vec_r[0] = cont[0].r;
-                        res[1, 0] = cont[0].r;
                         for (int j = 1; j < cont.Count; j++)
                         {
                             vec_i[j] = vec_i[j - 1] + cont[j].i;
-                            res[0, j] = vec_i[j];
                             vec_r[j] = vec_r[j - 1] + cont[j].r;
-                            res[1, j] = vec_r[j];
                         }
-                       // res.SaveCsv("cont.csv");
 
                         // show  the plot of this vector
-                        var pe_i = new PloterElement(vec_i);
-                        pe_i._Position = new FxVector2f(ieEllipseImage._Position.x + ieEllipseImage.Size.x, ieEllipseImage._Position.y);
-                        canvas_ellipse.AddElement(pe_i);
+                        var pe = new PloterElement(vec_i, PlotType.Lines, System.Drawing.Color.Blue);
+                        pe._Position.x = ieEllipseImage._Position.x + ieEllipseImage.Size.x;
+                        pe._Position.y = pe_pos_y;
+                        pe.AddPlot(vec_r, PlotType.Lines, System.Drawing.Color.Red);
+                        pe.CenterYOrigin();
+                        pe.FitPlots();
+                        canvas_ellipse.AddElement(pe);
 
-                        var pe_r = new PloterElement(vec_r);
-                        pe_r._Position = new FxVector2f(ieEllipseImage._Position.x + ieEllipseImage.Size.x, ieEllipseImage._Position.y + pe_i.Size.y);
-                        canvas_ellipse.AddElement(pe_r);
-
-
+                        // update the y of pe for the next one
+                        pe_pos_y += pe.Size.y;
 
                         // debug the ellipse
 
-                        for (int j = cont.Count - 200; j < cont.Count; j++)
+                        for (int j = 0; j < cont.Count; j++)
                         {
-                            imMat[(int)(vec_r[j] + cont.StartPoint.x), (int)(vec_i[j] + cont.StartPoint.y)] = 0.5f;
+                            imMat[(int)(vec_r[j] + cont.StartPoint.x), (int)(vec_i[j] + cont.StartPoint.y)] = 0.8f/contours.NumChains + 0.1f;
                         }
                         ieEllipseImage.UpdateInternalImage(imMat, new ColorMap(ColorMapDefaults.Jet));
 
                     }
 
-                    
 
+
+                    i++;
                 }
 
                 canvas_ellipse.ReDraw();
