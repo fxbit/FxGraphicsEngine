@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 using FxMaths.GUI;
 using FxMaths.Images;
-using FxMaths.Geometry;
+using FxMaths.Geometry;   
 using FxMaths.Matrix;
 using WeifenLuo.WinFormsUI.Docking;
 
@@ -27,7 +27,7 @@ namespace MainForm
             gpe = new GeometryPlotElement();
             gpe.Name = "People";
             gpe.lockMoving = true;
-            canvas1.AddElements(gpe);
+            canvas1.AddElement(gpe);
 
         }
 
@@ -39,13 +39,13 @@ namespace MainForm
             ImageElement ie = new ImageElement(im, new ColorMap(ColorMapDefaults.Bones));
             ie.Name = "Katopsi";
             ie.lockMoving = true;
-            canvas1.AddElements(ie);
+            canvas1.AddElement(ie);
 
             // add geometry plot
             gpe = new GeometryPlotElement();
             gpe.Name = "People";
             gpe.lockMoving = true;
-            canvas1.AddElements(gpe);
+            canvas1.AddElement(gpe);
 
         }
 

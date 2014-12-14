@@ -32,6 +32,8 @@ namespace MainForm
         /// </summary>
         public static PeopleOverview UIPeopleOverview = null;
 
+        public static SerialInput UISerialInput = null;
+
         /// <summary>
         /// The class that simulate the people movments.
         /// </summary>
@@ -57,6 +59,10 @@ namespace MainForm
             UIPeopleOverview = new PeopleOverview(katopsi);
             UIPeopleOverview.Show(dockPanel1, DockState.Document);
             peopleOverviewToolStripMenuItem.Checked = true;
+
+            // Init Serial debugiing
+            UISerialInput = new SerialInput();
+            UISerialInput.Show(dockPanel1, DockState.Document);
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -169,7 +175,8 @@ namespace MainForm
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            peopleSimulation.Stop();
+            if (peopleSimulation != null)
+                peopleSimulation.Stop();
         }
     }
 }
