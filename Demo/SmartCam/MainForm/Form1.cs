@@ -34,6 +34,8 @@ namespace MainForm
 
         public static SerialInput UISerialInput = null;
 
+        public static SerialCapture UISerialCapture = null;
+
         /// <summary>
         /// The class that simulate the people movments.
         /// </summary>
@@ -52,7 +54,7 @@ namespace MainForm
 
             // init the console
             UIConsole = new ConsoleOutput();
-            UIConsole.Show(dockPanel1, DockState.DockBottom);
+            UIConsole.Show(dockPanel1, DockState.DockBottomAutoHide);
             consoleOutputToolStripMenuItem.Checked = true;
 
             // init the people over view
@@ -63,6 +65,11 @@ namespace MainForm
             // Init Serial debugiing
             UISerialInput = new SerialInput();
             UISerialInput.Show(dockPanel1, DockState.Document);
+            
+
+            // Init serial Capture menu
+            UISerialCapture = new SerialCapture();
+            UISerialCapture.Show(dockPanel1, DockState.Document);
         }
 
         private void Form1_Load(object sender, EventArgs e)
