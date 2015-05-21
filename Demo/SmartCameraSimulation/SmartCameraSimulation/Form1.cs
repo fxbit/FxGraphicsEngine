@@ -19,6 +19,7 @@ using AForge.Video.FFMPEG;
 
 using SmartCam;
 using MoreLinq;
+using System.Diagnostics;
 
 namespace SmartCameraSimulation
 {
@@ -51,10 +52,10 @@ namespace SmartCameraSimulation
             shopPlan = shopPlan.Resize(targetRes.x, targetRes.y);
             shop = new Shop("Unisol", shopPlan);
 
-            simulation = new SimulationSimple(shop, 10, simulationMethod1);
+           // simulation = new SimulationSimple(shop, 10, simulationMethod1);
 
-           // simulationMethod2_Setup();
-           // simulation = new SimulationSimple(shop, 1, simulationMethod2);
+            simulationMethod2_Setup();
+            simulation = new SimulationSimple(shop, 1, simulationMethod2);
             
             // Defind entrance for the shop
             shop.entrancePositionsDirection.Add(new Tuple<FxVector2f, FxVector2f>(new FxVector2f(1800 * resize.x, 500 * resize.y), new FxVector2f(-1, 0)));
@@ -190,12 +191,45 @@ namespace SmartCameraSimulation
 
                     float speedChange =  (rand.Next(100) > 50 ? -0.2f : +0.2f) * rand.Next(1000) / 1000.0f;
 
+
+                    // select random target in the start
+                    if (person.Target.x == 0 && person.Target.y == 0)
+                    {
+                        person.Target = targetList.RandomSelectStruct();
+                    }
+
                     // check if the person arave to select target 
-                    // or we are 5% "lucky" change the target
-                    if (
-                        (person.Target.Distance(ref person.Position) < 5)
-                         || (rand.Next(100) >= 100)
-                        )
+                    if (person.Target.Distance(ref person.Position) < 10)
+                    {
+                        if (person.waitInTarget &&
+                            person.waitTime.ElapsedMilliseconds > person.waitTimeMs)
+                        {
+                            person.waitTime.Stop();
+
+                            // select random target
+                            person.Target = targetList.RandomSelectStruct();
+
+                        }
+                        else if (!person.waitInTarget)
+                        {
+                            person.waitInTarget = true;
+
+                            // select a new random wait time 0-2Sec
+                            person.waitTimeMs =  (long)(rand.NextDouble() * 2000);
+
+                            person.waitTime = new Stopwatch();
+                            person.waitTime.Start();
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    
+
+
+                    // We are 1% "lucky" change the target
+                    if(rand.Next(100) >= 100)
                     {
                         // select random target
                         person.Target = targetList.RandomSelectStruct();
@@ -203,12 +237,32 @@ namespace SmartCameraSimulation
 
                     // select the direction that you can go to the target
                     var targetDirection = person.Target - nextPosition;
-                    float directionAngleChange = (rand.Next(100) >= 90 ? 0 : 1) *
-                                                 (-(float)person.Direction.Angle(ref targetDirection))
+                    float directionAngleChange = (rand.Next(100) >= 99 ? 0 : 1) *
+                                                 (-(float)person.Direction.Angle(ref targetDirection));
+                    /*
                                                  + 
-                                                 (rand.Next(100) >= 50 ? -1 : +1) *             // Select randomly the left right.
-                                                 (float)(rand.NextDouble() * Math.PI *(10f/360f)); // select the angle
-                    
+                                                 (rand.Next(100) >= 50 ? -1 : +1)*              // Select randomly the left right.
+                                                 (float)(rand.NextDouble() * Math.PI *(20f/360f)); // select the angle
+                   */
+                    directionAngleChange *= (float)rand.NextDouble()/2;
+
+                    if (Math.Abs(directionAngleChange)>Math.PI/2)
+                    {
+                        Console.WriteLine("------------------------->");
+                        /*
+                        if (directionAngleChange < 0)
+                            directionAngleChange = (float)(- directionAngleChange - Math.PI / 2);
+                        else
+                            directionAngleChange = (float)(- directionAngleChange + Math.PI / 2);
+                         * */
+
+                        directionAngleChange = -directionAngleChange;
+                    }
+
+                    if (directionAngleChange!=0)
+                    {
+                        Console.WriteLine(directionAngleChange);
+                    }
 
                     if (float.IsNaN(directionAngleChange))
                         directionAngleChange = 0;
@@ -227,24 +281,25 @@ namespace SmartCameraSimulation
                             filtered.y = person.kalmanY.Update(nextPosition.y, 50);
 
 
-                            person.Position = filtered;
+                            person.Position = nextPosition;
                             person.PathKalman.Add(filtered);
                         }
                         else
                         {
+                            directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(Math.PI);
                             // select random target
                             person.Target = targetList.RandomSelectStruct();
                         }
                     }
                     else
-                        directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(Math.PI/2);
+                        directionAngleChange = (rand.Next(100) > 50 ? -1 : +1) * (float)(Math.PI);
 
                     // update the speed
                     person.Speed += speedChange;
 
                     // limit the max speed
-                    if (person.Speed > 6f)
-                        person.Speed = 6;
+                    if (person.Speed > 8f)
+                        person.Speed = 8;
 
                     // limit the min speed
                     if (person.Speed < 1f)
@@ -285,15 +340,15 @@ namespace SmartCameraSimulation
 
             var imTarget = imPerson * 0.1f + 0.5f;
 
-            for (int i = 0; i < 400; i++)
+            for (int i = 0; i < 2000; i++)
             {
                 // Set to zero value
-                //mat.DrawMatrix(shopPlan, new FxVector2f(0, 0), new FxVector2f(mat.Width, mat.Height), FxMatrixF.DrawInterpolationMethod.Linear);
-                mat.SetValue(1); // white
+                mat.DrawMatrix(shopPlan, new FxVector2f(0, 0), new FxVector2f(mat.Width, mat.Height), FxMatrixF.DrawInterpolationMethod.Linear);
+                //mat.SetValue(1); // white
 
 
                 // Draw the target points
-                if(false)
+                if(true)
                     foreach(var t in targetList)
                     {
                         var size = new FxVector2f(20 * resize.x, 20 * resize.y);

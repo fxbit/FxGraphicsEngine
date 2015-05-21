@@ -184,6 +184,9 @@ namespace MainForm
         {
             if (peopleSimulation != null)
                 peopleSimulation.Stop();
+
+            if (UISerialCapture != null)
+                UISerialCapture.Stop();
         }
     }
 }

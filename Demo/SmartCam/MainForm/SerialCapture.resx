@@ -120,4 +120,34 @@
   <metadata name="toolStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="toolStripButton_save.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEeSURBVHhe7ZYxDsMwEMPy9P48bQYBGYiiahzbypkAl5tM
+        Td46sF80HopyjIeiHOOhKMd4KMoxHopyjIeiHOOhKMd4KMoxHopyjIeiHOOhKMd4KMoxHopyjIeiHOOh
+        KMd4KMoxHopyjIeiHOOhKMd4KMoxHopyjIeiHOOhKMfhvD7SwxI83t6ExBGaxYukEZrHi4QRbosXM49w
+        e7yYcYRu8WKmEbrHixlGGBYvRo4wPF6MGGGaeNFzhOniRY8Rpo0Xd44wfby4Y4SYeNFyhLh40WKE2Hhx
+        ZYT4ePHPCI+JF84Ij4sXv4zw2HjxbYTHxwsaoUy8OI9QLl4c4WXjF4vFYrFYjOf8Ha0oHiuJx0risZJ4
+        rCQeK4nHSuKxiNv+Bu9CuqSYx8T6AAAAAElFTkSuQmCC
+</value>
+  </data>
+  <data name="toolStripButton_plus.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAD0SURBVHhe5c+xCcBAEMTA779puwElwrxBrGCSS449P/R8
+        lI9GGflolJGPRhn5aJSRj0YZ+WiUkY9GGflolJGPRhn5aJSRj0YZ+WiUkY9GGflolJGPRhn5aJSRj0YZ
+        +WiUkY9GGflolJGPRhn5aJSRj0YZ16OnS/C4BI9L8LgEj0vwuASPS/C4BI9L8LgEj0vwuASPS/C4BI9L
+        8LjkevTUyEejjHw0yshHo4x8NMrIR6OMfDTKyEejjHw0yshHo4x8NMrIR6OMfDTKyEejjHw0yshHo4x8
+        NMrIR6OMfDTKyEejjHw0yshHo4x8NMrIR6OMi53zAgre+Vvm2I3WAAAAAElFTkSuQmCC
+</value>
+  </data>
+  <data name="toolStripButton_minus.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABOSURBVHhe7chBDQAwEMOw4096I1AGsaV8cgAAAAAAQMqL
+        N2epOUvNWWrOUnOWmrPUnKXmLDVnqTlLzVlqzlJzlpqz1JylAAAAAACAhLsPRk/8LstRK+0AAAAASUVO
+        RK5CYII=
+</value>
+  </data>
 </root>

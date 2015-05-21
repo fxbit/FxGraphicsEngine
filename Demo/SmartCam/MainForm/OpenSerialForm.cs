@@ -51,7 +51,8 @@ namespace MainForm
             SerialSelectedEventArgs args = new SerialSelectedEventArgs();
             args.Port = (String)m_comport.SelectedItem;
             args.Rate = (int)m_baud.SelectedItem;
-            SerialSelected(args);
+            if (SerialSelected != null)
+                SerialSelected(args);
         }
 
         private void bCancel_Click(object sender, EventArgs e)

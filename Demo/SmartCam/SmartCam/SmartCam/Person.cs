@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using FxMaths.Vector;
 using FxMaths.Utils;
 using FxMaths.Matrix;
+using System.Diagnostics;
 
 namespace SmartCam
 {
@@ -23,6 +24,10 @@ namespace SmartCam
         public List<FxVector2f> PathKalman;
 
         public FxVector2f Target;
+
+        public Stopwatch waitTime;
+        public long waitTimeMs;
+        public Boolean waitInTarget = false;
 
 #if USE_KALMAN2D
         public FxKalman2D kalmanX;
@@ -56,7 +61,7 @@ namespace SmartCam
         public Person(FxVector2f Position, FxVector2f Direction, float Speed)
         {
             this.Position = Position; this.Direction = Direction; this.Speed = Speed;
-            this.Target = Position;
+            this.Target = new FxVector2f(0,0);
             this.Direction.Normalize();
             Path = new List<FxVector2f>();
             PathKalman = new List<FxVector2f>();
